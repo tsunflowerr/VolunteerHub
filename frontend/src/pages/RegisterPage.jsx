@@ -5,22 +5,35 @@ import '../styles/AuthenPage.css';
 import EyeIcon from '../assets/icons/eye.svg?react';
 import EyeOffIcon from '../assets/icons/eye-off.svg?react';
 
-const LoginPage = () => {
+const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    const result = login(email, password);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match!');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    const result = register(fullName, email, password);
 
     if (result.success) {
+      // Redirect to home page after registration
       navigate('/');
     } else {
       setError(result.message);
@@ -65,13 +78,29 @@ const LoginPage = () => {
 
           <div className="formWrapper">
             <div className="header">
-              <h2 className="title">Welcome Back</h2>
+              <h2 className="title">Create Account</h2>
               <p className="subtitle">
-                Enter your email and password to access your account.
+                Create a new account to get started with VolunteerHub.
               </p>
             </div>
 
             <form className="signinForm" onSubmit={handleSubmit}>
+              <div className="fieldGroup">
+                <label htmlFor="name" className="label">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  className="input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  //   disabled={isSubmitting}
+                  required
+                />
+              </div>
+
               <div className="fieldGroup">
                 <label htmlFor="email" className="label">
                   Email
@@ -84,6 +113,7 @@ const LoginPage = () => {
                   autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  //   disabled={isSubmitting}
                   required
                 />
               </div>
@@ -99,29 +129,65 @@ const LoginPage = () => {
                     placeholder="Enter password"
                     className="input passwordInput"
                     value={password}
-                    autoComplete="off"
                     onChange={(e) => setPassword(e.target.value)}
+                    // disabled={isSubmitting}
                     required
                   />
                   <button
                     type="button"
                     className="eyeButton"
                     onClick={() => setShowPassword(!showPassword)}
+                    // disabled={isSubmitting}
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" className="submitButton">
-                Log In
+              <div className="fieldGroup">
+                <label htmlFor="confirmPassword" className="label">
+                  Confirm Password
+                </label>
+                <div className="passwordWrapper">
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm password"
+                    className="input passwordInput"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    // disabled={isSubmitting}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="eyeButton"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    // disabled={isSubmitting}
+                  >
+                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="submitButton"
+                // disabled={isSubmitting}
+                // style={{
+                //   opacity: isSubmitting ? 0.6 : 1,
+                //   cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                // }}
+              >
+                Create Account{' '}
+                {/* {isSubmitting ? 'Validating...' : 'Create Account'} */}
               </button>
             </form>
 
             <div className="switchView">
-              Don't Have An Account?{' '}
-              <Link to="/register" className="switchLink">
-                Register Now.
+              Already Have An Account?{' '}
+              <Link to="/login" className="switchLink">
+                Sign In.
               </Link>
             </div>
           </div>
@@ -131,4 +197,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;
