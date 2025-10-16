@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
         return `https://ui-avatars.com/api/?name=${encodeURIComponent(this.username)}&background=random`;
     } },
     phone_number: {type: String, trim: true},
-    
+    bookmarks: [{type: mongoose.Schema.Types.ObjectId, ref: "event"}],
 }, {
     timestamps: true
 })
