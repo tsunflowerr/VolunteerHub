@@ -2,7 +2,7 @@
 @import './global.css';
 
 .navbar {
-  background: var(--container-color);
+  background: var(--background-color);
   color: var(--text-black-color);
   padding: 0;
   top: 0;
@@ -25,7 +25,7 @@
   gap: 0.5rem;
   color: var(--text-black-color);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 2rem;
   cursor: pointer;
 }
 
@@ -52,7 +52,7 @@
   background: none;
   border: none;
   color: var(--text-black-color);
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 500;
   cursor: pointer;
   padding: 0.5rem 0;
@@ -188,7 +188,7 @@
   }
 
   .nav-link {
-    font-size: 0.85rem;
+    font-size: 1rem;
   }
 
   .user-name {

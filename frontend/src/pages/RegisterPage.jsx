@@ -58,7 +58,7 @@ const RegisterPage = () => {
             </p>
           </div>
 
-          <div className="footer">
+          <div className="authen-footer">
             <span>Copyright © UET 2025.</span>
             <span className="footerLink">
               Image from{' '}

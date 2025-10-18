@@ -2,8 +2,8 @@
 
 /* Footer Container */
 .footer {
-  background: var(--primary-color);
-  color: var(--text-white-color);
+  background: var(--background-color);
+  color: var(--text-black-color);
   padding: 3rem 0 1.5rem;
   margin-top: auto;
 }
@@ -39,7 +39,6 @@
 }
 
 .footer-quote {
-  color: var(--color-gray-200);
   line-height: 1.6;
   font-size: 0.95rem;
 }
@@ -56,7 +55,6 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--color-gray-200);
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -90,7 +88,6 @@
 }
 
 .footer-item {
-  color: var(--color-gray-200);
   font-size: 0.95rem;
   cursor: pointer;
   transition: color 0.3s ease;
