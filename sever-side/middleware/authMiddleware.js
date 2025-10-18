@@ -13,7 +13,7 @@ export default async function authMiddleware(req, res, next) {
 
     try {
         const payload = jwt.verify(token, JWT_SECRET)
-        const user = User.findById(payload._id).select('-password')
+        const user = await User.findById(payload._id).select('-password')
         if(!user) {
             return res.status(401).json({success: false, message: "User not found"})
         }

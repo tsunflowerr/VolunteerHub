@@ -19,25 +19,13 @@ const createToken = (userId) => {
 
 export async function registerUser(req, res) {
     const {username, email, phone_number, password, confirm_password} = req.body;
-    if(!username || !email || !phone_number || !password || !confirm_password) {
-        return res.status(400).json({success: false, message: "All fields are required"})
-    }
-    if(!validator.isEmail(email)) {
-        return res.status(400).json({success: false, message:"Invalid email format"})
-    }
-    if(password.length < 6) {
-        return res.status(400).json({success: false, message: "password must be at least 6 characters long"})
-    }
-    if(!validator.isMobilePhone(phone_number)) {
-        return res.status(400).json({success: false, message: "Invalid phone number format"})
-    }
     if(password.toString() !== confirm_password.toString()) {
         return res.status(400).json({success: false, message: "Password and Confirm password do not match"})
     }
     try {
         if(await User.findOne({email})) {
             return res.status(400).json({success: false, message: "Email already in use"})
-        }
+        }   
         if(await User.findOne({phone_number})) {
             return res.status(400).json({success: false, message: "Phone already in use"})
         }
@@ -64,9 +52,6 @@ export async function registerUser(req, res) {
 
 export async function loginUser(req, res) {
     const {email, password} = req.body
-    if(!email || !password) {
-        return res.status(400).json({success: false, message: "All fields are required"})
-    }
     try {
         const user = await User.findOne({email})
         if(!user) {
@@ -109,15 +94,6 @@ export async function getUserProfile(req, res) {
 
 export async function updateUserProfile(req, res) {
     const {username, email, avatar, phone_number} = req.body
-    if(!username || !email || !phone_number) {
-        return res.status(400).json({success: false, message: "All fields are required"})
-    }
-    if(email && !validator.isEmail(email)) {
-        return res.status(400).json({success: false, message:"Invalid email format"})
-    }
-    if(phone_number && !validator.isMobilePhone(phone_number)) {
-        return res.status(400).json({success: false, message: "Invalid phone number format"})
-    }
     try {
         const existingUser = await User.findOne({email, _id: {$ne: req.user._id}})
         if(existingUser) {
@@ -159,14 +135,8 @@ export async function deleteUser(req, res) {
 
 export async function changePassword(req, res) {
     const {current_password, new_password, confirm_new_password} = req.body
-    if(!current_password || !new_password || !confirm_new_password) {
-        return res.status(400).json({success: false, message: "All fields are required"})
-    }
     if(new_password !== confirm_new_password) {
         return res.status(400).json({success: false, message: "New password and confirmation do not match"})
-    }
-    if(new_password.length < 6) {
-        return res.status(400).json({success: false, message: "New password must be at least 6 characters long"})
     }
     try {
         const user = await User.findById(req.user._id).select("password")
