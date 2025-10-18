@@ -1,0 +1,143 @@
+@import './global.css';
+
+/* Footer Container */
+.footer {
+  background: var(--primary-color);
+  color: var(--text-white-color);
+  padding: 3rem 0 1.5rem;
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 200px;
+}
+
+/* Footer Information Section */
+.footer-information {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-logo-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.footer-quote {
+  color: var(--color-gray-200);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Footer Contact */
+.footer-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.footer-contact .footer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-gray-200);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.footer-contact .footer-item:hover {
+  color: var(--secondary-color);
+  transform: translateX(5px);
+}
+
+.footer-contact .footer-item svg {
+  width: 18px;
+  height: 18px;
+  color: var(--secondary-color);
+}
+
+/* Footer Sections (Links) */
+.footer-section {
+  display: flex;
+  gap: 2rem;
+  margin-left: auto;
+}
+
+.footer-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-item {
+  color: var(--color-gray-200);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .footer {
+    padding: 2rem 0 1rem;
+  }
+
+  .footer-container {
+    flex-direction: column;
+    padding: 0 1.5rem;
+    gap: 20px;
+  }
+
+  .footer-section {
+    flex-direction: column;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 1.5rem 0 1rem;
+  }
+
+  .footer-container {
+    padding: 0 1rem;
+    gap: 1.5rem;
+  }
+
+  .footer-logo-name {
+    font-size: 1.3rem;
+  }
+
+  .footer-quote,
+  .footer-contact .footer-item {
+    font-size: 0.85rem;
+  }
+
+  .footer-item {
+    font-size: 0.9rem;
+  }
+
+  .footer-item:first-child {
+    font-size: 1rem;
+  }
+}

@@ -1,7 +1,8 @@
+@import './global.css';
+
 .container {
   min-height: 100vh;
   display: flex;
-  font-family: var(--font-sans);
 }
 
 .leftPanel {
@@ -37,28 +38,10 @@
   align-items: center;
 }
 
-.logoIcon {
-  width: 2rem;
-  height: 2rem;
-  background-color: var(--color-white);
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 0.75rem;
-}
-
-.logoIconInner {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.25rem;
-  background-color: #3f3ff3;
-}
-
 .logoText {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--color-white);
+  color: var(--text-white-color);
 }
 
 .heroSection {
@@ -70,7 +53,7 @@
 
 .heroTitle {
   font-size: 2.25rem;
-  color: var(--color-white);
+  color: var(--text-white-color);
   margin-bottom: 1.5rem;
   line-height: 1.2;
 }
@@ -108,7 +91,7 @@
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background-color: var(--color-white);
+  background-color: var(--text-white-color);
 }
 
 @media (min-width: 1024px) {
@@ -131,24 +114,6 @@
   .mobileLogo {
     display: none;
   }
-}
-
-.mobileLogoIcon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 0.75rem;
-  background-color: #3f3ff3;
-}
-
-.mobileLogoIconInner {
-  width: 1rem;
-  height: 1rem;
-  background-color: var(--color-white);
-  border-radius: 0.25rem;
 }
 
 .mobileLogoText {
@@ -220,7 +185,7 @@
   height: 3rem;
   border: 1px solid var(--color-gray-200);
   border-radius: 0.5rem;
-  background-color: var(--color-white);
+  background-color: var(--text-white-color);
   padding: 0 1rem;
   font-size: 0.875rem;
   transition: border-color 0.2s;
@@ -228,7 +193,7 @@
 
 .input:focus {
   outline: none;
-  border-color: #3f3ff3;
+  border-color: var(--secondary-color);
 }
 
 .input::placeholder {
@@ -275,8 +240,8 @@
   height: 3rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-white);
-  background-color: #3f3ff3;
+  color: var(--text-white-color);
+  background-color: var(--secondary-color);
   border: none;
   border-radius: 0.5rem;
   transition: opacity 0.2s;
@@ -301,7 +266,7 @@
   padding: 0;
   height: auto;
   font-size: 0.875rem;
-  color: #3f3ff3;
+  color: var(--secondary-color);
   font-weight: 500;
   background: transparent;
   border: none;
