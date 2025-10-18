@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import '../styles/NavBar.css';
-import defaultAvatar from '../assets/avatar.jpeg';
+import { useAuth } from '../../contexts/AuthContext';
+import styles from './NavBar.module.css';
+import defaultAvatar from '../../assets/avatar.jpeg';
 import { User, LogOut } from 'lucide-react';
 
 const NavBar = () => {
@@ -12,39 +12,35 @@ const NavBar = () => {
   const navigate = useNavigate();
 
   return (
-    <header className="navbar">
-      <div className="navbar-container">
+    <header className={styles.navbar}>
+      <div className={styles.navbar__container}>
         {/* Logo */}
-        <div className="navbar-logo">
-          <span className="logo-text">VolunteerHub</span>
+        <div className={styles.navbar__logo}>
+          <span className={styles.navbar__logoText}>VolunteerHub</span>
         </div>
 
         {/* Navigation Items */}
-        <nav className="navbar-nav">
+        <nav className={styles.navbar__nav}>
           <button
-            className={`nav-link ${activeTab === 'home' ? 'active' : ''}`}
+            className={`${styles.navbar__navLink} ${activeTab === 'home' ? styles['navbar__navLink--active'] : ''}`}
             onClick={() => setActiveTab('home')}
           >
             Home
           </button>
           <button
-            className={`nav-link ${activeTab === 'features' ? 'active' : ''}`}
+            className={`${styles.navbar__navLink} ${activeTab === 'features' ? styles['navbar__navLink--active'] : ''}`}
             onClick={() => setActiveTab('features')}
           >
             Events
           </button>
           <button
-            className={`nav-link ${
-              activeTab === 'Discussions' ? 'active' : ''
-            }`}
+            className={`${styles.navbar__navLink} ${activeTab === 'Discussions' ? styles['navbar__navLink--active'] : ''}`}
             onClick={() => setActiveTab('Discussions')}
           >
             Discussions
           </button>
           <button
-            className={`nav-link ${
-              activeTab === 'integrations' ? 'active' : ''
-            }`}
+            className={`${styles.navbar__navLink} ${activeTab === 'integrations' ? styles['navbar__navLink--active'] : ''}`}
             onClick={() => setActiveTab('integrations')}
           >
             Integrations
@@ -52,27 +48,27 @@ const NavBar = () => {
         </nav>
 
         {/* Sign Up Button */}
-        <div className="navbar-actions">
+        <div className={styles.navbar__actions}>
           {user ? (
-            <div className="nav-user-menu">
-              <span className="nav-user-name">Hello, {user.fullName}</span>
-              <div className="nav-user-avatar-container">
+            <div className={styles.navbar__userMenu}>
+              <span className={styles.navbar__userName}>Hello, {user.fullName}</span>
+              <div className={styles.navbar__userAvatarContainer}>
                 <img
                   src={user.avatar || defaultAvatar}
                   alt="User Avatar"
-                  className="nav-user-avatar"
+                  className={styles.navbar__userAvatar}
                   onClick={() => setShowDropdown(!showDropdown)}
                 />
                 {showDropdown && (
-                  <div className="nav-dropdown-menu">
+                  <div className={styles.navbar__dropdownMenu}>
                     <button
-                      className="nav-dropdown-item"
+                      className={styles.navbar__dropdownItem}
                       onClick={() => navigate('/user-profile')}
                     >
                       <User />
                       User Profile
                     </button>
-                    <button className="nav-dropdown-item" onClick={logout}>
+                    <button className={styles.navbar__dropdownItem} onClick={logout}>
                       <LogOut />
                       Logout
                     </button>
@@ -81,7 +77,7 @@ const NavBar = () => {
               </div>
             </div>
           ) : (
-            <button className="nav-link" onClick={() => navigate('/register')}>
+            <button className={styles.navbar__navLink} onClick={() => navigate('/register')}>
               Sign Up
             </button>
           )}
