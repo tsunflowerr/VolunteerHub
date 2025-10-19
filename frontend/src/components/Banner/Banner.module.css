@@ -1,0 +1,30 @@
+/* Banner Container */
+.banner {
+  margin-bottom: 3rem;
+}
+
+/* Position pagination inside the banner */
+.banner :global(.swiper-pagination) {
+  bottom: 30px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .banner {
+    margin-bottom: 2rem;
+  }
+
+  .banner :global(.swiper-pagination) {
+    bottom: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner {
+    margin-bottom: 1.5rem;
+  }
+
+  .banner :global(.swiper-pagination) {
+    bottom: 10px !important;
+  }
+}

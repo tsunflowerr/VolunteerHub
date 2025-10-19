@@ -5,6 +5,8 @@ import AOS from 'aos';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import Banner from '../components/Banner';
+import EventSection from '../components/EventCard/EventSection';
+import PartnerSlider from '../components/PartnerSlider';
 
 const Home = () => {
   useEffect(() => {
@@ -17,6 +19,8 @@ const Home = () => {
       <NavBar></NavBar>
       <div>
         <Banner></Banner>
+        <EventSection></EventSection>
+        <PartnerSlider></PartnerSlider>
       </div>
       <Footer></Footer>
     </div>

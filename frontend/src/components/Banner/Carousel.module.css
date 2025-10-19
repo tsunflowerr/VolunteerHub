@@ -72,7 +72,7 @@
 }
 
 .carousel__learnMoreBtn:hover {
-  background-color: var(--primary-color);
+  opacity: 0.9;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }

@@ -6,13 +6,15 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
 import Carousel from './Carousel';
-import bg1 from '../assets/images/4.jpg';
-import bg2 from '../assets/images/5.jpg';
-import bg3 from '../assets/images/6.jpg';
+import styles from './Banner.module.css';
+import bg1 from '../../assets/images/4.jpg';
+import bg2 from '../../assets/images/5.jpg';
+import bg3 from '../../assets/images/6.jpg';
 
 const Banner = () => {
   return (
     <div
+      className={styles.banner}
       data-aos="fade-up"
       data-aos-anchor-placement="top-bottom"
       data-aos-easing="linear"
