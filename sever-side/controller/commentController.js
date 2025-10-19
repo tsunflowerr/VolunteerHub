@@ -1,6 +1,21 @@
 import Comment from '../models/commentModel.js';
-import Post from "../models/postModel.js";
+import Post from "../models/postsModel.js";
 import Event from "../models/eventModel.js";
+
+async function checkEventStatus(eventId) {
+    const event = await Event.findById(eventId).select('status endDate');
+    if (!event) {
+        return { success: false, status: 404, message: 'Event not found' };
+    }
+    if (event.status !== 'approved') {
+        return { success: false, status: 400, message: 'Cannot comment when event is not approved' };
+    }
+    if (event.endDate && new Date() > event.endDate) {
+        return { success: false, status: 400, message: 'Cannot comment after event has ended' };
+    }
+    return { success: true };
+}
+
 
 export async function addComment(req, res) {
     try {
@@ -9,7 +24,13 @@ export async function addComment(req, res) {
         if(!content || !content.trim()) {
             return res.status(400).json({success: false, message: 'Content is required'});
         }
-        const post = await Post.findOne({_id: postId, eventId}).select('author commentsCount');
+
+        const eventCheck = await checkEventStatus(eventId);
+        if (!eventCheck.success) {
+            return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
+        }
+
+        const post = await Post.findOne({_id: postId, eventId}).select('_id');
         if(!post) {
             return res.status(404).json({success: false, message: 'Post not found in this event'});
         }
@@ -21,7 +42,7 @@ export async function addComment(req, res) {
         });
 
         const saved = await comment.save();
-        await saved.populate('author', 'userName email avatar');
+        await saved.populate('author', 'username email avatar');
 
         await Post.findByIdAndUpdate(postId, {$inc: {commentsCount: 1}});
 
@@ -42,6 +63,11 @@ export async function replyComment(req, res) {
             return res.status(400).json({success: false, message: 'Content is required'});
         }
 
+        const eventCheck = await checkEventStatus(eventId);
+        if (!eventCheck.success) {
+            return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
+        }
+
         const parentComment = await Comment.findOne({_id: commentId, postId, eventId}).select('_id');
         if(!parentComment) {
             return res.status(404).json({success: false, message: 'Parent comment not found'});
@@ -56,7 +82,7 @@ export async function replyComment(req, res) {
         });
 
         const saved = await reply.save();
-        await saved.populate('author', 'userName email avatar');
+        await saved.populate('author', 'username email avatar');
         await Post.findByIdAndUpdate(postId, {$inc: {commentsCount: 1}});
 
         res.status(201).json({success: true, comment: saved});
@@ -72,7 +98,7 @@ export async function getCommentsByPost(req, res) {
         const {postId} = req.params;
         const {page = 1, limit = 20} = req.query;
         const comments = await Comment.find({postId, parentComment: null})
-            .populate('author', 'userName email avatar')
+            .populate('author', 'username email avatar')
             .sort({createdAt: -1})
             .limit(limit * 1)
             .skip((page - 1) * limit)
@@ -80,7 +106,7 @@ export async function getCommentsByPost(req, res) {
 
         const commentIds = comments.map(c => c._id);
         const replies = await Comment.find({parentComment: {$in: commentIds}})
-            .populate('author', 'userName email avatar')
+            .populate('author', 'username email avatar')
             .sort({createdAt: 1})
             .lean();
 
@@ -129,7 +155,7 @@ export async function updateComment(req, res) {
             {_id: commentId, author: req.user._id},
             {content: content.trim()},
             {new: true, runValidators: true}
-        ).populate('author', 'userName email avatar');
+        ).populate('author', 'username email avatar');
 
         if(!comment) {
             return res.status(404).json({success: false, message: 'Comment not found or unauthorized'});

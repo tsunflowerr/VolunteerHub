@@ -66,7 +66,7 @@ export async function getEventsByManager(req, res) {
     }   
 }
 
-export async function getUpcommingEvents(re, res) {
+export async function getUpcommingEvents(req, res) {
     try {
         const currentDate = new Date();
         const events = await Event.find({ startDate: { $gt: currentDate } }).populate('managerId', 'username email avatar').populate('category', 'name slug');

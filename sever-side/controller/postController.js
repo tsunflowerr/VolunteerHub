@@ -70,19 +70,6 @@ export async function updatePost(req, res) {
             return res.status(404).json({ success: false, message: 'Event not found' });
         }
         
-        // const post = await Post.findById(postId);
-        // if (!post) {
-        //     return res.status(404).json({ success: false, message: 'Post not found' });
-        // }
-        
-        // if (post.eventId.toString() !== eventId) {
-        //     return res.status(400).json({ success: false, message: 'Post does not belong to this event' });
-        // }
-        
-        // if (post.author.toString() !== req.user._id.toString()) {
-        //     return res.status(403).json({ success: false, message: 'Unauthorized: You can only update your own posts' });
-        // }
-        
         const now = new Date();
         if (event.endDate && now > event.endDate) {
             return res.status(400).json({ 

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const likeSchema = new mongoose.Schema({
     userId: {type: mongoose.Schema.Types.ObjectId, ref: "user", required: true},
     likeableId: {type: String, required: true},
-    likeableType: {type: String, enum:[event, post, comment], required: true}
+    likeableType: {type: String, enum:['event', 'post', 'comment'], required: true}
 }, {
     timestamps: { createdAt: true, updatedAt: false }
 })

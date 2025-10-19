@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     username: {type: String, required: true, trim: true},
@@ -10,11 +10,15 @@ const userSchema = new mongoose.Schema({
     } },
     phone_number: {type: String, trim: true},
     bookmarks: [{type: mongoose.Schema.Types.ObjectId, ref: "event"}],
+    pushSubscription: {
+        type: Object,
+        default: null
+    }
 }, {
     timestamps: true
-})
+});
 
 userSchema.index({ email: 1 }, { unique: true });
-const userModel = mongoose.models.user || mongoose.model("user", userSchema)
+const userModel = mongoose.models.user || mongoose.model("user", userSchema);
 
-export default userModel
+export default userModel;

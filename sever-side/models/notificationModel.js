@@ -5,7 +5,7 @@ const notificationSchema = new mongoose.Schema({
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
     type: {
         type: String,
-        enum: ["like", "comment", "milestone", "accept", "deny", "event_approved"], // Đã sửa 'accecpt'
+        enum: ["like", "comment", "milestone", "accept", "deny", "event_approved", "registration_confirmation", "new_registration"], 
         required: true
     },
     post: { type: mongoose.Schema.Types.ObjectId, ref: "post", default: null },

@@ -1,17 +1,60 @@
 import Registration from "../models/registrationsModel";
 import Event from "../models/eventModel.js";
+
 export async function registerEvent(req, res) {
-    const {userId, eventId} = req.body;
+    const { eventId } = req.params; 
+    const volunteerId = req.user._id;
+
     try {
-        const newRegistration = new Registration({userId, eventId});
+        const event = await Event.findById(eventId).select('name managerId');
+        if (!event) {
+            return res.status(404).json({ success: false, message: "Event not found" });
+        }
+
+        const existingRegistration = await Registration.findOne({ userId: volunteerId, eventId });
+        if (existingRegistration) {
+            return res.status(409).json({ success: false, message: "You have already registered for this event" });
+        }
+
+        const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
-        res.status(201).json({success: true, message: "Event registered successfully"});
+
+        const volunteerNotificationData = {
+            recipient: volunteerId,
+            sender: event.managerId || volunteerId,
+            type: 'registration_confirmation',
+            content: `You have successfully registered for the event "${event.name}". Current status: Pending approval.`,
+            event: eventId,
+        };
+        const volunteerPushPayload = {
+            title: 'Registration successful! ✅',
+            body: `You have just registered for the event "${event.name}".`,
+            icon:  req.user.avatar || '/default-avatar.png'
+        };
+        createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
+
+        if (event.managerId) {
+            const managerNotificationData = {
+                recipient: event.managerId,
+                sender: volunteerId,
+                type: 'new_registration',
+                content: `${req.user.username} has just registered for the event "${event.name}" that you manage.`,
+                event: eventId,
+            };
+            const managerPushPayload = {
+                title: 'New volunteer registered! 🧑‍🤝‍🧑',
+                body: `${req.user.username} just registered for your event.`,
+                icon:  req.user.avatar || '/default-avatar.png'
+            };
+            createAndSendNotification(managerNotificationData, managerPushPayload);
+        }
+
+        res.status(201).json({ success: true, message: "Event registered successfully" });
     } catch (error) {
         console.error("Error registering event:", error);
-        res.status(500).json({success: false, message: "Server error"});
+        res.status(500).json({ success: false, message: "Server error" });
     }
 }
-
 export async function unregisterEvent(req, res) {
     const {userId, eventId} = req.body;
     const now = new Date()

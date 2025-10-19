@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv"
 import {connectDB} from "./config/db.js";
+import webpush from 'web-push';
 
 dotenv.config()
 const app = express()
@@ -12,6 +13,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
 connectDB()
+
+webpush.setVapidDetails(
+  'mailto:tot23032@gmail.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
 
 app.get("/", (req, res) => {
     res.send("Welcome to the API");
