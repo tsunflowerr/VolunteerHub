@@ -7,6 +7,8 @@ import Footer from '../components/Footer';
 import Banner from '../components/Banner';
 import EventSection from '../components/EventCard/EventSection';
 import PartnerSlider from '../components/PartnerSlider';
+import RatingSection from '../components/Rating/RatingSection';
+import { Rating } from '@mui/material';
 
 const Home = () => {
   useEffect(() => {
@@ -21,6 +23,8 @@ const Home = () => {
         <Banner></Banner>
         <EventSection></EventSection>
         <PartnerSlider></PartnerSlider>
+        <RatingSection></RatingSection>
+        {/* <Rating name="read-only" value={5} readOnly /> */}
       </div>
       <Footer></Footer>
     </div>
