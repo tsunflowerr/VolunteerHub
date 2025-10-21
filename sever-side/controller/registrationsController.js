@@ -56,7 +56,8 @@ export async function registerEvent(req, res) {
     }
 }
 export async function unregisterEvent(req, res) {
-    const {userId, eventId} = req.body;
+    const {eventId} = req.params;
+    const userId = req.user._id;
     const now = new Date()
     try {
         const event =  await Event.findById(eventId).select('startTime');
@@ -66,7 +67,7 @@ export async function unregisterEvent(req, res) {
         if(now >= event.startTime) {
             return res.status(400).json({success: false, message: "Cannot unregister from an event that has already started"})
         }
-        const  deleted = await Registration.findOneAndDelete({userId, eventId});
+        const deleted = await Registration.findOneAndDelete({userId, eventId});
         if(!deleted) {
             return res.status(404).json({success: false, message: "Registration not found"})
         }

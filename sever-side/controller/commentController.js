@@ -1,6 +1,9 @@
 import Comment from '../models/commentModel.js';
 import Post from "../models/postsModel.js";
 import Event from "../models/eventModel.js";
+import NotificationModel from '../models/notificationModel.js';
+import redisClient from '../config/redis.js';
+import { cache } from 'react';
 
 async function checkEventStatus(eventId) {
     const event = await Event.findById(eventId).select('status endDate');
@@ -30,7 +33,7 @@ export async function addComment(req, res) {
             return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
         }
 
-        const post = await Post.findOne({_id: postId, eventId}).select('_id');
+        const post = await Post.findOne({_id: postId, eventId})
         if(!post) {
             return res.status(404).json({success: false, message: 'Post not found in this event'});
         }
@@ -46,6 +49,31 @@ export async function addComment(req, res) {
 
         await Post.findByIdAndUpdate(postId, {$inc: {commentsCount: 1}});
 
+        const cacheKey = `comment_notification:${req.user._id}:${post.author}:comment:${postId}`;
+        try {
+            const isRecent = await redisClient.exists(cacheKey)
+            if(!isRecent) {
+                const newNotification = new NotificationModel({
+                    sender: req.user._id,
+                    recipient: post.author,
+                    type: 'comment',
+                    content: `${req.user.username} commented on your post "${post.title}".`,
+                    post: postId,
+                });
+                await newNotification.save();
+                await redisClient.setEx(cacheKey, 300, '1');
+            }
+        } catch (redisError) {
+            console.error('Redis error:', redisError);
+            const newNotification = new NotificationModel({
+                sender: req.user._id,
+                recipient: post.author,
+                type: 'comment',
+                content: `${req.user.username} commented on your post "${post.title}".`,
+                post: postId,
+            });
+            await newNotification.save();
+        }
         res.status(201).json({success: true, comment: saved});
     }
     catch(error) {
@@ -68,7 +96,7 @@ export async function replyComment(req, res) {
             return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
         }
 
-        const parentComment = await Comment.findOne({_id: commentId, postId, eventId}).select('_id');
+        const parentComment = await Comment.findOne({_id: commentId, postId, eventId})
         if(!parentComment) {
             return res.status(404).json({success: false, message: 'Parent comment not found'});
         }
@@ -84,6 +112,32 @@ export async function replyComment(req, res) {
         const saved = await reply.save();
         await saved.populate('author', 'username email avatar');
         await Post.findByIdAndUpdate(postId, {$inc: {commentsCount: 1}});
+
+        const cacheKey = `comment_reply_notification:${req.user._id}:${parentComment.author}:comment_reply:${postId}`;
+        try {
+            const isRecent = await redisClient.exists(cacheKey);
+            if(!isRecent) {
+                const newNotification = new NotificationModel({
+                    sender: req.user._id,
+                    recipient: parentComment.author,
+                    type: 'comment_reply',
+                    content: `${req.user.username} replied to your comment.`,
+                    post: postId,
+                });
+                await newNotification.save();
+                await redisClient.setEx(cacheKey, 300, '1');
+            }
+        } catch (redisError) {
+            console.error('Redis error:', redisError);
+            const newNotification = new NotificationModel({
+                sender: req.user._id,
+                recipient: parentComment.author,
+                type: 'comment_reply',
+                content: `${req.user.username} replied to your comment.`,
+                post: postId,
+            });
+            await newNotification.save();
+        }
 
         res.status(201).json({success: true, comment: saved});
     }

@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv"
 import {connectDB} from "./config/db.js";
 import webpush from 'web-push';
+import redisClient from './config/redis.js';
 
 dotenv.config()
 const app = express()
@@ -11,6 +12,8 @@ const port = process.env.PORT || 4000
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
+
+await redisClient.connect(); 
 
 connectDB()
 
