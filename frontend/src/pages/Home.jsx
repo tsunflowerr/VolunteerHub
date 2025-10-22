@@ -8,8 +8,7 @@ import Banner from '../components/Banner';
 import EventSection from '../components/EventCard/EventSection';
 import PartnerSlider from '../components/PartnerSlider';
 import RatingSection from '../components/Rating/RatingSection';
-import { Rating } from '@mui/material';
-
+import UserDetail from '../components/UserDetail/UserDetail';
 const Home = () => {
   useEffect(() => {
     // Refresh AOS when component mounts
@@ -20,10 +19,11 @@ const Home = () => {
     <div className="home-container">
       <NavBar></NavBar>
       <div>
-        <Banner></Banner>
+        {/* <Banner></Banner>
         <EventSection></EventSection>
         <PartnerSlider></PartnerSlider>
-        <RatingSection></RatingSection>
+        <RatingSection></RatingSection> */}
+        <UserDetail></UserDetail>
         {/* <Rating name="read-only" value={5} readOnly /> */}
       </div>
       <Footer></Footer>
