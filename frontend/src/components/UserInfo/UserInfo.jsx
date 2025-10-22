@@ -1,74 +1,115 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import styles from './UserDetail.module.css';
+import styles from './UserInfo.module.css';
 import { ArrowLeft, Camera } from 'lucide-react';
-
-const UserDetail = () => {
+import { useAuth } from '../../contexts/AuthContext';
+const UserInfo = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
-  const [formData, setFormData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    location: 'United States',
-    bio: 'Passionate volunteer and community advocate',
-    aboutMe:
-      'I love helping others and making a positive impact in my community. I have been volunteering for over 5 years in various organizations.',
-    avatar: '',
-  });
-  //   const [formData, setFormData] = useState(null);
+  const { updateUserInfo } = useAuth();
+  // const [formData, setFormData] = useState({
+  //   name: 'John Doe',
+  //   email: 'john.doe@example.com',
+  //   location: 'United States',
+  //   bio: 'Passionate volunteer and community advocate',
+  //   aboutMe:
+  //     'I love helping others and making a positive impact in my community. I have been volunteering for over 5 years in various organizations.',
+  //   avatar: '',
+  // });
+  const [formData, setFormData] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  //   useEffect(() => {
-  //     const storedData = localStorage.getItem('userData');
-  //     if (storedData) {
-  //       const parsed = JSON.parse(storedData);
-  //       setUserData(parsed);
-  //       setFormData(parsed);
-  //     } else {
-  //       navigate('/register');
-  //     }
-  //   }, [navigate]);
+  useEffect(() => {
+    const storedData = localStorage.getItem('currentUser');
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      console.log(parsed);
+      setUserData(parsed);
+      setFormData(parsed);
+    } else {
+      navigate('/register');
+    }
+  }, [navigate]);
 
   const handleAvatarChange = (e) => {
-    //   const file = e.target.files?.[0];
-    //   if (file && formData) {
-    //     const reader = new FileReader();
-    //     reader.onloadend = () => {
-    //       setFormData({
-    //         ...formData,
-    //         avatar: reader.result,
-    //       });
-    //     };
-    //     reader.readAsDataURL(file);
-    //   }
+    const file = e.target.files?.[0];
+    if (file && formData) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({
+          ...formData,
+          avatar: reader.result,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleChange = (e) => {
-    // if (formData) {
-    //   setFormData({
-    //     ...formData,
-    //     [e.target.name]: e.target.value,
-    //   });
-    // }
+    if (formData) {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    //   setIsSaving(true);
+    setIsSaving(true);
 
-    //   // Simulate save process
-    //   await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      // Get all users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
 
-    //   if (formData) {
-    //     localStorage.setItem('userData', JSON.stringify(formData));
-    //     setUserData(formData);
-    //     setSaveSuccess(true);
-    //     setTimeout(() => setSaveSuccess(false), 3000);
-    //   }
+      // Find the current user index
+      const userIndex = users.findIndex((u) => u.id === userData.id);
 
-    //   setIsSaving(false);
+      if (userIndex !== -1) {
+        // Update user in users array (preserve password)
+        const existingPassword = users[userIndex].password;
+        users[userIndex] = {
+          ...users[userIndex],
+          fullName: formData.fullName,
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          aboutMe: formData.aboutMe,
+          avatar: formData.avatar,
+          password: existingPassword,
+          updatedAt: new Date().toISOString(),
+        };
+
+        // Save updated users array to localStorage
+        localStorage.setItem('users', JSON.stringify(users));
+
+        // Update currentUser in localStorage (without password)
+        const updatedCurrentUser = {
+          id: userData.id,
+          email: userData.email,
+          fullName: formData.fullName,
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          aboutMe: formData.aboutMe,
+          avatar: formData.avatar,
+        };
+        localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
+
+        // Update context state
+        updateUserInfo(formData);
+
+        // Show success message
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save changes:', error);
+    }
+
+    setIsSaving(false);
   };
 
   if (!formData) {
@@ -79,7 +120,7 @@ const UserDetail = () => {
     );
   }
 
-  const initials = formData.name
+  const initials = formData.fullName
     .split(' ')
     .map((n) => n[0])
     .join('')
@@ -120,7 +161,7 @@ const UserDetail = () => {
                       {formData.avatar ? (
                         <img
                           src={formData.avatar}
-                          alt={formData.name}
+                          alt={formData.fullName}
                           className={styles['user-detail__avatar-image']}
                         />
                       ) : (
@@ -167,16 +208,16 @@ const UserDetail = () => {
               <div className={styles['user-detail__card-content']}>
                 <div className={styles['user-detail__field']}>
                   <label
-                    htmlFor="name"
+                    htmlFor="fullName"
                     className={styles['user-detail__label']}
                   >
                     Full Name
                   </label>
                   <input
-                    id="name"
-                    name="name"
+                    id="fullName"
+                    name="fullName"
                     type="text"
-                    value={formData.name}
+                    value={formData.fullName}
                     onChange={handleChange}
                     placeholder="John Doe"
                     required
@@ -207,6 +248,23 @@ const UserDetail = () => {
                 </div>
                 <div className={styles['user-detail__field']}>
                   <label
+                    htmlFor="phone"
+                    className={styles['user-detail__label']}
+                  >
+                    Phone
+                  </label>
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="text"
+                    value={formData.phone || ''}
+                    onChange={handleChange}
+                    placeholder=""
+                    className={styles['user-detail__input']}
+                  />
+                </div>
+                <div className={styles['user-detail__field']}>
+                  <label
                     htmlFor="location"
                     className={styles['user-detail__label']}
                   >
@@ -216,9 +274,9 @@ const UserDetail = () => {
                     id="location"
                     name="location"
                     type="text"
-                    value={formData.location}
+                    value={formData.location || ''}
                     onChange={handleChange}
-                    placeholder="United States"
+                    placeholder=""
                     className={styles['user-detail__input']}
                   />
                 </div>
@@ -240,14 +298,14 @@ const UserDetail = () => {
                   <textarea
                     id="bio"
                     name="bio"
-                    value={formData.bio}
+                    value={formData.bio || ''}
                     onChange={handleChange}
                     placeholder="A short bio about yourself..."
                     rows={3}
                     className={styles['user-detail__textarea']}
                   />
                   <p className={styles['user-detail__hint']}>
-                    {formData.bio.length}/160 characters
+                    {(formData.bio || '').length}/160 characters
                   </p>
                 </div>
                 <div className={styles['user-detail__field']}>
@@ -303,4 +361,4 @@ const UserDetail = () => {
   );
 };
 
-export default UserDetail;
+export default UserInfo;

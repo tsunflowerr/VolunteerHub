@@ -22,25 +22,37 @@ const NavBar = () => {
         {/* Navigation Items */}
         <nav className={styles.navbar__nav}>
           <button
-            className={`${styles.navbar__navLink} ${activeTab === 'home' ? styles['navbar__navLink--active'] : ''}`}
+            className={`${styles.navbar__navLink} ${
+              activeTab === 'home' ? styles['navbar__navLink--active'] : ''
+            }`}
             onClick={() => setActiveTab('home')}
           >
             Home
           </button>
           <button
-            className={`${styles.navbar__navLink} ${activeTab === 'features' ? styles['navbar__navLink--active'] : ''}`}
+            className={`${styles.navbar__navLink} ${
+              activeTab === 'features' ? styles['navbar__navLink--active'] : ''
+            }`}
             onClick={() => setActiveTab('features')}
           >
             Events
           </button>
           <button
-            className={`${styles.navbar__navLink} ${activeTab === 'Discussions' ? styles['navbar__navLink--active'] : ''}`}
+            className={`${styles.navbar__navLink} ${
+              activeTab === 'Discussions'
+                ? styles['navbar__navLink--active']
+                : ''
+            }`}
             onClick={() => setActiveTab('Discussions')}
           >
             Discussions
           </button>
           <button
-            className={`${styles.navbar__navLink} ${activeTab === 'integrations' ? styles['navbar__navLink--active'] : ''}`}
+            className={`${styles.navbar__navLink} ${
+              activeTab === 'integrations'
+                ? styles['navbar__navLink--active']
+                : ''
+            }`}
             onClick={() => setActiveTab('integrations')}
           >
             Integrations
@@ -51,10 +63,12 @@ const NavBar = () => {
         <div className={styles.navbar__actions}>
           {user ? (
             <div className={styles.navbar__userMenu}>
-              <span className={styles.navbar__userName}>Hello, {user.fullName}</span>
+              <span className={styles.navbar__userName}>
+                Hello, {user.fullName}
+              </span>
               <div className={styles.navbar__userAvatarContainer}>
                 <img
-                  src={user.avatar || defaultAvatar}
+                  src={user.avatar}
                   alt="User Avatar"
                   className={styles.navbar__userAvatar}
                   onClick={() => setShowDropdown(!showDropdown)}
@@ -63,12 +77,18 @@ const NavBar = () => {
                   <div className={styles.navbar__dropdownMenu}>
                     <button
                       className={styles.navbar__dropdownItem}
-                      onClick={() => navigate('/user-profile')}
+                      onClick={() => navigate('/userinfo')}
                     >
                       <User />
                       User Profile
                     </button>
-                    <button className={styles.navbar__dropdownItem} onClick={logout}>
+                    <button
+                      className={styles.navbar__dropdownItem}
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                      }}
+                    >
                       <LogOut />
                       Logout
                     </button>
@@ -77,7 +97,10 @@ const NavBar = () => {
               </div>
             </div>
           ) : (
-            <button className={styles.navbar__navLink} onClick={() => navigate('/register')}>
+            <button
+              className={styles.navbar__navLink}
+              onClick={() => navigate('/register')}
+            >
               Sign Up
             </button>
           )}

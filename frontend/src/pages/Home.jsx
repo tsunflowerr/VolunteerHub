@@ -1,14 +1,10 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
 import AOS from 'aos';
-import NavBar from '../components/NavBar';
-import Footer from '../components/Footer';
-import Banner from '../components/Banner';
-import EventSection from '../components/EventCard/EventSection';
-import PartnerSlider from '../components/PartnerSlider';
-import RatingSection from '../components/Rating/RatingSection';
-import UserDetail from '../components/UserDetail/UserDetail';
+import Banner from '../components/Banner/Banner.jsx';
+import EventSection from '../components/EventCard/EventSection.jsx';
+import PartnerSlider from '../components/PartnerSlider/PartnerSlider.jsx';
+import RatingSection from '../components/Rating/RatingSection.jsx';
+
 const Home = () => {
   useEffect(() => {
     // Refresh AOS when component mounts
@@ -16,18 +12,12 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="home-container">
-      <NavBar></NavBar>
-      <div>
-        {/* <Banner></Banner>
-        <EventSection></EventSection>
-        <PartnerSlider></PartnerSlider>
-        <RatingSection></RatingSection> */}
-        <UserDetail></UserDetail>
-        {/* <Rating name="read-only" value={5} readOnly /> */}
-      </div>
-      <Footer></Footer>
-    </div>
+    <>
+      <Banner></Banner>
+      <EventSection></EventSection>
+      <PartnerSlider></PartnerSlider>
+      <RatingSection></RatingSection>
+    </>
   );
 };
 

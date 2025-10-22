@@ -34,7 +34,7 @@ const RegisterPage = () => {
 
     if (result.success) {
       // Redirect to home page after registration
-      navigate('/');
+      navigate('/userinfo');
     } else {
       setError(result.message);
     }

@@ -29,6 +29,11 @@ export const AuthProvider = ({ children }) => {
         id: foundUser.id,
         fullName: foundUser.fullName,
         email: foundUser.email,
+        phone: foundUser.phone,
+        location: foundUser.location,
+        bio: foundUser.bio,
+        aboutMe: foundUser.aboutMe,
+        avatar: foundUser.avatar,
       };
       setUser(userWithoutPassword);
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
@@ -53,7 +58,12 @@ export const AuthProvider = ({ children }) => {
       id: Date.now().toString(),
       fullName,
       email,
-      password, // In real app, this should be hashed on server
+      password,
+      phone: null,
+      location: null,
+      bio: null,
+      aboutMe: null,
+      avatar: `https://ui-avatars.com/api/?name=${fullName}&background=random`,
       createdAt: new Date().toISOString(),
     };
 
@@ -65,6 +75,11 @@ export const AuthProvider = ({ children }) => {
       id: newUser.id,
       fullName: newUser.fullName,
       email: newUser.email,
+      phone: newUser.phone,
+      location: newUser.location,
+      bio: newUser.bio,
+      aboutMe: newUser.aboutMe,
+      avatar: newUser.avatar,
     };
     setUser(userWithoutPassword);
     localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
@@ -77,8 +92,59 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('currentUser');
   };
 
+  const updateUserInfo = (updatedData) => {
+    if (!user) {
+      return { success: false, message: 'No user logged in' };
+    }
+
+    // Get stored users
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    // Find and update the user in users array
+    const userIndex = users.findIndex((u) => u.id === user.id);
+    if (userIndex !== -1) {
+      // Preserve password when updating
+      const existingPassword = users[userIndex].password;
+      users[userIndex] = {
+        ...users[userIndex],
+        ...updatedData,
+        password: existingPassword,
+        id: user.id,
+        email: user.email, // Email should not be changed
+      };
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    // Update current user (without password)
+    const updatedUser = {
+      id: user.id,
+      email: user.email,
+      fullName:
+        updatedData.fullName !== undefined
+          ? updatedData.fullName
+          : user.fullName,
+      phone: updatedData.phone !== undefined ? updatedData.phone : user.phone,
+      location:
+        updatedData.location !== undefined
+          ? updatedData.location
+          : user.location,
+      bio: updatedData.bio !== undefined ? updatedData.bio : user.bio,
+      aboutMe:
+        updatedData.aboutMe !== undefined ? updatedData.aboutMe : user.aboutMe,
+      avatar:
+        updatedData.avatar !== undefined ? updatedData.avatar : user.avatar,
+    };
+
+    setUser(updatedUser);
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, updateUserInfo, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
