@@ -1,25 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import styles from './UserInfo.module.css';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+
+// Validation schema
+const userInfoSchema = Yup.object().shape({
+  fullName: Yup.string()
+    .matches(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces')
+    .required('Full name is required'),
+  phone: Yup.string()
+    .matches(
+      /^[0-9+\-\s()]*$/,
+      'Phone number can only contain numbers, +, -, spaces, and parentheses'
+    )
+    .nullable(),
+  location: Yup.string().nullable(),
+  bio: Yup.string().max(160, 'Bio must not exceed 160 characters').nullable(),
+  aboutMe: Yup.string()
+    .max(500, 'About Me must not exceed 500 characters')
+    .nullable(),
+});
 const UserInfo = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const { updateUserInfo } = useAuth();
-  // const [formData, setFormData] = useState({
-  //   name: 'John Doe',
-  //   email: 'john.doe@example.com',
-  //   location: 'United States',
-  //   bio: 'Passionate volunteer and community advocate',
-  //   aboutMe:
-  //     'I love helping others and making a positive impact in my community. I have been volunteering for over 5 years in various organizations.',
-  //   avatar: '',
-  // });
   const [formData, setFormData] = useState(null);
+  const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem('currentUser');
@@ -59,57 +70,61 @@ const UserInfo = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
+    setErrors({});
 
     try {
-      // Get all users from localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-
-      // Find the current user index
-      const userIndex = users.findIndex((u) => u.id === userData.id);
-
-      if (userIndex !== -1) {
-        // Update user in users array (preserve password)
-        const existingPassword = users[userIndex].password;
-        users[userIndex] = {
-          ...users[userIndex],
+      // Validate form data with Yup
+      await userInfoSchema.validate(
+        {
           fullName: formData.fullName,
-          phone: formData.phone,
-          location: formData.location,
-          bio: formData.bio,
-          aboutMe: formData.aboutMe,
-          avatar: formData.avatar,
-          password: existingPassword,
-          updatedAt: new Date().toISOString(),
-        };
+          phone: formData.phone || null,
+          location: formData.location || null,
+          bio: formData.bio || null,
+          aboutMe: formData.aboutMe || null,
+        },
+        { abortEarly: false }
+      );
 
-        // Save updated users array to localStorage
-        localStorage.setItem('users', JSON.stringify(users));
+      // Check if any data has changed
+      const hasChanged =
+        formData.fullName !== userData.fullName ||
+        (formData.phone || '') !== (userData.phone || '') ||
+        (formData.location || '') !== (userData.location || '') ||
+        (formData.bio || '') !== (userData.bio || '') ||
+        (formData.aboutMe || '') !== (userData.aboutMe || '') ||
+        (formData.avatar || '') !== (userData.avatar || '');
 
-        // Update currentUser in localStorage (without password)
-        const updatedCurrentUser = {
-          id: userData.id,
-          email: userData.email,
-          fullName: formData.fullName,
-          phone: formData.phone,
-          location: formData.location,
-          bio: formData.bio,
-          aboutMe: formData.aboutMe,
-          avatar: formData.avatar,
-        };
-        localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
-
-        // Update context state
-        updateUserInfo(formData);
-
-        // Show success message
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
+      // If no changes, don't update and don't show notification
+      if (!hasChanged) {
+        setIsSaving(false);
+        return;
       }
-    } catch (error) {
-      console.error('Failed to save changes:', error);
-    }
 
-    setIsSaving(false);
+      const result = updateUserInfo(formData);
+      if (result.success) {
+        toast.success('Profile updated successfully! 🎉', {
+          duration: 3000,
+        });
+      }
+
+      // Show success toast and message
+    } catch (validationErrors) {
+      // Handle Yup validation errors
+      if (validationErrors.inner) {
+        const formattedErrors = {};
+        validationErrors.inner.forEach((err) => {
+          formattedErrors[err.path] = err.message;
+        });
+        setErrors(formattedErrors);
+      } else {
+        console.error('Failed to save changes:', validationErrors);
+        toast.error('Failed to save changes. Please try again.', {
+          duration: 3000,
+        });
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!formData) {
@@ -220,9 +235,15 @@ const UserInfo = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    required
-                    className={styles['user-detail__input']}
+                    className={`${styles['user-detail__input']} ${
+                      errors.fullName ? styles['user-detail__input--error'] : ''
+                    }`}
                   />
+                  {errors.fullName && (
+                    <p className={styles['user-detail__error']}>
+                      {errors.fullName}
+                    </p>
+                  )}
                 </div>
                 <div className={styles['user-detail__field']}>
                   <label
@@ -259,9 +280,16 @@ const UserInfo = () => {
                     type="text"
                     value={formData.phone || ''}
                     onChange={handleChange}
-                    placeholder=""
-                    className={styles['user-detail__input']}
+                    placeholder="+1 (555) 123-4567"
+                    className={`${styles['user-detail__input']} ${
+                      errors.phone ? styles['user-detail__input--error'] : ''
+                    }`}
                   />
+                  {errors.phone && (
+                    <p className={styles['user-detail__error']}>
+                      {errors.phone}
+                    </p>
+                  )}
                 </div>
                 <div className={styles['user-detail__field']}>
                   <label
@@ -276,9 +304,16 @@ const UserInfo = () => {
                     type="text"
                     value={formData.location || ''}
                     onChange={handleChange}
-                    placeholder=""
-                    className={styles['user-detail__input']}
+                    placeholder="United States"
+                    className={`${styles['user-detail__input']} ${
+                      errors.location ? styles['user-detail__input--error'] : ''
+                    }`}
                   />
+                  {errors.location && (
+                    <p className={styles['user-detail__error']}>
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -302,11 +337,17 @@ const UserInfo = () => {
                     onChange={handleChange}
                     placeholder="A short bio about yourself..."
                     rows={3}
-                    className={styles['user-detail__textarea']}
+                    className={`${styles['user-detail__textarea']} ${
+                      errors.bio ? styles['user-detail__input--error'] : ''
+                    }`}
                   />
-                  <p className={styles['user-detail__hint']}>
-                    {(formData.bio || '').length}/160 characters
-                  </p>
+                  {errors.bio ? (
+                    <p className={styles['user-detail__error']}>{errors.bio}</p>
+                  ) : (
+                    <p className={styles['user-detail__hint']}>
+                      {(formData.bio || '').length}/160 characters
+                    </p>
+                  )}
                 </div>
                 <div className={styles['user-detail__field']}>
                   <label
@@ -322,11 +363,19 @@ const UserInfo = () => {
                     onChange={handleChange}
                     placeholder="Tell us more about yourself, your interests, and what you do..."
                     rows={5}
-                    className={styles['user-detail__textarea']}
+                    className={`${styles['user-detail__textarea']} ${
+                      errors.aboutMe ? styles['user-detail__input--error'] : ''
+                    }`}
                   />
-                  <p className={styles['user-detail__hint']}>
-                    {(formData.aboutMe || '').length}/500 characters
-                  </p>
+                  {errors.aboutMe ? (
+                    <p className={styles['user-detail__error']}>
+                      {errors.aboutMe}
+                    </p>
+                  ) : (
+                    <p className={styles['user-detail__hint']}>
+                      {(formData.aboutMe || '').length}/500 characters
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -337,23 +386,15 @@ const UserInfo = () => {
                 disabled={isSaving}
                 className={styles['user-detail__button']}
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                Save Changes
               </button>
-              <Link
+              <button
                 to="/profile"
                 className={styles['user-detail__button--outline']}
               >
-                Cancel
-              </Link>
+                Revert Changes
+              </button>
             </div>
-            {/* Success Message */}
-            {saveSuccess && (
-              <div className={styles['user-detail__success']}>
-                <p className={styles['user-detail__success-text']}>
-                  ✓ Changes saved successfully!
-                </p>
-              </div>
-            )}
           </form>
         </div>
       </div>

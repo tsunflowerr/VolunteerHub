@@ -47,7 +47,7 @@ const NavBar = () => {
           >
             Discussions
           </button>
-          <button
+          {/* <button
             className={`${styles.navbar__navLink} ${
               activeTab === 'integrations'
                 ? styles['navbar__navLink--active']
@@ -56,7 +56,7 @@ const NavBar = () => {
             onClick={() => setActiveTab('integrations')}
           >
             Integrations
-          </button>
+          </button> */}
         </nav>
 
         {/* Sign Up Button */}

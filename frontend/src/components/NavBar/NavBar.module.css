@@ -10,8 +10,9 @@
 }
 
 .navbar__container {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -173,7 +174,6 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .navbar__container {
-    padding: 0 1rem;
     gap: 1rem;
   }
 

@@ -1,9 +1,30 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import * as Yup from 'yup';
 import { useAuth } from '../contexts/AuthContext';
 import Sign, { styles } from '../components/Sign';
 import EyeIcon from '../assets/icons/eye.svg?react';
 import EyeOffIcon from '../assets/icons/eye-off.svg?react';
+
+// Validation schema
+const registerSchema = Yup.object().shape({
+  fullName: Yup.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(50, 'Full name must not exceed 50 characters')
+    .matches(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces')
+    .required('Full name is required'),
+  email: Yup.string()
+    .email('Invalid email address')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(20, 'Password must not exceed 20 characters')
+    .required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Please confirm your password'),
+});
 
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,31 +33,61 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setErrors({});
+    setIsSubmitting(true);
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match!');
-      return;
-    }
+    try {
+      // Validate form data with Yup
+      await registerSchema.validate(
+        {
+          fullName,
+          email,
+          password,
+          confirmPassword,
+        },
+        { abortEarly: false }
+      );
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
+      // If validation passes, proceed with registration
+      const result = register(fullName, email, password);
 
-    const result = register(fullName, email, password);
+      if (result.success) {
+        // Show success toast
+        toast.success(
+          'Account created successfully! Welcome to VolunteerHub! 🎉',
+          {
+            duration: 3000,
+          }
+        );
 
-    if (result.success) {
-      // Redirect to home page after registration
-      navigate('/userinfo');
-    } else {
-      setError(result.message);
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          navigate('/userinfo');
+        }, 1000);
+      } else {
+        setError(result.message);
+      }
+    } catch (validationErrors) {
+      // Handle Yup validation errors
+      if (validationErrors.inner) {
+        const formattedErrors = {};
+        validationErrors.inner.forEach((err) => {
+          formattedErrors[err.path] = err.message;
+        });
+        console.log(formattedErrors);
+        setErrors(formattedErrors);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -52,14 +103,19 @@ const RegisterPage = () => {
           </label>
           <input
             id="name"
-            type="text"
             placeholder="John Doe"
-            className={styles.authen__input}
+            className={`${styles.authen__input} ${
+              errors.fullName ? styles.authen__inputError : ''
+            }`}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            //   disabled={isSubmitting}
-            required
+            disabled={isSubmitting}
           />
+          {errors.fullName && (
+            <span className={styles.authen__errorMessage}>
+              {errors.fullName}
+            </span>
+          )}
         </div>
 
         <div className={styles.authen__fieldGroup}>
@@ -68,15 +124,22 @@ const RegisterPage = () => {
           </label>
           <input
             id="email"
-            type="email"
             placeholder="user@company.com"
-            className={styles.authen__input}
+            className={`${styles.authen__input} ${
+              errors.email ? styles.authen__inputError : ''
+            }`}
             autoComplete="off"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            //   disabled={isSubmitting}
-            required
+            disabled={isSubmitting}
           />
+          {errors.email ? (
+            <span className={styles.authen__errorMessage}>{errors.email}</span>
+          ) : (
+            error && (
+              <span className={styles.authen__errorMessage}>{error}</span>
+            )
+          )}
         </div>
 
         <div className={styles.authen__fieldGroup}>
@@ -88,21 +151,27 @@ const RegisterPage = () => {
               id="password"
               type={showPassword ? 'text' : 'password'}
               placeholder="Enter password"
-              className={`${styles.authen__input} ${styles.authen__passwordInput}`}
+              className={`${styles.authen__input} ${
+                styles.authen__passwordInput
+              } ${errors.password ? styles.authen__inputError : ''}`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              // disabled={isSubmitting}
-              required
+              disabled={isSubmitting}
             />
             <button
               type="button"
               className={styles.authen__eyeButton}
               onClick={() => setShowPassword(!showPassword)}
-              // disabled={isSubmitting}
+              disabled={isSubmitting}
             >
               {showPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.password && (
+            <span className={styles.authen__errorMessage}>
+              {errors.password}
+            </span>
+          )}
         </div>
 
         <div className={styles.authen__fieldGroup}>
@@ -114,34 +183,39 @@ const RegisterPage = () => {
               id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="Confirm password"
-              className={`${styles.authen__input} ${styles.authen__passwordInput}`}
+              className={`${styles.authen__input} ${
+                styles.authen__passwordInput
+              } ${errors.confirmPassword ? styles.authen__inputError : ''}`}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              // disabled={isSubmitting}
-              required
+              disabled={isSubmitting}
             />
             <button
               type="button"
               className={styles.authen__eyeButton}
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              // disabled={isSubmitting}
+              disabled={isSubmitting}
             >
               {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
             </button>
           </div>
+          {errors.confirmPassword && (
+            <span className={styles.authen__errorMessage}>
+              {errors.confirmPassword}
+            </span>
+          )}
         </div>
 
         <button
           type="submit"
           className={styles.authen__submitButton}
-          // disabled={isSubmitting}
-          // style={{
-          //   opacity: isSubmitting ? 0.6 : 1,
-          //   cursor: isSubmitting ? 'not-allowed' : 'pointer',
-          // }}
+          disabled={isSubmitting}
+          style={{
+            opacity: isSubmitting ? 0.6 : 1,
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+          }}
         >
-          Create Account{' '}
-          {/* {isSubmitting ? 'Validating...' : 'Create Account'} */}
+          {isSubmitting ? 'Validating...' : 'Create Account'}
         </button>
       </form>
 
