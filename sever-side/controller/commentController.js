@@ -1,9 +1,8 @@
 import Comment from '../models/commentModel.js';
-import Post from "../models/postsModel.js";
+import Post from "../models/postModel.js";
 import Event from "../models/eventModel.js";
 import NotificationModel from '../models/notificationModel.js';
 import redisClient from '../config/redis.js';
-import { cache } from 'react';
 
 async function checkEventStatus(eventId) {
     const event = await Event.findById(eventId).select('status endDate');

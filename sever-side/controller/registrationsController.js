@@ -1,12 +1,13 @@
-import Registration from "../models/registrationsModel";
+import Registration from "../models/registrationsModel.js";
 import Event from "../models/eventModel.js";
+import { createAndSendNotification } from '../utils/notificationHelper.js';
 
 export async function registerEvent(req, res) {
     const { eventId } = req.params; 
     const volunteerId = req.user._id;
 
     try {
-        const event = await Event.findById(eventId).select('name managerId');
+        const event = await Event.findById(eventId).select('name managerId capacity');
         if (!event) {
             return res.status(404).json({ success: false, message: "Event not found" });
         }
@@ -15,7 +16,14 @@ export async function registerEvent(req, res) {
         if (existingRegistration) {
             return res.status(409).json({ success: false, message: "You have already registered for this event" });
         }
+        const currentRegistrations = await Registration.countDocuments({ 
+            eventId,
+            status: { $in: ['pending', 'confirmed'] }  
+        });
 
+        if (currentRegistrations >= event.capacity) {
+            return res.status(409).json({ message: "Event capacity reached" });
+        }
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
 
@@ -60,11 +68,11 @@ export async function unregisterEvent(req, res) {
     const userId = req.user._id;
     const now = new Date()
     try {
-        const event =  await Event.findById(eventId).select('startTime');
+        const event =  await Event.findById(eventId).select('startDate');
         if(!event) {
             return res.status(404).json({success: false, message: "Event not found"})
         }
-        if(now >= event.startTime) {
+        if(now >= event.startDate) {
             return res.status(400).json({success: false, message: "Cannot unregister from an event that has already started"})
         }
         const deleted = await Registration.findOneAndDelete({userId, eventId});

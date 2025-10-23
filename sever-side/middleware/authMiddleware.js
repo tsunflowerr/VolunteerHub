@@ -17,6 +17,9 @@ export default async function authMiddleware(req, res, next) {
         if(!user) {
             return res.status(401).json({success: false, message: "User not found"})
         }
+        if(user.status === "locked") {
+            return res.status(403).json({success: false, message: "User account is locked"})
+        }
         req.user = user
         next()
     }

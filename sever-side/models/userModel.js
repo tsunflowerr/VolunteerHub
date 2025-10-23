@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema({
     pushSubscription: {
         type: Object,
         default: null
-    }
+    },
+    status: {type: String, enum: ["active", "locked"], default: "active"}
 }, {
     timestamps: true
 });

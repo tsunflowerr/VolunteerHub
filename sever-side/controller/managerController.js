@@ -1,7 +1,8 @@
-import Registration from "../models/registrationsModel";
-import Notification from "../models/notificationModel";
-import Event from "../models/eventModel";
-import User from "../models/userModel"; 
+import Registration from "../models/registrationsModel.js";
+import Notification from "../models/notificationModel.js";
+import Event from "../models/eventModel.js";
+import User from "../models/userModel.js"; 
+import { createAndSendNotification } from '../utils/notificationHelper.js';
 
 export async function updateRegistrationStatus(req, res) {
     try {

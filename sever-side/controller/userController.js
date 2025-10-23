@@ -31,7 +31,13 @@ export async function registerUser(req, res) {
         }
 
         const hashpassword = await bcrypt.hash(password,10)
-        const newUser = await User.create({username, email, password: hashpassword, avatar:`https://ui-avatars.com/api/?name=${encodeURIComponent(username || "User")}&background=random`}, phone_number)
+        const newUser = await User.create({
+            username, 
+            email, 
+            password: hashpassword, 
+            phone_number,
+            avatar:`https://ui-avatars.com/api/?name=${encodeURIComponent(username || "User")}&background=random`
+        })
         const token = createToken(newUser._id)
         res.status(201).json({
             success: true, 

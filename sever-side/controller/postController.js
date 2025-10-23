@@ -1,4 +1,4 @@
-import Post from '../models/postsModel.js';
+import Post from '../models/postModel.js';
 import Event from '../models/eventModel.js';
 
 export async function createPost(req, res) {

@@ -1,7 +1,9 @@
 import Event from '../models/eventModel.js';
 import Category from '../models/categoryModel.js';
 import Registration from '../models/registrationsModel.js';
-
+import Notification from '../models/notificationModel.js';
+import redisClient from '../config/redis.js';
+import { createAndSendNotification } from '../utils/notificationHelper.js';
 
 export async function getAllEvents(req, res) {
     try {
@@ -157,6 +159,71 @@ export async function deleteEvent(req, res) {
     } catch (error) {
         console.error("Error deleting event:", error);
         res.status(500).json({success: false, message: "Failed to delete event"});
+    }
+}
+
+//Admin event controller functions
+
+export async function getPendingEvents(req, res) {
+    try{
+        const events = await Event.find({status: 'pending'}).populate('managerId', 'username email avatar').populate('category', 'name slug');
+        if(!events || events.length === 0) {
+            return res.status(404).json({ message: "No pending events found" });
+        }
+        res.status(200).json({ success: true, events });
+    } catch (error) {
+        console.error("Error fetching pending events:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch pending events" });
+    }
+}
+
+export async function updateStatusEvent(req, res) { 
+    const eventId = req.params.id;
+    const { status } = req.body; // expected values: "approved", "rejected"
+    try {
+        if (!['approved', 'rejected', 'cancelled'].includes(status)) {
+            return res.status(400).json({ success: false, message: "Invalid status value" });
+        }
+        const updatedEvent = await Event.findByIdAndUpdate(eventId, { status }, { new: true });
+        if (!updatedEvent) {
+            return res.status(404).json({ success: false, message: "Event not found" });
+        }
+        const notificationData = {
+            recipient: updatedEvent.managerId,
+            sender: req.user._id,
+            type: status,
+            content: `Your event "${updatedEvent.name}" has been ${status}.`,
+            event: eventId,
+        };
+        const adminPushPayload = {
+            title: `Event ${status.charAt(0).toUpperCase() + status.slice(1)}!`,
+            body: `Your event "${updatedEvent.name}" has been ${status}.`,
+            icon: req.user.avatar || '/default-avatar.png'
+        };
+        const cacheKey = `event:${eventId}:${status}`;
+        let shouldSendNotification = true;
+        try {
+            const isRecent = await redisClient.get(cacheKey);
+            if (isRecent) {
+                shouldSendNotification = false;
+            }
+        } catch (error) {
+            console.error("Error checking Redis cache:", error);
+        }
+
+        if(shouldSendNotification) {
+            createAndSendNotification(notificationData, adminPushPayload);
+            try {
+                await redisClient.setEx(cacheKey, 300, '1');
+            }
+            catch(redisError) {
+                console.error("Error setting Redis cache:", redisError);
+            }
+        }
+        res.status(200).json({ success: true, event: updatedEvent });
+    } catch (error) {
+        console.error("Error updating event status:", error);
+        res.status(500).json({ success: false, message: "Failed to update event status" });
     }
 }
 
