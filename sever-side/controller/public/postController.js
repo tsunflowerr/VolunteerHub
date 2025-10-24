@@ -1,5 +1,8 @@
-import Post from '../models/postModel.js';
-import Event from '../models/eventModel.js';
+import Post from '../../models/postModel.js';
+import Event from '../../models/eventModel.js';
+import Comment from '../../models/commentModel.js';
+import Like from '../../models/likeModel.js';
+import Notification from '../../models/notificationModel.js';
 
 export async function createPost(req, res) {
     try {
@@ -31,6 +34,9 @@ export async function createPost(req, res) {
 
         let saved = await post.save();
         saved = await saved.populate('author', 'username email avatar');
+
+        // Increase postsCount in Event
+        await Event.findByIdAndUpdate(eventId, { $inc: { postsCount: 1 } });
 
         res.status(201).json({
             success: true,
@@ -128,11 +134,30 @@ export async function deletePost(req, res) {
             });
         }
         
+    
+        const deletedComments = await Comment.deleteMany({ postId: postId });
+        const deletedLikes = await Like.deleteMany({ 
+            likeableId: postId.toString(), 
+            likeableType: 'post' 
+        });
+        const deletedNotifications = await Notification.deleteMany({ post: postId });
         await Post.findByIdAndDelete(postId);
+        await Event.findByIdAndUpdate(eventId, { 
+            $inc: { postsCount: -1 }
+        });
+        await Event.updateOne(
+            { _id: eventId, postsCount: { $lt: 0 } },
+            { $set: { postsCount: 0 } }
+        );
         
         res.status(200).json({ 
             success: true, 
-            message: 'Post deleted successfully' 
+            message: 'Post and all related data deleted successfully',
+            details: {
+                comments: deletedComments.deletedCount,
+                likes: deletedLikes.deletedCount,
+                notifications: deletedNotifications.deletedCount
+            }
         });
         
     } catch(error) {

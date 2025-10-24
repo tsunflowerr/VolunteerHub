@@ -9,11 +9,13 @@ const eventSchema = new mongoose.Schema({
     thumbnail: {type: String},
     images: [{ type: String }],
     capacity: {type: Number, required: true},
-    status: { type: String, enum: ["pending","approved","rejected","cancelled"], default: "pending" },
+    status: { type: String, enum: ["pending","approved","rejected","cancelled", "completed"], default: "pending" },
     startDate:{type: Date, required: true},
     endDate:{type: Date, required:true},
     likesCount: { type: Number, default: 0 },
-    viewCount: {type: Number, default: 0}
+    viewCount: {type: Number, default: 0},
+    registrationsCount: { type: Number, default: 0 },
+    postsCount: { type: Number, default: 0 }
 }, {
     timestamps: true
 })

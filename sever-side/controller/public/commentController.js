@@ -1,8 +1,9 @@
-import Comment from '../models/commentModel.js';
-import Post from "../models/postModel.js";
-import Event from "../models/eventModel.js";
-import NotificationModel from '../models/notificationModel.js';
-import redisClient from '../config/redis.js';
+import Comment from '../../models/commentModel.js';
+import Post from "../../models/postModel.js";
+import Event from "../../models/eventModel.js";
+import NotificationModel from '../../models/notificationModel.js';
+import Like from '../../models/likeModel.js';
+import redisClient from '../../config/redis.js';
 
 async function checkEventStatus(eventId) {
     const event = await Event.findById(eventId).select('status endDate');
@@ -243,19 +244,51 @@ export async function deleteComment(req, res) {
             return res.status(403).json({success: false, message: 'You are not authorized to delete this comment'});
         }
 
-        const replyCount = await Comment.countDocuments({parentComment: commentId});
-        const totalDeleteCount = replyCount + 1;
+        // Get all child comments (replies)
+        const childComments = await Comment.find({parentComment: commentId}).select('_id');
+        const allCommentIds = [commentId, ...childComments.map(c => c._id)];
+        const totalDeleteCount = allCommentIds.length;
+        
+        console.log(`🗑️ Deleting comment and ${childComments.length} replies`);
 
+        // CASCADE DELETE
+        // 1. Delete all likes for this comment and its replies
+        const deletedLikes = await Like.deleteMany({
+            likeableId: { $in: allCommentIds.map(id => id.toString()) },
+            likeableType: 'comment'
+        });
+        console.log(`   ✅ Deleted ${deletedLikes.deletedCount} likes`);
+
+        // 2. Delete all notifications for this comment and its replies
+        const deletedNotifications = await NotificationModel.deleteMany({
+            $or: [
+                { content: { $regex: commentId.toString() } },
+                ...childComments.map(c => ({ content: { $regex: c._id.toString() } }))
+            ]
+        });
+        console.log(`   ✅ Deleted ${deletedNotifications.deletedCount} notifications`);
+
+        // 3. Delete the comment and all replies
         await Comment.deleteMany({
             $or: [
                 {_id: commentId},
                 {parentComment: commentId}
             ]
         });
+        console.log(`   ✅ Deleted ${totalDeleteCount} comments`);
 
+        // 4. Update post comment count
         await Post.findByIdAndUpdate(comment.postId, {$inc: {commentsCount: -totalDeleteCount}});
 
-        res.status(200).json({success: true, message: 'Comment deleted successfully'});
+        res.status(200).json({
+            success: true, 
+            message: 'Comment and all related data deleted successfully',
+            details: {
+                comments: totalDeleteCount,
+                likes: deletedLikes.deletedCount,
+                notifications: deletedNotifications.deletedCount
+            }
+        });
     }
     catch(error) {
         console.error('Error deleting comment:', error);

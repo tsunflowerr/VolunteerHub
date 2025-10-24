@@ -1,6 +1,6 @@
-import Registration from "../models/registrationsModel.js";
-import Event from "../models/eventModel.js";
-import { createAndSendNotification } from '../utils/notificationHelper.js';
+import Registration from "../../models/registrationsModel.js";
+import Event from "../../models/eventModel.js";
+import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 export async function registerEvent(req, res) {
     const { eventId } = req.params; 
@@ -26,7 +26,7 @@ export async function registerEvent(req, res) {
         }
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
-
+        await Event.findByIdAndUpdate(eventId, { $inc: { registrationsCount: 1 } });
         const volunteerNotificationData = {
             recipient: volunteerId,
             sender: event.managerId || volunteerId,

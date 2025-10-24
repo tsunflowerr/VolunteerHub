@@ -1,8 +1,8 @@
-import Registration from "../models/registrationsModel.js";
-import Notification from "../models/notificationModel.js";
-import Event from "../models/eventModel.js";
-import User from "../models/userModel.js"; 
-import { createAndSendNotification } from '../utils/notificationHelper.js';
+import Registration from "../../models/registrationsModel.js";
+import Notification from "../../models/notificationModel.js";
+import Event from "../../models/eventModel.js";
+import User from "../../models/userModel.js"; 
+import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 export async function updateRegistrationStatus(req, res) {
     try {
@@ -99,6 +99,24 @@ export async function getVolunteersForEvent(req, res) {
         res.status(200).json({ success: true, eventName: event.name, volunteers });
     } catch (error) {
         console.error("Error fetching volunteers for event:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+}
+
+export async function getRegistrationsByStatus(req, res) {
+    try {
+        const  { status } = req.params;
+        if (!["pending", "confirmed", "cancelled", "completed"].includes(status)) {
+            return res.status(400).json({ success: false, message: "Invalid status value" });
+        }
+
+        const registrations = await Registration.find({ status: status }).populate('eventId', 'name category location capacity status startDate endDate registrationsCount').populate('userId', 'name email avatar');
+        if(!registrations || registrations.length === 0) {
+            return res.status(404).json({ success: false, message: "No registrations found for the specified status" });
+        }
+        res.status(200).json({ success: true, registrations });
+    } catch (error) {
+        console.error("Error fetching registrations by status:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 }

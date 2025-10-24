@@ -1,10 +1,10 @@
-import Like from '../models/likeModel.js';
-import Post from '../models/postModel.js';
-import Comment from '../models/commentModel.js';
-import Event from '../models/eventModel.js';
+import Like from '../../models/likeModel.js';
+import Post from '../../models/postModel.js';
+import Comment from '../../models/commentModel.js';
+import Event from '../../models/eventModel.js';
 import mongoose from 'mongoose';
-import Notification from '../models/notificationModel.js';
-import redisClient from '../config/redis.js';
+import Notification from '../../models/notificationModel.js';
+import redisClient from '../../config/redis.js';
 
 export async function likeEvent(req, res) {
     try {
