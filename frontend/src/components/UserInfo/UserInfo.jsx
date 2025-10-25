@@ -64,7 +64,28 @@ const UserInfo = () => {
         ...formData,
         [e.target.name]: e.target.value,
       });
+
+      setErrors({
+        ...errors,
+        [e.target.name]: '',
+      });
     }
+  };
+
+  const revertChanges = () => {
+    const hasChanged =
+      formData.fullName !== userData.fullName ||
+      (formData.phone || '') !== (userData.phone || '') ||
+      (formData.location || '') !== (userData.location || '') ||
+      (formData.bio || '') !== (userData.bio || '') ||
+      (formData.aboutMe || '') !== (userData.aboutMe || '') ||
+      (formData.avatar || '') !== (userData.avatar || '');
+
+    if (!hasChanged) {
+      return;
+    }
+
+    setFormData(userData);
   };
 
   const handleSubmit = async (e) => {
@@ -73,7 +94,6 @@ const UserInfo = () => {
     setErrors({});
 
     try {
-      // Validate form data with Yup
       await userInfoSchema.validate(
         {
           fullName: formData.fullName,
@@ -85,7 +105,6 @@ const UserInfo = () => {
         { abortEarly: false }
       );
 
-      // Check if any data has changed
       const hasChanged =
         formData.fullName !== userData.fullName ||
         (formData.phone || '') !== (userData.phone || '') ||
@@ -94,12 +113,12 @@ const UserInfo = () => {
         (formData.aboutMe || '') !== (userData.aboutMe || '') ||
         (formData.avatar || '') !== (userData.avatar || '');
 
-      // If no changes, don't update and don't show notification
       if (!hasChanged) {
         setIsSaving(false);
         return;
       }
 
+      setUserData(formData);
       const result = updateUserInfo(formData);
       if (result.success) {
         toast.success('Profile updated successfully! 🎉', {
@@ -141,6 +160,7 @@ const UserInfo = () => {
     .join('')
     .toUpperCase();
 
+  console.log('render');
   return (
     <div className={styles['user-detail']}>
       <div className={styles['user-detail__container']}>
@@ -389,7 +409,7 @@ const UserInfo = () => {
                 Save Changes
               </button>
               <button
-                to="/profile"
+                onClick={revertChanges}
                 className={styles['user-detail__button--outline']}
               >
                 Revert Changes

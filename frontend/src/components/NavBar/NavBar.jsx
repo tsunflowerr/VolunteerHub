@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './NavBar.module.css';
 import defaultAvatar from '../../assets/avatar.jpeg';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Bell, Menu } from 'lucide-react';
 
 const NavBar = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -31,9 +32,9 @@ const NavBar = () => {
           </button>
           <button
             className={`${styles.navbar__navLink} ${
-              activeTab === 'features' ? styles['navbar__navLink--active'] : ''
+              activeTab === 'events' ? styles['navbar__navLink--active'] : ''
             }`}
-            onClick={() => setActiveTab('features')}
+            onClick={() => setActiveTab('events')}
           >
             Events
           </button>
@@ -63,9 +64,21 @@ const NavBar = () => {
         <div className={styles.navbar__actions}>
           {user ? (
             <div className={styles.navbar__userMenu}>
-              <span className={styles.navbar__userName}>
-                Hello, {user.fullName}
-              </span>
+              <button
+                className={styles.navbar__menuButton}
+                onClick={() => setShowMenu(!showMenu)}
+                aria-label="Menu"
+              >
+                <Menu size={20} />
+              </button>
+              <button
+                className={styles.navbar__notiButton}
+                onClick={() => console.log('Notifications clicked')}
+                aria-label="Notifications"
+              >
+                <Bell size={20} />
+              </button>
+
               <div className={styles.navbar__userAvatarContainer}>
                 <img
                   src={user.avatar}
@@ -77,7 +90,10 @@ const NavBar = () => {
                   <div className={styles.navbar__dropdownMenu}>
                     <button
                       className={styles.navbar__dropdownItem}
-                      onClick={() => navigate('/userinfo')}
+                      onClick={() => {
+                        setShowDropdown(false);
+                        navigate('/userinfo');
+                      }}
                     >
                       <User />
                       User Profile
@@ -85,6 +101,7 @@ const NavBar = () => {
                     <button
                       className={styles.navbar__dropdownItem}
                       onClick={() => {
+                        setShowDropdown(false);
                         logout();
                         navigate('/login');
                       }}
@@ -105,6 +122,49 @@ const NavBar = () => {
             </button>
           )}
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMenu && (
+          <div className={styles.navbar__menu}>
+            <button
+              className={`${styles.navbar__menuItem} ${
+                activeTab === 'home' ? styles['navbar__menuItem--active'] : ''
+              }`}
+              onClick={() => {
+                setActiveTab('home');
+                setShowMenu(false);
+              }}
+            >
+              Home
+            </button>
+            <button
+              className={`${styles.navbar__menuItem} ${
+                activeTab === 'features'
+                  ? styles['navbar__menuItem--active']
+                  : ''
+              }`}
+              onClick={() => {
+                setActiveTab('features');
+                setShowMenu(false);
+              }}
+            >
+              Events
+            </button>
+            <button
+              className={`${styles.navbar__menuItem} ${
+                activeTab === 'Discussions'
+                  ? styles['navbar__menuItem--active']
+                  : ''
+              }`}
+              onClick={() => {
+                setActiveTab('Discussions');
+                setShowMenu(false);
+              }}
+            >
+              Discussions
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
