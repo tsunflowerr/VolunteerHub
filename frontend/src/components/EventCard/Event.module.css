@@ -1,0 +1,224 @@
+/* Event Component - BEM Convention */
+@import '../../styles/global.css';
+
+.event {
+  background-color: var(--text-white-color);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.event:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-4px);
+}
+
+/* Image Section */
+.event__image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  background-color: var(--color-gray-200);
+  overflow: hidden;
+}
+
+.event__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.event:hover .event__image {
+  transform: scale(1.05);
+}
+
+/* Date Badge */
+.event__date-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background-color: var(--text-white-color);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 60px;
+}
+
+.event__date-day {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-black-color);
+  line-height: 1.2;
+}
+
+.event__date-month {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+  letter-spacing: 0.05em;
+}
+
+/* Content Section */
+.event__content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+/* Location */
+.event__location {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.event__location svg {
+  flex-shrink: 0;
+}
+
+.event__location-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Title */
+.event__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-black-color);
+  line-height: 1.4;
+  margin: 0;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Description */
+.event__description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Footer */
+.event__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-gray-200);
+  margin-top: auto;
+}
+
+/* Organization */
+.event__host {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.event__host-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--color-gray-100);
+  border: 2px solid var(--color-gray-200);
+  flex-shrink: 0;
+}
+
+.event__host-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.event__host-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-black-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event__host-type {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Registered Count */
+.event__registered {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.event__registered-icon {
+  color: var(--secondary-color);
+  flex-shrink: 0;
+}
+
+.event__registered-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--secondary-color);
+  white-space: nowrap;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .event__image-wrapper {
+    height: 180px;
+  }
+
+  .event__content {
+    padding: 1rem;
+  }
+
+  .event__title {
+    font-size: 1rem;
+  }
+
+  .event__date-badge {
+    padding: 0.375rem 0.625rem;
+    min-width: 50px;
+  }
+
+  .event__date-day {
+    font-size: 1.25rem;
+  }
+
+  .event__favorite-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .event__org-logo {
+    width: 36px;
+    height: 36px;
+  }
+}

@@ -7,7 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Home from './pages/Home';
 import UserInfo from './components/UserInfo/UserInfo';
-
+import Events from './pages/Events';
 const App = () => {
   AOS.init({
     duration: 1000,
@@ -22,6 +22,7 @@ const App = () => {
         <Route>
           <Route path="/" element={<Home />}></Route>
           <Route path="/userinfo" element={<UserInfo />}></Route>
+          <Route path="/events" element={<Events />}></Route>
         </Route>
       </Route>
     </Routes>

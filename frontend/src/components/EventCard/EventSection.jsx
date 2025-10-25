@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { EventCard } from './EventCard';
 import { Link } from 'react-router-dom';
 import styles from './EventSection.module.css';
 import { volunteerEvents } from '../../dummy/volunteerEvents';
+import Event from './Event';
 
 const EventSection = () => {
   const [volunteers, setVolunteers] = useState(volunteerEvents);
@@ -26,14 +26,19 @@ const EventSection = () => {
 
       <div className={styles['event-section__grid']}>
         {volunteers.map((volunteer) => (
-          <EventCard
+          <Event
             key={volunteer._id}
             title={volunteer.title}
             description={volunteer.description}
             date={volunteer.date}
+            location={volunteer.location}
             image={volunteer.image}
+            hostName={volunteer.hostName}
+            hostAvatar={volunteer.hostAvatar}
+            registeredCount={volunteer.registeredCount}
             onLearnMore={() => {
-              // Handle learn more action
+              console.log('Learn more about:', volunteer);
+              // Handle learn more action - navigate to event details page
             }}
           />
         ))}
