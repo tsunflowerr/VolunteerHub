@@ -112,6 +112,244 @@ export const volunteerEvents = [
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
     registeredCount: 28,
   },
+  {
+    _id: '9',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '10',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '11',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '12',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '13',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '14',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '15',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '16',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '17',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '18',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '19',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '20',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '21',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '22',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '23',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '24',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
+  {
+    _id: '25',
+    title: 'Senior Center Activities',
+    description:
+      'Bring joy to seniors by organizing recreational activities and social events.',
+    date: '2025-12-10',
+    location: '555 Elder Ave, Miami, FL, USA',
+    image:
+      'https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=800&q=80',
+    hostName: 'Jessica Williams',
+    hostAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    registeredCount: 28,
+  },
 ];
 
 // Single event for testing

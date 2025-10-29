@@ -4,8 +4,10 @@
 .hero {
   position: relative;
   min-height: 600px;
+  height: 60vh;
+  width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   background-image: url('https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=1920&q=80');
   background-size: cover;
@@ -66,7 +68,7 @@
 /* Search Inputs */
 .hero__search-inputs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -95,7 +97,7 @@
 }
 
 .hero__input::placeholder {
-  color: #9ca3af;
+  color: var(--color-gray-500);
 }
 
 .hero__input:focus {
@@ -123,7 +125,6 @@
 }
 
 .hero__search-button:hover {
-  background-color: #e85a3a;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px var(--secondary-shadow-color);
 }
@@ -183,12 +184,18 @@
 }
 
 .hero__category-btn--active:hover {
-  background-color: #e85a3a;
-  border-color: #e85a3a;
+  background-color: var(--secondary-color);
+  color: var(--text-white-color);
+  border-color: var(--secondary-color);
 }
 
 .hero__category-icon {
   font-size: 1rem;
+}
+
+.hero__category-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 /* Search by Name */

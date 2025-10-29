@@ -11,6 +11,9 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .event:hover {
@@ -23,16 +26,19 @@
 .event__image-wrapper {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 220px;
   background-color: var(--color-gray-200);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .event__image {
   width: 100%;
   height: 100%;
+  max-width: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  display: block;
 }
 
 .event:hover .event__image {
@@ -190,11 +196,12 @@
 }
 
 /* Responsive */
-@media (max-width: 640px) {
-  .event__image-wrapper {
-    height: 180px;
+@media (min-width: 1440px) {
+  .event {
+    width: 450px;
   }
-
+}
+@media (max-width: 640px) {
   .event__content {
     padding: 1rem;
   }

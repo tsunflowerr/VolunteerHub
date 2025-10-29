@@ -1,26 +1,32 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import styles from './Hero.module.css';
+import { CategoryIcons } from './CategoriesIcons.jsx';
 
 const Hero = () => {
   const [searchData, setSearchData] = useState({
     organization: '',
     location: '',
-    date: '',
+    dateFrom: '',
+    dateTo: '',
     searchQuery: '',
   });
 
   const categories = [
-    { id: 'all', name: 'All', icon: '🔘' },
-    { id: 'animals', name: 'Animals', icon: '🐾' },
-    { id: 'poverty', name: 'Poverty', icon: '📦' },
-    { id: 'food', name: 'Food', icon: '🍽️' },
-    { id: 'water', name: 'Water & Sanitation', icon: '💧' },
-    { id: 'health', name: 'Health', icon: '❤️' },
-    { id: 'education', name: 'Education', icon: '🎓' },
-    { id: 'equality', name: 'Equality', icon: '⚖️' },
-    { id: 'energy', name: 'Energy', icon: '⚡' },
-    { id: 'arts', name: 'Arts and Culture', icon: '🎨' },
+    { id: 'all', name: 'All', icon: CategoryIcons.all },
+    { id: 'animal', name: 'Animals', icon: CategoryIcons.animal },
+    { id: 'help', name: 'Help', icon: CategoryIcons.help },
+    { id: 'food', name: 'Food', icon: CategoryIcons.food },
+    { id: 'health', name: 'Health', icon: CategoryIcons.health },
+    { id: 'book', name: 'Education', icon: CategoryIcons.book },
+    { id: 'equality', name: 'Equality', icon: CategoryIcons.equality },
+    { id: 'climate', name: 'Climate', icon: CategoryIcons.climate },
+    {
+      id: 'communityDevelop',
+      name: 'Community Development',
+      icon: CategoryIcons.communityDevelop,
+    },
+    { id: 'organize', name: 'Event Organizer', icon: CategoryIcons.organize },
   ];
 
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -60,37 +66,26 @@ const Hero = () => {
             {/* Search Inputs */}
             <div className={styles['hero__search-inputs']}>
               <div className={styles['hero__input-group']}>
-                <label className={styles['hero__label']}>Organization</label>
+                <label className={styles['hero__label']}>From</label>
                 <input
-                  type="text"
-                  name="organization"
-                  value={searchData.organization}
+                  type="date"
+                  name="dateFrom"
+                  value={searchData.dateFrom}
                   onChange={handleInputChange}
-                  placeholder="All Organizations"
+                  placeholder="Start Date"
                   className={styles['hero__input']}
                 />
               </div>
 
               <div className={styles['hero__input-group']}>
-                <label className={styles['hero__label']}>Where</label>
+                <label className={styles['hero__label']}>To</label>
                 <input
-                  type="text"
-                  name="location"
-                  value={searchData.location}
+                  type="date"
+                  name="dateTo"
+                  value={searchData.dateTo}
                   onChange={handleInputChange}
-                  placeholder="Any ZipCode"
-                  className={styles['hero__input']}
-                />
-              </div>
-
-              <div className={styles['hero__input-group']}>
-                <label className={styles['hero__label']}>When</label>
-                <input
-                  type="text"
-                  name="date"
-                  value={searchData.date}
-                  onChange={handleInputChange}
-                  placeholder="Any Dates"
+                  placeholder="End Date"
+                  min={searchData.dateFrom}
                   className={styles['hero__input']}
                 />
               </div>
