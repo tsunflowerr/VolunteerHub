@@ -17,7 +17,8 @@ export async function getAllEvents(req, res) {
                 .populate('category', 'name slug')
                 .sort({ createdAt: -1 })
                 .skip(skip)
-                .limit(limit),
+                .limit(limit)
+                .lean(),
             Event.countDocuments({status: { $in: ['approved', 'completed'] }})
         ]);
         
@@ -55,7 +56,7 @@ export async function getEventById(req, res) {
         
         // Check if this user/IP has viewed this event recently (within 1 hour)
         try {
-            const hasViewed = await redisClient.get(viewCacheKey);
+            const hasViewed = await redisClient.exists(viewCacheKey);
             if (hasViewed) {
                 shouldIncreaseView = false;
             }
@@ -97,49 +98,133 @@ export async function getEventById(req, res) {
 //Trending events based on registrations, likes, views, posts count, and age
 export async function getTrendingEvents(req, res) {
     try {
-        const limit = parseInt(req.query.limit) || 10;
+        const { page = 1, limit = 10 } = req.query;
+        
+        const skip = (page - 1) * limit;
+        
         const currentDate = new Date();
         
-        // Get approved events that haven't ended yet
-        const events = await Event.find({ 
-            status: 'approved',
-            endDate: { $gte: currentDate }
-        }).populate('managerId', 'username email avatar').populate('category', 'name slug');
-        
-        if(!events || events.length === 0) {
-            return res.status(404).json({ success: false, message: "No events found" });
+        const results = await Event.aggregate([
+            {
+                $match: {
+                    status: 'approved',
+                    endDate: { $gte: currentDate }
+                }
+            },
+            {
+                $addFields: {
+                    daysSinceCreation: {
+                        $divide: [
+                            { $subtract: [currentDate, '$createdAt'] },
+                            86400000 
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    ageFactor: {
+                        $pow: [
+                            { $add: ['$daysSinceCreation', 2] },
+                            1.5
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    trendingScore: {
+                        $divide: [
+                            {
+                                $add: [
+                                    { $multiply: [{ $ifNull: ['$registrationsCount', 0] }, 4] },
+                                    { $multiply: [{ $ifNull: ['$postsCount', 0] }, 3] },
+                                    { $multiply: [{ $ifNull: ['$likesCount', 0] }, 2] },
+                                    { $ifNull: ['$viewCount', 0] }
+                                ]
+                            },
+                            '$ageFactor'
+                        ]
+                    }
+                }
+            },
+            
+            { $sort: { trendingScore: -1 } },
+            
+            {
+                $facet: {
+                    // Pipeline con 1: Lấy data của trang hiện tại
+                    data: [
+                        { $skip: skip },
+                        
+                        { $limit: limit },
+                        
+                        {
+                            $lookup: {
+                                from: 'users',
+                                localField: 'managerId',
+                                foreignField: '_id',
+                                as: 'managerData'
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: 'categories',
+                                localField: 'category',
+                                foreignField: '_id',
+                                as: 'categoryData'
+                            }
+                        },
+                        
+                        {
+                            $project: {
+                                name: 1, description: 1, location: 1, thumbnail: 1,
+                                images: 1, capacity: 1, status: 1, startDate: 1,
+                                endDate: 1, likesCount: 1, viewCount: 1,
+                                registrationsCount: 1, postsCount: 1,
+                                trendingScore: 1, createdAt: 1,
+                                managerId: { $arrayElemAt: ['$managerData', 0] },
+                                category: '$categoryData'
+                            }
+                        }
+                    ],
+                    
+                    metadata: [
+                        { $count: 'totalEvents' }
+                    ]
+                }
+            }
+        ]);
+
+        const trendingEvents = results[0].data;
+        const totalEvents = results[0].metadata[0] ? results[0].metadata[0].totalEvents : 0;
+        const totalPages = Math.ceil(totalEvents / limit);
+
+        if (trendingEvents.length === 0) {
+            return res.status(200).json({ 
+                success: true, 
+                events: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalEvents: 0
+                }
+            });
         }
-        
-        // Calculate trending score for each event (using postsCount field directly - MUCH FASTER!)
-        const eventsWithScore = events.map(event => {
-            const daysSinceCreation = Math.max(1, (currentDate - event.createdAt) / (1000 * 60 * 60 * 24));
-            
-            // Trending score formula: (registrations * 4 + posts * 3 + likes * 2 + views) / age_factor
-            // Higher weight for registrations, posts, and likes
-            const ageFactor = Math.pow(daysSinceCreation + 2, 1.5); // Decay factor
-            const trendingScore = (
-                (event.registrationsCount || 0) * 4 + 
-                (event.postsCount || 0) * 3 +
-                (event.likesCount || 0) * 2 + 
-                (event.viewCount || 0)
-            ) / ageFactor;
-            
-            return {
-                ...event.toObject(),
-                trendingScore
-            };
+        res.status(200).json({
+            success: true,
+            events: trendingEvents,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalEvents: totalEvents,
+                hasNextPage: page < totalPages
+            }
         });
-        
-        // Sort by trending score (highest first) and limit results
-        const trendingEvents = eventsWithScore
-            .sort((a, b) => b.trendingScore - a.trendingScore)
-            .slice(0, limit);
-        
-        res.status(200).json({success: true, events: trendingEvents});
-    }
-    catch(err){
+
+    } catch(err) {
         console.error("Error fetching trending events:", err);
-        res.status(500).json({success: false, message: "Server error" });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 }
 
@@ -156,7 +241,9 @@ export async function getEventsByCategorySlug(req, res) {
             status: { $in: ['approved', 'completed'] }
         })
         .populate('managerId', 'username email avatar')
-        .populate('category', 'name slug');
+        .populate('category', 'name slug')
+        .sort({ createdAt: -1 })
+        .lean();
         
         if(!events || events.length === 0) {
             return res.status(404).json({ success: false, message: "No events found for this category" });
@@ -178,8 +265,9 @@ export async function getUpcommingEvents(req, res) {
         })
         .populate('managerId', 'username email avatar')
         .populate('category', 'name slug')
-        .sort({ startDate: 1 }); // Sort by nearest date first
-        
+        .sort({ startDate: 1 })
+        .lean();
+
         if(!events || events.length === 0) {
             return res.status(404).json({ success: false, message: "No upcoming events found" });
         }
@@ -194,18 +282,23 @@ export async function getUpcommingEvents(req, res) {
 
 export async function getUserEvents(req, res) {
     const userId = req.user._id;
-    const {status} = req.query; // expected values: "pending", "confirmed", "completed", "cancelled"
+    const {status, page = 1, limit = 10} = req.query; // expected values: "pending", "confirmed", "completed", "cancelled"
     try {
-        const registrations = await Registration.find({ userId, ...(status ? { status } : {}) })
-            .populate({
-                path: 'eventId',
-                populate: [
-                    { path: 'managerId', select: 'username email avatar' },
-                    { path: 'category', select: 'name slug' }
-                ]
-            })
-            .sort({ createdAt: -1 });
-            
+        const [registrations, total] = await Promise.all([
+            Registration.find({userId, ...(status ? {status} : {})})
+                .populate({
+                    path: 'eventId',
+                    populate: [
+                        { path: 'managerId', select: 'username email avatar' },
+                        { path: 'category', select: 'name slug' }
+                    ]
+                })
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Registration.countDocuments({userId, ...(status ? {status} : {})})
+        ]);
         if(!registrations || registrations.length === 0) {
             return res.status(200).json({success:true, message:"No events found", events: []});
         }
@@ -218,7 +311,16 @@ export async function getUserEvents(req, res) {
             registrationId: reg._id
         }));
         
-        res.status(200).json({success:true, events: eventsWithRegistration});
+        res.status(200).json({
+            success: true,
+            events: eventsWithRegistration,
+            pagination: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / limit),
+                limit: Number(limit)
+            }
+        })
     }
     catch(err) {
         console.error("Error fetching user events:", err);
@@ -226,37 +328,24 @@ export async function getUserEvents(req, res) {
     }
 }
 
-export async function addRemoveBookMark(req, res) {
+export async function addBookMark(req, res) {
     try {
         const userId = req.user.id || req.user._id;
         const eventId = req.params.eventId;
-        
         if(!eventId) {
-            return res.status(400).json({success:false, message:"EventId is required"})
+            return res.status(400).json({success:false, message:"Event ID is required"})
         }
-        
-        // Check if event exists
-        const event = await Event.findById(eventId);
-        if(!event) {
-            return res.status(404).json({success:false, message:"Event not found"})
-        }
-        
         const user = await User.findById(userId);
         if(!user) {
             return res.status(404).json({success:false, message:"User not found"})
         }
-        
         const isBookmarked = user.bookmarks.some(b => b.toString() === eventId);
         if(isBookmarked) {
-            user.bookmarks = user.bookmarks.filter(b => b.toString() !== eventId);
-            await user.save();
-            return res.status(200).json({success:true, type:"Remove", message:"Removed bookmark successfully"})
+            return res.status(400).json({success:false, message:"Event already bookmarked"})
         }
-        else {
-            user.bookmarks.push(eventId);
-            await user.save();
-            return res.status(200).json({success:true, type:"Add", message:"Added bookmark successfully"})
-        }
+        user.bookmarks.push(eventId);
+        await user.save();
+        return res.status(201).json({success:true, message:"Bookmark added successfully"})
     }
     catch(error) {
         console.log('Error adding bookmark:', error);
@@ -264,26 +353,27 @@ export async function addRemoveBookMark(req, res) {
     }
 }
 
-export async function getUserBookMarks(req, res) {
+export async function removeBookMark(req, res) {
     try {
-        const userId = req.user._id || req.user.id;
-        const user = await User.findById(userId)
-        .select('bookmarks')
-        .populate({
-            path: 'bookmarks',
-            select: "name description managerId category location thumbnail images capacity status startDate endDate likesCount viewCount registrationsCount createdAt",
-            populate: [
-                { path: 'managerId', select: 'username email avatar' },
-                { path: 'category', select: 'name slug' }
-            ]
-        });
+        const userId = req.user.id || req.user._id;
+        const eventId = req.params.eventId;
+        if(!eventId) {
+            return res.status(400).json({success:false, message:"Event ID is required"})
+        }
+        const user = await User.findById(userId);
         if(!user) {
             return res.status(404).json({success:false, message:"User not found"})
         }
-        res.status(200).json({success:true, bookmarks: user.bookmarks});
+        const isBookmarked = user.bookmarks.some(b => b.toString() === eventId);
+        if(!isBookmarked) {
+            return res.status(404).json({success:false, message:"Bookmark not found"})
+        }
+        user.bookmarks = user.bookmarks.filter(b => b.toString() !== eventId);
+        await user.save();
+        return res.status(200).json({success:true, message:"Bookmark removed successfully"})
     }
     catch(error) {
-        console.log('Error fetching user bookmarks:', error);
+        console.log('Error removing bookmark:', error);
         res.status(500).json({success: false, message: 'Server error'});
     }
 }

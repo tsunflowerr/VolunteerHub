@@ -5,7 +5,7 @@ const notificationSchema = new mongoose.Schema({
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
     type: {
         type: String,
-        enum: ["like", "comment", "cancelled", "confirmed", "completed", "registration_confirmation", "new_registration", "comment_reply"],
+        enum: ["like", "comment", "cancelled", "confirmed", "completed", "registration_confirmation", "new_registration", "comment_reply", "new_post"],
         required: true
     },
     post: { type: mongoose.Schema.Types.ObjectId, ref: "post", default: null },

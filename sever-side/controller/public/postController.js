@@ -3,6 +3,7 @@ import Event from '../../models/eventModel.js';
 import Comment from '../../models/commentModel.js';
 import Like from '../../models/likeModel.js';
 import Notification from '../../models/notificationModel.js';
+import redisClient from '../../config/redis.js';
 
 export async function createPost(req, res) {
     try {
@@ -38,6 +39,33 @@ export async function createPost(req, res) {
         // Increase postsCount in Event
         await Event.findByIdAndUpdate(eventId, { $inc: { postsCount: 1 } });
 
+        const shouldSendNotification = true;
+        const cacheKey = `new_post_event_${eventId}:${req.user._id}`;
+        try {
+            const isRecent = await redisClient.exists(cacheKey);
+            if(isRecent) {
+                shouldSendNotification = false;
+            }
+        } catch(err) {
+            console.error('Redis error:', err);
+        }
+        if(shouldSendNotification) {
+            const newNotification = new Notification({
+                recipient: event.managerId,
+                sender: req.user._id,
+                type: 'new_post',
+                content: `A new post has been created in your event "${event.name}".`,
+                event: eventId,
+            });
+            await newNotification.save();
+            try {
+                await redisClient.setEx(cacheKey, 300, '1'); // Cache for 300 seconds
+            }
+            catch(err) {
+                console.error('Redis error:', err);
+            }
+        }
+
         res.status(201).json({
             success: true,
             post: saved
@@ -53,12 +81,27 @@ export async function createPost(req, res) {
 
 export async function getAllPosts(req, res) {
     const eventId = req.params.eventId;
+    const {page = 1, limit = 10} = req.query;
     try {
-        const posts = await Post.find({ eventId })
-            .populate('author', 'username email avatar')
-            .sort({ createdAt: -1 });
-            
-        res.status(200).json({ success: true, posts, count: posts.length });
+        const [posts, total] = await Promise.all([
+            Post.find({ eventId })
+                .populate('author', 'username email avatar')
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Post.countDocuments({ eventId })
+        ]);
+        res.status(200).json({ 
+            success: true, 
+            posts,
+            pagination: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / limit),
+                limit: Number(limit)
+            }
+        });
     }
     catch (error) {
         console.error('Error fetching posts:', error);
@@ -134,21 +177,22 @@ export async function deletePost(req, res) {
             });
         }
         
-    
-        const deletedComments = await Comment.deleteMany({ postId: postId });
-        const deletedLikes = await Like.deleteMany({ 
-            likeableId: postId.toString(), 
-            likeableType: 'post' 
-        });
-        const deletedNotifications = await Notification.deleteMany({ post: postId });
-        await Post.findByIdAndDelete(postId);
+        // Delete post and all related data in parallel for better performance
+        const [deletedComments, deletedLikes, deletedNotifications] = await Promise.all([
+            Comment.deleteMany({ postId: postId }),
+            Like.deleteMany({ 
+                likeableId: postId.toString(), 
+                likeableType: 'post' 
+            }),
+            Notification.deleteMany({ post: postId }),
+            Post.findByIdAndDelete(postId)
+        ]);
+        
+        // Update event postsCount (must be sequential to avoid race condition)
         await Event.findByIdAndUpdate(eventId, { 
-            $inc: { postsCount: -1 }
+            $inc: { postsCount: -1 },
+            $max: { postsCount: 0 }  
         });
-        await Event.updateOne(
-            { _id: eventId, postsCount: { $lt: 0 } },
-            { $set: { postsCount: 0 } }
-        );
         
         res.status(200).json({ 
             success: true, 

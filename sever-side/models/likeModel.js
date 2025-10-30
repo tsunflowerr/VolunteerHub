@@ -12,5 +12,6 @@ likeSchema.index(
   { userId: 1, likeableId: 1, likeableType: 1 },
   { unique: true }
 );
+likeSchema.index({ likeableId: 1, likeableType: 1 });
 const likeModel = mongoose.model("like", likeSchema)
 export default likeModel

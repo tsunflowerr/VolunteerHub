@@ -1,7 +1,8 @@
 import Registration from "../../models/registrationsModel.js";
 import Event from "../../models/eventModel.js";
 import { createAndSendNotification } from '../../utils/notificationHelper.js';
-
+import redisClient from '../../config/redis.js';
+ 
 export async function registerEvent(req, res) {
     const { eventId } = req.params; 
     const volunteerId = req.user._id;
@@ -39,22 +40,41 @@ export async function registerEvent(req, res) {
             body: `You have just registered for the event "${event.name}".`,
             icon:  req.user.avatar || '/default-avatar.png'
         };
-        createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
+        const managerNotificationData = {
+            recipient: event.managerId,
+            sender: volunteerId,
+            type: 'new_registration',
+            content: `${req.user.username} has just registered for the event "${event.name}" that you manage.`,
+            event: eventId,
+        };
+        const managerPushPayload = {
+            title: 'New volunteer registered! 🧑‍🤝‍🧑',
+            body: `${req.user.username} just registered for your event.`,
+            icon:  req.user.avatar || '/default-avatar.png'
+        };
+        
+        let shouldSendNotification = true;
+        const cacheKey = `registration:${volunteerId}:${eventId}`;
+        try {
+            const isRecent = await redisClient.exists(cacheKey);
+            if(isRecent) {
+                shouldSendNotification = false;
+            }
+        }
+        catch(error) {
+            console.error("Error checking Redis cache:", error);
+        }
 
-        if (event.managerId) {
-            const managerNotificationData = {
-                recipient: event.managerId,
-                sender: volunteerId,
-                type: 'new_registration',
-                content: `${req.user.username} has just registered for the event "${event.name}" that you manage.`,
-                event: eventId,
-            };
-            const managerPushPayload = {
-                title: 'New volunteer registered! 🧑‍🤝‍🧑',
-                body: `${req.user.username} just registered for your event.`,
-                icon:  req.user.avatar || '/default-avatar.png'
-            };
-            createAndSendNotification(managerNotificationData, managerPushPayload);
+        if (shouldSendNotification) {
+            createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
+            if (event.managerId) {
+                createAndSendNotification(managerNotificationData, managerPushPayload);
+            }
+            try {
+                await redisClient.setEx(cacheKey, 300, '1'); // Cache for 300 seconds
+            } catch (error) {
+                console.error("Error setting Redis cache:", error);
+            }
         }
 
         res.status(201).json({ success: true, message: "Event registered successfully" });

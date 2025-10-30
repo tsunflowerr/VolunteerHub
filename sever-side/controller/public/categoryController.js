@@ -2,7 +2,7 @@ import Category from '../../models/categoryModel.js';
 
 export async function getAllCategories(req, res) {
     try {
-        const categories = await Category.find().sort({createdAt: -1});
+        const categories = await Category.find().sort({createdAt: -1}).lean();
         if(categories.length === 0) {
             return res.status(200).json({success:true, message:"No categories found", categories: []});
         }

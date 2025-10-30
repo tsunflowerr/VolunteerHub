@@ -1,7 +1,6 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
-import { getUserProfile, updateUserProfile, deleteUser, changePassword, getUserById, getUserBookMarks, addRemoveBookMark } from '../controller/user/userProfileController.js';
-
+import { getUserProfile, updateUserProfile, deleteUser, changePassword, getUserById, getUserBookMarks, } from '../controller/user/userProfileController.js';
 const router = express.Router();
 
 // Apply authMiddleware to all user routes (protected)
@@ -15,7 +14,6 @@ router.put('/profile/password', changePassword);
 
 // ====== User Bookmarks Routes ======
 router.get('/bookmarks', getUserBookMarks);
-router.post('/bookmarks', addRemoveBookMark);
 
 // ====== Public User Info ======
 router.get('/:id', getUserById);

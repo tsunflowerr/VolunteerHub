@@ -37,31 +37,86 @@ export async function updateUserProfile(req, res) {
 
 export async function deleteUser(req, res) {
     try {
-        const userId = req.user._id
+        const userId = req.user._id;
         const userObjectId = new mongoose.Types.ObjectId(userId);
-        const deleteUser = await User.findByIdAndDelete(userObjectId)
-        if(!deleteUser) {
-            return res.status(404).json({success: false, message: "User not found"})
+        
+        const deleteUser = await User.findByIdAndDelete(userObjectId);
+        if (!deleteUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
         }
-        await Promise.all([
-            await Event.deleteMany({managerId: userObjectId}),
-            //Xóa các bài viết của User
-            await Post.deleteMany({author: userObjectId}),
-            //Xóa các đăng ký của User
-            await Registration.deleteMany({userId: userObjectId}),
-            //Xóa các bình luận của User
-            await Comment.deleteMany({author: userObjectId}),
-            //Xóa các like của User
-            await Like.deleteMany({userId: userObjectId}),
-            //Xóa các thông báo của User
-            await Notification.deleteMany({$or: [{sender: userObjectId}, {recipient: userObjectId}]}),
-        ])
-        res.status(200).json({success: true, message: "User deleted successfully"})
-    } catch(err) {
-        console.error("Error deleting user:", err)
-        res.status(500).json({success:false, message:"Server error"})
-    }
+        
+        // Step 1: Get all events managed by this user
+        const userEvents = await Event.find({ managerId: userObjectId }).select('_id').lean();
+        const eventIds = userEvents.map(e => e._id);
+        
+        // Step 2: Get all posts in those events
+        const eventPosts = await Post.find({ eventId: { $in: eventIds } }).select('_id').lean();
+        const eventPostIds = eventPosts.map(p => p._id);
+        const eventPostIdsStr = eventPostIds.map(id => id.toString());
 
+        const commentsByUserPosts = await Comment.find({ postId: { $in: eventPostIds } }).select('_id').lean();
+        const commentsByUserPostIds = commentsByUserPosts.map(c => c._id);
+        
+        // Step 3: Cascade delete everything in parallel
+        await Promise.all([
+            // Delete user's events
+            Event.deleteMany({ managerId: userObjectId }),
+            
+            // Delete posts in user's events
+            Post.deleteMany({ eventId: { $in: eventIds } }),
+            
+            // Delete user's own posts
+            Post.deleteMany({ author: userObjectId }),
+            
+            // Delete comments in user's event posts
+            Comment.deleteMany({
+                $or: [
+                    { eventId: { $in: eventIds } },
+                    { postId: { $in: eventPostIds } },
+                    { author: userObjectId } // User's comments
+                ]
+            }),
+            
+            // Delete likes related to user's events/posts/comments
+            Like.deleteMany({
+                $or: [
+                    { userId: userObjectId }, // User's likes
+                    { likeableId: { $in: eventIds.map(id => id.toString()) }, likeableType: 'event' },
+                    { likeableId: { $in: eventPostIdsStr }, likeableType: 'post' },
+                    { likeableId: { $in: commentsByUserPostIds.map(id => id.toString()) }, likeableType: 'comment' }
+                ]
+            }),
+            
+            // Delete registrations
+            Registration.deleteMany({
+                $or: [
+                    { userId: userObjectId },
+                    { eventId: { $in: eventIds } }
+                ]
+            }),
+            
+            // Delete notifications
+            Notification.deleteMany({
+                $or: [
+                    { sender: userObjectId },
+                    { recipient: userObjectId },
+                    { event: { $in: eventIds } },
+                    { post: { $in: eventPostIds } }
+                ]
+            }),
+            
+            // Remove user from other users' bookmarks
+            User.updateMany(
+                { bookmarks: userObjectId },
+                { $pull: { bookmarks: userObjectId } }
+            )
+        ]);
+        
+        res.status(200).json({ success: true, message: "User and all related data deleted successfully" });
+    } catch(err) {
+        console.error("Error deleting user:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 }
 
 export async function changePassword(req, res) {
@@ -125,31 +180,4 @@ export async function getUserBookMarks(req, res) {
     }
 }
 
-export async function addRemoveBookMark(req, res) {
-    try {
-        const userId = req.user.id || req.user._id;
-        const eventId = req.body.eventId;
-        if(!eventId) {
-            return res.status(400).json({success:false, message:"Event is required"})
-        }
-        const user = await User.findById(userId);
-        if(!user) {
-            return res.status(404).json({success:false, message:"User not found"})
-        }
-        const isBookmarked = user.bookmarks.some(b => b.toString() === eventId);
-        if(isBookmarked) {
-            user.bookmarks = user.bookmarks.filter(b => b.toString() !== eventId);
-            await user.save();
-            return res.status(200).json({success:true, type:"Remove", message:"Removed bookmark successfully"})
-        }
-        else {
-            user.bookmarks.push(eventId);
-            await user.save();
-            return res.status(200).json({success:true, type:"Add", message:"Added bookmark successfully"})
-        }
-    }
-    catch(error) {
-        console.log('Error adding bookmark:', error);
-        res.status(500).json({success: false, message: 'Server error'});
-    }
-}
+

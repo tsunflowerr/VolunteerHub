@@ -4,6 +4,7 @@ import Event from "../../models/eventModel.js";
 import NotificationModel from '../../models/notificationModel.js';
 import Like from '../../models/likeModel.js';
 import redisClient from '../../config/redis.js';
+import mongoose from 'mongoose';
 
 async function checkEventStatus(eventId) {
     const event = await Event.findById(eventId).select('status endDate');
@@ -149,50 +150,128 @@ export async function replyComment(req, res) {
 
 export async function getCommentsByPost(req, res) {
     try {
-        const {postId} = req.params;
-        const {page = 1, limit = 20} = req.query;
-        const comments = await Comment.find({postId, parentComment: null})
-            .populate('author', 'username email avatar')
-            .sort({createdAt: -1})
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
-            .lean();
-
-        const commentIds = comments.map(c => c._id);
-        const replies = await Comment.find({parentComment: {$in: commentIds}})
-            .populate('author', 'username email avatar')
-            .sort({createdAt: 1})
-            .lean();
-
-        const repliesMap = {};
-        replies.forEach(reply => {
-            const parentId = reply.parentComment.toString();
-            if(!repliesMap[parentId]) {
-                repliesMap[parentId] = [];
+        const { postId } = req.params;
+        const { page = 1, limit = 20 } = req.query;
+        
+        const comments = await Comment.aggregate([
+            // Stage 1: Match parent comments only
+            {
+                $match: {
+                    postId: mongoose.Types.ObjectId(postId),
+                    parentComment: null
+                }
+            },
+            
+            // Stage 2: Sort
+            { $sort: { createdAt: -1 } },
+            
+            // Stage 3: Pagination
+            { $skip: (page - 1) * limit },
+            { $limit: limit * 1 },
+            
+            // Stage 4: Lookup replies using $graphLookup (1 query!)
+            {
+                $graphLookup: {
+                    from: 'comments',
+                    startWith: '$_id',
+                    connectFromField: '_id',
+                    connectToField: 'parentComment',
+                    as: 'replies',
+                    maxDepth: 0, // Only direct children
+                    depthField: 'depth'
+                }
+            },
+            
+            // Stage 5: Lookup author for parent comments
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'author',
+                    foreignField: '_id',
+                    as: 'authorData'
+                }
+            },
+            
+            // Stage 6: Lookup authors for replies
+            {
+                $unwind: {
+                    path: '$replies',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'replies.author',
+                    foreignField: '_id',
+                    as: 'replies.authorData'
+                }
+            },
+            
+            // Stage 7: Group back
+            {
+                $group: {
+                    _id: '$_id',
+                    postId: { $first: '$postId' },
+                    eventId: { $first: '$eventId' },
+                    content: { $first: '$content' },
+                    author: { $first: { $arrayElemAt: ['$authorData', 0] } },
+                    likesCount: { $first: '$likesCount' },
+                    createdAt: { $first: '$createdAt' },
+                    replies: { 
+                        $push: {
+                            $cond: [
+                                { $eq: ['$replies', {}] },
+                                '$$REMOVE',
+                                {
+                                    _id: '$replies._id',
+                                    content: '$replies.content',
+                                    author: { $arrayElemAt: ['$replies.authorData', 0] },
+                                    likesCount: '$replies.likesCount',
+                                    createdAt: '$replies.createdAt'
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            
+            // Stage 8: Sort replies
+            {
+                $addFields: {
+                    replies: {
+                        $sortArray: {
+                            input: '$replies',
+                            sortBy: { createdAt: 1 }
+                        }
+                    }
+                }
+            },
+            
+            // Stage 9: Project (clean up)
+            {
+                $project: {
+                    'author.password': 0,
+                    'author.pushSubscription': 0,
+                    'replies.author.password': 0,
+                    'replies.author.pushSubscription': 0
+                }
             }
-            repliesMap[parentId].push(reply);
-        });
-
-        const commentsWithReplies = comments.map(comment => ({
-            ...comment,
-            replies: repliesMap[comment._id.toString()] || []
-        }));
-
-        const total = await Comment.countDocuments({postId, parentComment: null});
-
+        ]);
+        const total = await Comment.countDocuments({ postId, parentComment: null });
+        
         res.status(200).json({
-            success: true, 
-            comments: commentsWithReplies,
+            success: true,
+            comments,
             pagination: {
                 total,
                 page: Number(page),
                 pages: Math.ceil(total / limit)
             }
         });
-    }
-    catch(error) {
+    } catch(error) {
         console.error('Error fetching comments:', error);
-        res.status(500).json({success: false, message: 'Server error'});
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 }
 

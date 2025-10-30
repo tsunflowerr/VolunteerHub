@@ -12,5 +12,8 @@ const postSchema = new mongoose.Schema({
     timestamps: true
 })
 
+postSchema.index({ eventId: 1, createdAt: -1 }); 
+postSchema.index({ author: 1 }); 
+postSchema.index({ eventId: 1, author: 1 });
 const postModel = mongoose.models.post || mongoose.model("post", postSchema)
 export default postModel

@@ -1,13 +1,26 @@
 import User from "../../models/userModel.js";
 
 export async function getAllUsersAndManagers(req, res) {
+    const {page = 1, limit = 20} = req.query;
     try {
         // Find All users and managers
-        const users = await User.find({ role: { $in: ['user', 'manager'] } }).select('-password');
+        const [users, total] = await Promise.all([
+            User.find({ role: { $in: ['user', 'manager'] } }).select('-password')
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean(),
+            User.countDocuments({ role: { $in: ['user', 'manager'] } })
+        ]);
         if(!users || users.length === 0) {
             return  res.status(404).json({ success: false, message: "No users or managers found" });
         }
-        res.status(200).json({success: true, users})
+        res.status(200).json({success: true, users, pagination:{
+            total, 
+            page: Number(page),
+            pages: Math.ceil(total/limit),
+            limit: Number(limit)
+        }})
     }
     catch(err) {
         console.error("Error fetching users and managers:", err);

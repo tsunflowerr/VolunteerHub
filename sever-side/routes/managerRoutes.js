@@ -15,12 +15,12 @@ router.use(authMiddleware, managerMiddleware);
 router.post('/events', validateEvent, validate, createEvent);
 router.put('/events/:id', validateEvent, validate, updateEvent);
 router.delete('/events/:id', deleteEvent);
-router.get('/events/manager/:managerId', getEventsByManager);
-router.get('/events/volunteers/total', getTotalConfirmedVolunteers);
+router.get('/events', getEventsByManager); // Get current manager's events from req.user._id
+router.get('/stats/volunteers', getTotalConfirmedVolunteers); // Get stats for current manager
 
 // ====== Registration Management Routes ======
-router.patch('/registrations/:registrationId/status', updateRegistrationStatus);
-router.get('/registrations/event/:eventId/volunteers', getVolunteersForEvent);
-router.get('/registrations/status/:status', getRegistrationsByStatus);
+router.patch('/registrations/:registrationId/status', updateRegistrationStatus); // Status in body
+router.get('/events/:eventId/volunteers', getVolunteersForEvent); // More RESTful
+router.get('/registrations', getRegistrationsByStatus); // Support ?status=pending query
 
 export default router;

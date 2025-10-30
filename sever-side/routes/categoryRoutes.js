@@ -4,8 +4,8 @@ import { getAllCategories, getCategoryById, getCategoryBySlug } from '../control
 const router = express.Router();
 
 // ====== Public Category Routes ======
-router.get('/', getAllCategories);
+router.get('/', getAllCategories); // Also supports ?slug=abc query
+router.get('/slug/:slug', getCategoryBySlug); // Must be BEFORE /:id to avoid conflict
 router.get('/:id', getCategoryById);
-router.get('/slug/:slug', getCategoryBySlug);
 
 export default router;

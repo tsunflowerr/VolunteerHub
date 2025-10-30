@@ -5,10 +5,6 @@ import authRoutes from './authRoutes.js';
 import userRoutes from './userRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import eventRoutes from './eventRoutes.js';
-import postRoutes from './postRoutes.js';
-import commentRoutes from './commentRoutes.js';
-import likeRoutes from './likeRoutes.js';
-import registrationRoutes from './registrationRoutes.js';
 
 const router = express.Router();
 
@@ -18,13 +14,8 @@ router.use('/manager', managerRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/categories', categoryRoutes);
-router.use('/events', eventRoutes);
-router.use('/posts', postRoutes);
-router.use('/comments', commentRoutes);
-router.use('/likes', likeRoutes);
-router.use('/registrations', registrationRoutes);
+router.use('/events', eventRoutes); // Includes posts, comments, likes, registrations
 
-// Health check route
 router.get('/health', (req, res) => {
     res.status(200).json({ 
         success: true, 

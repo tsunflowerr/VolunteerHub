@@ -60,7 +60,7 @@ export async function updateStatusEvent(req, res) {
         const cacheKey = `event:${eventId}:${status}`;
         let shouldSendNotification = true;
         try {
-            const isRecent = await redisClient.get(cacheKey);
+            const isRecent = await redisClient.exists(cacheKey);
             if (isRecent) {
                 shouldSendNotification = false;
             }

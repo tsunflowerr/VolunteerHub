@@ -140,17 +140,30 @@ export async function deleteEvent(req, res) {
 }
 
 export async function getEventsByManager(req, res) {
-    const managerId = req.params.managerId;
+    const managerId = req.user._id; // Get from authenticated user, not params
+    const { page = 1, limit = 10 } = req.query;
     try {
-        const events = await Event.find({managerId})
+        const [events, total] = await Promise.all([
+            await Event.find({managerId})
             .populate('managerId', 'username email avatar')
             .populate('category', 'name slug')
-            .sort({ createdAt: -1 });
-            
+            .sort({ createdAt: -1 })
+            .lean(),
+            Event.countDocuments({managerId})
+        ]);
         if(!events || events.length === 0) {
             return res.status(404).json({ success: false, message: "No events found for this manager" });
         }
-        res.status(200).json({success: true, events});
+        res.status(200).json({
+            success: true,
+            events,
+            pagination: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / limit),
+                limit: Number(limit)
+            }
+        });
     }
     catch(err){
         console.error("Error fetching events by manager ID:", err);
