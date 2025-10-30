@@ -3,6 +3,7 @@ import Category from '../../models/categoryModel.js';
 import Registration from '../../models/registrationsModel.js';
 import redisClient from '../../config/redis.js';
 import User from '../../models/userModel.js';
+import { getOrSetCache, invalidateCache, invalidateCacheByPattern, CACHE_TTL } from '../../utils/cacheHelper.js';
 
 export async function getAllEvents(req, res) {
     try {
@@ -11,30 +12,41 @@ export async function getAllEvents(req, res) {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const [events, total] = await Promise.all([
-            Event.find({status: { $in: ['approved', 'completed'] }})
-                .populate('managerId', 'username email avatar')
-                .populate('category', 'name slug')
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit)
-                .lean(),
-            Event.countDocuments({status: { $in: ['approved', 'completed'] }})
-        ]);
+        // Cache key bao gồm page & limit
+        const cacheKey = `events:all:page:${page}:limit:${limit}`;
+
+        const result = await getOrSetCache(
+            cacheKey,
+            CACHE_TTL.EVENTS_LIST,
+            async () => {
+                const [events, total] = await Promise.all([
+                    Event.find({status: { $in: ['approved', 'completed'] }})
+                        .populate('managerId', 'username email avatar')
+                        .populate('category', 'name slug')
+                        .sort({ createdAt: -1 })
+                        .skip(skip)
+                        .limit(limit)
+                        .lean(),
+                    Event.countDocuments({status: { $in: ['approved', 'completed'] }})
+                ]);
+                
+                return {
+                    events,
+                    pagination: {
+                        currentPage: page,
+                        totalPages: Math.ceil(total / limit),
+                        totalEvents: total,
+                        limit
+                    }
+                };
+            }
+        );
         
-        if(!events || events.length === 0) {
+        if(!result.events || result.events.length === 0) {
             return res.status(404).json({ success: false, message: "No events found" });
         }
-        res.status(200).json({
-            success: true, 
-            events,
-            pagination: {
-                currentPage: page,
-                totalPages: Math.ceil(total / limit),
-                totalEvents: total,
-                limit
-            }
-        });
+        
+        res.status(200).json({ success: true, ...result });
     }
     catch(err){
         console.error("Error fetching events:", err);
@@ -62,29 +74,46 @@ export async function getEventById(req, res) {
             }
         } catch (redisError) {
             console.error("Error checking Redis view cache:", redisError);
-            // Continue without Redis if it fails
         }
         
-        // Fetch event and conditionally increase view count
-        const event = await Event.findByIdAndUpdate(
-            eventId, 
-            shouldIncreaseView ? { $inc: { viewCount: 1 } } : {},
-            { new: true }
-        )
-        .populate('managerId', 'username email avatar')
-        .populate('category', 'name slug');
+        // Cache event detail (KHÔNG cache view count logic)
+        const cacheKey = `event:detail:${eventId}`;
+        let event;
         
-        if(!event) {
-            return res.status(404).json({ success: false, message: "Event not found" });
-        }
-        
-        // Set cache to prevent view count spam (expires in 1 hour = 3600 seconds)
         if (shouldIncreaseView) {
+            // Nếu cần tăng view, không dùng cache và update DB
+            event = await Event.findByIdAndUpdate(
+                eventId, 
+                { $inc: { viewCount: 1 } },
+                { new: true }
+            )
+            .populate('managerId', 'username email avatar')
+            .populate('category', 'name slug')
+            .lean();
+            
+            // Invalidate cache sau khi tăng view
+            await invalidateCache(cacheKey);
+            
+            // Set view tracking cache
             try {
                 await redisClient.setEx(viewCacheKey, 3600, '1');
             } catch (redisError) {
                 console.error("Error setting Redis view cache:", redisError);
             }
+        } else {
+            // Đã view rồi → dùng cache
+            event = await getOrSetCache(
+                cacheKey,
+                CACHE_TTL.EVENT_DETAIL,
+                () => Event.findById(eventId)
+                    .populate('managerId', 'username email avatar')
+                    .populate('category', 'name slug')
+                    .lean()
+            );
+        }
+        
+        if(!event) {
+            return res.status(404).json({ success: false, message: "Event not found" });
         }
         
         res.status(200).json({success: true, event})
@@ -98,13 +127,20 @@ export async function getEventById(req, res) {
 //Trending events based on registrations, likes, views, posts count, and age
 export async function getTrendingEvents(req, res) {
     try {
-        const { page = 1, limit = 10 } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         
         const skip = (page - 1) * limit;
         
-        const currentDate = new Date();
+        const cacheKey = `events:trending:page:${page}:limit:${limit}`;
         
-        const results = await Event.aggregate([
+        const result = await getOrSetCache(
+            cacheKey,
+            CACHE_TTL.TRENDING,
+            async () => {
+                const currentDate = new Date();
+                
+                const results = await Event.aggregate([
             {
                 $match: {
                     status: 'approved',
@@ -194,13 +230,25 @@ export async function getTrendingEvents(req, res) {
                     ]
                 }
             }
-        ]);
+                ]);
 
-        const trendingEvents = results[0].data;
-        const totalEvents = results[0].metadata[0] ? results[0].metadata[0].totalEvents : 0;
-        const totalPages = Math.ceil(totalEvents / limit);
+                const trendingEvents = results[0].data;
+                const totalEvents = results[0].metadata[0]?.totalEvents || 0;
+                const totalPages = Math.ceil(totalEvents / limit);
 
-        if (trendingEvents.length === 0) {
+                return {
+                    events: trendingEvents,
+                    pagination: {
+                        currentPage: page,
+                        totalPages,
+                        totalEvents,
+                        hasNextPage: page < totalPages
+                    }
+                };
+            }
+        );
+
+        if (result.events.length === 0) {
             return res.status(200).json({ 
                 success: true, 
                 events: [],
@@ -211,16 +259,8 @@ export async function getTrendingEvents(req, res) {
                 }
             });
         }
-        res.status(200).json({
-            success: true,
-            events: trendingEvents,
-            pagination: {
-                currentPage: page,
-                totalPages: totalPages,
-                totalEvents: totalEvents,
-                hasNextPage: page < totalPages
-            }
-        });
+        
+        res.status(200).json({ success: true, ...result });
 
     } catch(err) {
         console.error("Error fetching trending events:", err);
@@ -231,24 +271,37 @@ export async function getTrendingEvents(req, res) {
 export async function getEventsByCategorySlug(req, res) {
     const categoryslug = req.params.slug;
     try {
-        const category = await Category.findOne({slug: categoryslug})
-        if(!category) {
+        const cacheKey = `events:category:${categoryslug}`;
+        
+        const result = await getOrSetCache(
+            cacheKey,
+            CACHE_TTL.EVENTS_LIST,
+            async () => {
+                const category = await Category.findOne({slug: categoryslug});
+                if(!category) return null;
+                
+                const events = await Event.find({
+                    category: { $in: [category._id] },
+                    status: { $in: ['approved', 'completed'] }
+                })
+                .populate('managerId', 'username email avatar')
+                .populate('category', 'name slug')
+                .sort({ createdAt: -1 })
+                .lean();
+                
+                return events;
+            }
+        );
+        
+        if(!result) {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
-        // category is an array in Event model, use $in
-        const events = await Event.find({
-            category: { $in: [category._id] },
-            status: { $in: ['approved', 'completed'] }
-        })
-        .populate('managerId', 'username email avatar')
-        .populate('category', 'name slug')
-        .sort({ createdAt: -1 })
-        .lean();
         
-        if(!events || events.length === 0) {
+        if(result.length === 0) {
             return res.status(404).json({ success: false, message: "No events found for this category" });
         }
-        res.status(200).json({success: true, events});
+        
+        res.status(200).json({success: true, events: result});
     }
     catch(err){
         console.error("Error fetching events by category slug:", err);
@@ -258,15 +311,23 @@ export async function getEventsByCategorySlug(req, res) {
 
 export async function getUpcommingEvents(req, res) {
     try {
-        const currentDate = new Date();
-        const events = await Event.find({
-            status: "approved", 
-            startDate: { $gt: currentDate } 
-        })
-        .populate('managerId', 'username email avatar')
-        .populate('category', 'name slug')
-        .sort({ startDate: 1 })
-        .lean();
+        const cacheKey = 'events:upcoming';
+        
+        const events = await getOrSetCache(
+            cacheKey,
+            CACHE_TTL.EVENTS_LIST,
+            async () => {
+                const currentDate = new Date();
+                return await Event.find({
+                    status: "approved", 
+                    startDate: { $gt: currentDate } 
+                })
+                .populate('managerId', 'username email avatar')
+                .populate('category', 'name slug')
+                .sort({ startDate: 1 })
+                .lean();
+            }
+        );
 
         if(!events || events.length === 0) {
             return res.status(404).json({ success: false, message: "No upcoming events found" });

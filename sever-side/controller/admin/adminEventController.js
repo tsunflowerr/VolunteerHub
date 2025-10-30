@@ -7,6 +7,7 @@ import Notification from "../../models/notificationModel.js";
 import User from "../../models/userModel.js";
 import redisClient from '../../config/redis.js';
 import { createAndSendNotification } from '../../utils/notificationHelper.js';
+import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function getPendingEvents(req, res) {
     try{
@@ -77,6 +78,11 @@ export async function updateStatusEvent(req, res) {
                 console.error("Error setting Redis cache:", redisError);
             }
         }
+        
+        // Xóa cache sau khi thay đổi status event
+        await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
+        await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
+        
         res.status(200).json({ success: true, event: updatedEvent });
     } catch (error) {
         console.error("Error updating event status:", error);
@@ -135,6 +141,10 @@ export async function deleteEvent(req, res) {
         ]);
         
         await Event.findByIdAndDelete(eventId);
+        
+        // Xóa cache sau khi delete event
+        await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
+        await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
         
         res.status(200).json({
             success: true, 

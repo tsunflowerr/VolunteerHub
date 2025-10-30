@@ -5,6 +5,7 @@ import Like from "../../models/likeModel.js";
 import Registration from "../../models/registrationsModel.js";
 import Notification from "../../models/notificationModel.js";
 import User from "../../models/userModel.js";
+import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function createEvent(req, res) {
     const { name, description, category, location, thumbnail, images, capacity, startDate, endDate } = req.body;
@@ -28,6 +29,9 @@ export async function createEvent(req, res) {
         let saved = await newEvent.save();
         saved = await saved.populate('managerId', 'username email avatar');
         saved = await saved.populate('category', 'name slug');
+        
+        // Không cần xóa cache vì event mới có status='pending', chưa hiển thị
+        
         res.status(201).json({success: true, event: saved});
     } catch (error) {
         console.error("Error creating event:", error);
@@ -55,6 +59,10 @@ export async function updateEvent(req, res) {
         const updatedEvent = await Event.findByIdAndUpdate(eventId, data, {new: true, runValidators: true})
             .populate('managerId', 'username email avatar')
             .populate('category', 'name slug');
+        
+        // Xóa cache sau khi update event
+        await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
+        await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
             
         res.status(200).json({success: true, event: updatedEvent});
     } catch (error) {
@@ -120,6 +128,10 @@ export async function deleteEvent(req, res) {
         ]);
         
         await Event.findByIdAndDelete(eventId);
+        
+        // Xóa cache sau khi delete event
+        await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
+        await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
         
         res.status(200).json({
             success: true, 
