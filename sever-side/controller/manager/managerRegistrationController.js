@@ -3,20 +3,28 @@ import Notification from "../../models/notificationModel.js";
 import Event from "../../models/eventModel.js";
 import User from "../../models/userModel.js"; 
 import { createAndSendNotification } from '../../utils/notificationHelper.js';
+import redisClient from '../../config/redis.js';
+import mongoose from 'mongoose';
 
 export async function updateRegistrationStatus(req, res) {
+    // 🔒 START TRANSACTION
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const { registrationId } = req.params;
-        const { status } = req.body; // Changed from params to body
+        const { status } = req.body;
         
         if (!["confirmed", "cancelled", "completed"].includes(status)) {
              return res.status(400).json({ success: false, message: "Invalid status value" });
         }
 
         const registration = await Registration.findOne({ _id: registrationId })
-            .populate('eventId');
+            .populate('eventId')
+            .session(session);
 
         if (!registration) {
+            await session.abortTransaction();
             return res.status(404).json({ 
                 success: false, 
                 message: "Registration not found" 
@@ -27,6 +35,7 @@ export async function updateRegistrationStatus(req, res) {
         
         // Authorization check: Ensure the event belongs to the current manager
         if (event.managerId.toString() !== req.user._id.toString()) {
+            await session.abortTransaction();
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized: This registration is not for your event"
@@ -35,15 +44,17 @@ export async function updateRegistrationStatus(req, res) {
 
         // Update registration status
         if (registration.status !== "pending") {
+            await session.abortTransaction();
             return res.status(400).json({
                 success: false,
                 message: `Cannot update registration that is already ${registration.status}`
             });
         }
 
+        // 🔹 Update registration (với session)
         registration.status = status;
         registration.reviewedAt = new Date();
-        await registration.save();
+        await registration.save({ session });
 
         let content;
         if (status === "confirmed") {
@@ -79,12 +90,39 @@ export async function updateRegistrationStatus(req, res) {
             body: body,
             icon: req.user.avatar || '/default-avatar.png'
         };
-        createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
+
+        let shouldSendNotification = true;
+        const cacheKey = `update_registration:${registration.userId}:${event._id}`;
+        try {
+            const isRecent = await redisClient.exists(cacheKey);
+            if(isRecent) {
+                shouldSendNotification = false;
+            }
+        } catch (error) {
+            console.error("Error checking Redis cache:", error);
+        }
+
+        // ✅ COMMIT trước khi send notification
+        await session.commitTransaction();
+
+        if (shouldSendNotification) {
+            createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
+            try {
+                await redisClient.setEx(cacheKey, 300, '1'); // Cache for 5 minutes
+            } catch (error) {
+                console.error("Error setting Redis cache:", error);
+            }
+        }
 
         res.status(200).json({ success: true, registration });
     } catch (error) {
+        // ❌ ROLLBACK
+        await session.abortTransaction();
         console.error("Error updating registration status:", error);
         res.status(500).json({ success: false, message: "Server error" });
+    } finally {
+        // 🔓 Đóng session
+        session.endSession();
     }
 }
 
@@ -142,11 +180,24 @@ export async function getVolunteersForEvent(req, res) {
 
 export async function getRegistrationsByStatus(req, res) {
     try {
-        const status = req.query.status || req.params.status; // Support both query and param
+        const status = req.query.status;
+        const {page = 1, limit = 20} = req.query;
         
-        // Build filter for manager's events
-        const managerEvents = await Event.find({ managerId: req.user._id }).select('_id');
-        const eventIds = managerEvents.map(e => e._id);
+        // Get all event IDs of this manager (use distinct to get IDs directly)
+        const eventIds = await Event.find({ managerId: req.user._id }).distinct('_id');
+        
+        if (!eventIds || eventIds.length === 0) {
+            return res.status(200).json({ 
+                success: true, 
+                registrations: [],
+                pagination: {
+                    total: 0,
+                    page: Number(page),
+                    pages: 0,
+                    limit: Number(limit)
+                }
+            });
+        }
 
         const filter = { eventId: { $in: eventIds } };
         
@@ -158,15 +209,27 @@ export async function getRegistrationsByStatus(req, res) {
             filter.status = status;
         }
 
-        const registrations = await Registration.find(filter)
-            .populate('eventId', 'name category location capacity status startDate endDate registrationsCount')
-            .populate('userId', 'name email avatar')
-            .sort({ createdAt: -1 });
-            
-        if(!registrations || registrations.length === 0) {
-            return res.status(404).json({ success: false, message: "No registrations found for the specified status" });
-        }
-        res.status(200).json({ success: true, registrations });
+        const [registrations, total] = await Promise.all([
+            Registration.find(filter)
+                .populate('eventId', 'name category location capacity status startDate endDate registrationsCount')
+                .populate('userId', 'username email avatar')
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(Number(limit))
+                .lean(),
+            Registration.countDocuments(filter)
+        ]);
+        
+        res.status(200).json({ 
+            success: true, 
+            registrations,
+            pagination: {
+                total,
+                page: Number(page),
+                pages: Math.ceil(total / limit),
+                limit: Number(limit)
+            }
+        });
     } catch (error) {
         console.error("Error fetching registrations by status:", error);
         res.status(500).json({ success: false, message: "Server error" });

@@ -6,6 +6,7 @@ import Registration from "../../models/registrationsModel.js";
 import Notification from "../../models/notificationModel.js";
 import User from "../../models/userModel.js";
 import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import mongoose from 'mongoose';
 
 export async function createEvent(req, res) {
     const { name, description, category, location, thumbnail, images, capacity, startDate, endDate } = req.body;
@@ -72,66 +73,90 @@ export async function updateEvent(req, res) {
 }
 
 export async function deleteEvent(req, res) {
+    // 🔒 START TRANSACTION
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     const eventId = req.params.id;
     const managerId = req.user._id;
     
     try {
         // Check if event exists and belongs to manager
-        const event = await Event.findById(eventId);
+        const event = await Event.findById(eventId).session(session);
         if (!event) {
+            await session.abortTransaction();
             return res.status(404).json({success: false, message: "Event not found"});
         }
         
         // Check ownership
         if (event.managerId.toString() !== managerId.toString()) {
+            await session.abortTransaction();
             return res.status(403).json({success: false, message: "Unauthorized to delete this event"});
         }
         
-        const postIds = await Post.find({ eventId }).distinct('_id');
+        const postIds = await Post.find({ eventId }).distinct('_id').session(session);
         const postIdsStr = postIds.map(id => id.toString());
+        
+        // Get all comment IDs to delete their likes
+        const commentIds = await Comment.find({ 
+            $or: [
+                { eventId },
+                { postId: { $in: postIds } }
+            ]
+        }).distinct('_id').session(session);
+        const commentIdsStr = commentIds.map(id => id.toString());
+        
+        // � CASCADE DELETE PARALLEL (chạy song song để nhanh hơn)
         const [
             deletedComments,
             deletedLikes,
             deletedRegistrations,
             deletedNotifications,
             updatedUsers,
-            deletedPosts
+            deletedPosts,
+            deletedEvent
         ] = await Promise.all([
             Comment.deleteMany({ 
                 $or: [
                     { eventId },
                     { postId: { $in: postIds } }
                 ]
-            }),
+            }, { session }),
             
             Like.deleteMany({
                 $or: [
                     { likeableId: eventId.toString(), likeableType: 'event' },
-                    { likeableId: { $in: postIdsStr }, likeableType: 'post' }
+                    { likeableId: { $in: postIdsStr }, likeableType: 'post' },
+                    { likeableId: { $in: commentIdsStr }, likeableType: 'comment' }
                 ]
-            }),
-            Registration.deleteMany({ eventId }),
+            }, { session }),
+            
+            Registration.deleteMany({ eventId }, { session }),
             
             Notification.deleteMany({ 
                 $or: [
                     { event: eventId },
                     { post: { $in: postIds } }
                 ]
-            }),
+            }, { session }),
             
             User.updateMany(
                 { bookmarks: eventId },
-                { $pull: { bookmarks: eventId } }
+                { $pull: { bookmarks: eventId } },
+                { session }
             ),
             
-            Post.deleteMany({ eventId })
+            Post.deleteMany({ eventId }, { session }),
+            
+            Event.findByIdAndDelete(eventId, { session })
         ]);
         
-        await Event.findByIdAndDelete(eventId);
+        // ✅ COMMIT
+        await session.commitTransaction();
         
-        // Xóa cache sau khi delete event
-        await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
-        await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
+        // Xóa cache sau khi delete event (không cần session)
+        await invalidateCacheByPattern('events:*');
+        await invalidateCacheByPattern(`event:detail:*`);
         
         res.status(200).json({
             success: true, 
@@ -146,8 +171,13 @@ export async function deleteEvent(req, res) {
             }
         });
     } catch (error) {
+        // ❌ ROLLBACK
+        await session.abortTransaction();
         console.error("Error deleting event:", error);
         res.status(500).json({success: false, message: "Failed to delete event"});
+    } finally {
+        // 🔓 Đóng session
+        session.endSession();
     }
 }
 
@@ -187,19 +217,17 @@ export async function getTotalConfirmedVolunteers(req, res) {
     try {
         const managerId = req.user._id;
         
-        // Lấy tất cả các event của manager
-        const managerEvents = await Event.find({ managerId }).select('_id');
+        // Lấy tất cả event IDs của manager (tối ưu với distinct)
+        const eventIds = await Event.find({ managerId }).distinct('_id');
         
-        if (!managerEvents || managerEvents.length === 0) {
-            return res.status(200).json({
-                success: true,
+        if (!eventIds || eventIds.length === 0) {
+            return res.status(404).json({
+                success: false,
                 totalVolunteers: 0,
+                totalEvents: 0,
                 message: "No events found for this manager"
             });
         }
-        
-        // Lấy danh sách eventIds
-        const eventIds = managerEvents.map(event => event._id);
         
         // Đếm tổng số registration đã được duyệt (confirmed hoặc completed)
         const totalConfirmedVolunteers = await Registration.countDocuments({
@@ -210,7 +238,7 @@ export async function getTotalConfirmedVolunteers(req, res) {
         res.status(200).json({
             success: true,
             totalVolunteers: totalConfirmedVolunteers,
-            totalEvents: managerEvents.length
+            totalEvents: eventIds.length
         });
     } catch (error) {
         console.error("Error getting total confirmed volunteers:", error);

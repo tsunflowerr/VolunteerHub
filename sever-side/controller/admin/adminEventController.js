@@ -10,11 +10,18 @@ import { createAndSendNotification } from '../../utils/notificationHelper.js';
 import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function getPendingEvents(req, res) {
+    const {page = 1, limit = 20} = req.query;
     try{
-        const events = await Event.find({status: 'pending'})
-            .populate('managerId', 'username email avatar')
-            .populate('category', 'name slug')
-            .sort({ createdAt: -1 });
+        const [events, total] = await Promise.all([
+            Event.find({status: 'pending'})
+                .populate('managerId', 'username email avatar')
+                .populate('category', 'name slug')
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+            Event.countDocuments({status: 'pending'})
+        ]);
             
         if(!events || events.length === 0) {
             return res.status(404).json({ success: false, message: "No pending events found" });
@@ -102,6 +109,16 @@ export async function deleteEvent(req, res) {
         
         const postIds = await Post.find({ eventId }).distinct('_id');
         const postIdsStr = postIds.map(id => id.toString());
+        
+        // Get all comment IDs to delete their likes
+        const commentIds = await Comment.find({ 
+            $or: [
+                { eventId },
+                { postId: { $in: postIds } }
+            ]
+        }).distinct('_id');
+        const commentIdsStr = commentIds.map(id => id.toString());
+        
         const [
             deletedComments,
             deletedLikes,
@@ -120,7 +137,8 @@ export async function deleteEvent(req, res) {
             Like.deleteMany({
                 $or: [
                     { likeableId: eventId.toString(), likeableType: 'event' },
-                    { likeableId: { $in: postIdsStr }, likeableType: 'post' }
+                    { likeableId: { $in: postIdsStr }, likeableType: 'post' },
+                    { likeableId: { $in: commentIdsStr }, likeableType: 'comment' }
                 ]
             }),
             Registration.deleteMany({ eventId }),

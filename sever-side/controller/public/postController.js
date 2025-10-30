@@ -4,14 +4,20 @@ import Comment from '../../models/commentModel.js';
 import Like from '../../models/likeModel.js';
 import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
+import mongoose from 'mongoose';
 
 export async function createPost(req, res) {
+    // 🔒 START TRANSACTION
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const eventId = req.params.eventId;
         const { title, content, image } = req.body;
         
-        const event = await Event.findById(eventId);
+        const event = await Event.findById(eventId).session(session);
         if (!event) {
+            await session.abortTransaction();
             return res.status(404).json({
                 success: false,
                 message: 'Event not found'
@@ -19,12 +25,14 @@ export async function createPost(req, res) {
         }
         
         if(event.status === 'pending' || event.status === 'rejected' || event.status === 'draft') {
+            await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot create post when event is not approved' 
             });
         }
         
+        // 🔹 Step 1: Create post (với session)
         const post = new Post({
             title,
             content,
@@ -33,13 +41,18 @@ export async function createPost(req, res) {
             eventId
         });
 
-        let saved = await post.save();
+        let saved = await post.save({ session });
         saved = await saved.populate('author', 'username email avatar');
 
-        // Increase postsCount in Event
-        await Event.findByIdAndUpdate(eventId, { $inc: { postsCount: 1 } });
+        // 🔹 Step 2: Increase postsCount in Event (với session)
+        await Event.findByIdAndUpdate(
+            eventId, 
+            { $inc: { postsCount: 1 } },
+            { session }
+        );
 
-        const shouldSendNotification = true;
+        // 🔹 Step 3: Create notification (với session, nếu cần)
+        let shouldSendNotification = true;
         const cacheKey = `new_post_event_${eventId}:${req.user._id}`;
         try {
             const isRecent = await redisClient.exists(cacheKey);
@@ -49,6 +62,7 @@ export async function createPost(req, res) {
         } catch(err) {
             console.error('Redis error:', err);
         }
+        
         if(shouldSendNotification) {
             const newNotification = new Notification({
                 recipient: event.managerId,
@@ -57,25 +71,33 @@ export async function createPost(req, res) {
                 content: `A new post has been created in your event "${event.name}".`,
                 event: eventId,
             });
-            await newNotification.save();
+            await newNotification.save({ session });
             try {
-                await redisClient.setEx(cacheKey, 300, '1'); // Cache for 300 seconds
+                await redisClient.setEx(cacheKey, 300, '1');
             }
             catch(err) {
                 console.error('Redis error:', err);
             }
         }
 
+        // ✅ Tất cả thành công → COMMIT
+        await session.commitTransaction();
+
         res.status(201).json({
             success: true,
             post: saved
         });
     } catch (error) {
+        // ❌ Có lỗi → ROLLBACK tất cả
+        await session.abortTransaction();
         console.error('Error creating post:', error);
         res.status(500).json({
             success: false,
             message: 'Server error'
         });
+    } finally {
+        // 🔓 Đóng session
+        session.endSession();
     }
 }
 
@@ -155,13 +177,18 @@ export async function updatePost(req, res) {
 }
 
 export async function deletePost(req, res) {
+    // 🔒 START TRANSACTION
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const { eventId, postId } = req.params;
         const userId = req.user._id;
         const userRole = req.user.role;
 
-        const post = await Post.findOne({ _id: postId, eventId: eventId }).populate('eventId');
+        const post = await Post.findOne({ _id: postId, eventId: eventId }).populate('eventId').session(session);
         if(!post) {
+            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Post not found' });
         }
         
@@ -171,28 +198,32 @@ export async function deletePost(req, res) {
         const isAuthor = post.author.toString() === userId.toString();
         
         if (!isAdmin && !isManager && !isAuthor) {
+            await session.abortTransaction();
             return res.status(403).json({ 
                 success: false, 
                 message: 'Unauthorized: You do not have permission to delete this post' 
             });
         }
         
-        // Delete post and all related data in parallel for better performance
+        // 🔹 CASCADE DELETE (tất cả với session)
         const [deletedComments, deletedLikes, deletedNotifications] = await Promise.all([
-            Comment.deleteMany({ postId: postId }),
+            Comment.deleteMany({ postId: postId }, { session }),
             Like.deleteMany({ 
                 likeableId: postId.toString(), 
                 likeableType: 'post' 
-            }),
-            Notification.deleteMany({ post: postId }),
-            Post.findByIdAndDelete(postId)
+            }, { session }),
+            Notification.deleteMany({ post: postId }, { session }),
+            Post.findByIdAndDelete(postId, { session })
         ]);
         
-        // Update event postsCount (must be sequential to avoid race condition)
+        // Update event postsCount
         await Event.findByIdAndUpdate(eventId, { 
             $inc: { postsCount: -1 },
             $max: { postsCount: 0 }  
-        });
+        }, { session });
+        
+        // ✅ Tất cả thành công → COMMIT
+        await session.commitTransaction();
         
         res.status(200).json({ 
             success: true, 
@@ -205,7 +236,12 @@ export async function deletePost(req, res) {
         });
         
     } catch(error) {
+        // ❌ Có lỗi → ROLLBACK tất cả
+        await session.abortTransaction();
         console.error('Error deleting post:', error);
         res.status(500).json({ success: false, message: 'Server error' });
+    } finally {
+        // 🔓 Đóng session
+        session.endSession();
     }
 }
