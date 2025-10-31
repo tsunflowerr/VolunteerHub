@@ -5,7 +5,6 @@ import {
     paginationSchema, 
     objectIdSchema, 
     eventIdSchema, 
-    categorySlugSchema,
     userEventsQuerySchema 
 } from '../validators/eventValidator.js';
 import { createandUpdatePostSchema, eventPostParamsSchema } from '../validators/postValidator.js';
@@ -21,6 +20,7 @@ import {
     getMyRegistrationsSchema, 
     getRegistrationDetailSchema 
 } from '../validators/registrationValidator.js';
+import { categorySlugSchema } from '../validators/categoryValidator.js';
 const router = express.Router();
 
 // ====== Public Event Routes ======

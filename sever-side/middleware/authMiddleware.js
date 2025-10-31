@@ -4,7 +4,7 @@ import User from "../models/userModel.js"
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key"
 
 
-export default async function authMiddleware(req, res, next) {
+export async function authMiddleware(req, res, next) {
     let token;
 
     if (req.cookies && req.cookies.token) {
