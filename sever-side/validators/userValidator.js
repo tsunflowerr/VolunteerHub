@@ -66,3 +66,13 @@ export const changePasswordSchema = Joi.object({
         "string.empty": "Confirm new password is required",
     })
 })
+
+// ====== Validation cho userId trong params (Admin only) ======
+export const userIdSchema = Joi.object({
+    userId: Joi.string().hex().length(24).required().messages({
+        'string.base': '"userId" must be a string',
+        'string.hex': '"userId" must be a valid ObjectId',
+        'string.length': '"userId" must be 24 characters long',
+        'any.required': '"userId" is required',
+    }),
+})

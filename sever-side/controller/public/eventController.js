@@ -7,9 +7,9 @@ import { getOrSetCache, invalidateCache, invalidateCacheByPattern, CACHE_TTL } f
 
 export async function getAllEvents(req, res) {
     try {
-        // Pagination
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        // Pagination - đã được validate bởi middleware
+        const page = req.query.page; // Không cần parseInt vì middleware đã xử lý
+        const limit = req.query.limit;
         const skip = (page - 1) * limit;
 
         // Cache key bao gồm page & limit
@@ -55,8 +55,8 @@ export async function getAllEvents(req, res) {
 }
 
 export async function getEventById(req, res) {
-    const eventId = req.params.id;
-    const userId = req.user?._id || req.user?.id; // Get userId if authenticated
+    const eventId = req.params.id; // Đã được validate bởi middleware
+    const userId = req.user?._id; // Consistent - chỉ dùng _id
     const ipAddress = req.ip || req.connection.remoteAddress; // Get IP as fallback
     
     try {
@@ -127,9 +127,8 @@ export async function getEventById(req, res) {
 //Trending events based on registrations, likes, views, posts count, and age
 export async function getTrendingEvents(req, res) {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        
+        const page = req.query.page; // Đã được validate
+        const limit = req.query.limit;
         const skip = (page - 1) * limit;
         
         const cacheKey = `events:trending:page:${page}:limit:${limit}`;
@@ -269,19 +268,19 @@ export async function getTrendingEvents(req, res) {
 }
 
 export async function getEventsByCategorySlug(req, res) {
-    const categoryslug = req.params.slug;
+    const categorySlug = req.params.slug; // Đã được validate
     try {
-        const cacheKey = `events:category:${categoryslug}`;
+        const cacheKey = `events:category:${categorySlug}`;
         
         const result = await getOrSetCache(
             cacheKey,
             CACHE_TTL.EVENTS_LIST,
             async () => {
-                const category = await Category.findOne({slug: categoryslug});
+                const category = await Category.findOne({slug: categorySlug});
                 if(!category) return null;
                 
                 const events = await Event.find({
-                    category: { $in: [category._id] },
+                    category: category._id, // ✅ Fixed: Không cần $in cho 1 giá trị
                     status: { $in: ['approved', 'completed'] }
                 })
                 .populate('managerId', 'username email avatar')
@@ -298,7 +297,7 @@ export async function getEventsByCategorySlug(req, res) {
         }
         
         if(result.length === 0) {
-            return res.status(404).json({ success: false, message: "No events found for this category" });
+            return res.status(200).json({ success: true, message: "No events found for this category", events: [] });
         }
         
         res.status(200).json({success: true, events: result});
@@ -309,8 +308,9 @@ export async function getEventsByCategorySlug(req, res) {
     }
 }
 
-export async function getUpcommingEvents(req, res) {
+export async function getUpcomingEvents(req, res) { 
     try {
+        const {page = 1, limit = 10} = req.query; 
         const cacheKey = 'events:upcoming';
         
         const events = await getOrSetCache(
@@ -318,21 +318,38 @@ export async function getUpcommingEvents(req, res) {
             CACHE_TTL.EVENTS_LIST,
             async () => {
                 const currentDate = new Date();
-                return await Event.find({
-                    status: "approved", 
-                    startDate: { $gt: currentDate } 
-                })
-                .populate('managerId', 'username email avatar')
-                .populate('category', 'name slug')
-                .sort({ startDate: 1 })
-                .lean();
+                const [events, total] = await Promise.all([
+                    Event.find({
+                        startDate: { $gte: currentDate },
+                        status: 'approved'
+                    })
+                    .populate('managerId', 'username email avatar')
+                    .populate('category', 'name slug')
+                    .sort({ startDate: 1 })
+                    .skip((page - 1) * limit)
+                    .limit(limit)
+                    .lean(),
+                    Event.countDocuments({
+                        startDate: { $gte: currentDate },
+                        status: 'approved'
+                    })
+                ]);
+                return [events, total];
             }
         );
 
-        if(!events || events.length === 0) {
-            return res.status(404).json({ success: false, message: "No upcoming events found" });
+        if(!events.events || events.events.length === 0) {
+            return res.status(200).json({ success: true, message: "No upcoming events found", events: [] });
         }
-        res.status(200).json({success: true, events});
+        res.status(200).json({success: true, 
+            events: events.events,
+            pagination: {
+                total: events.total,
+                currentPage: page,
+                totalPages: Math.ceil(events.total / limit),
+                pageSize: limit
+            }
+        });
 
     }
     catch(err) {
@@ -341,100 +358,59 @@ export async function getUpcommingEvents(req, res) {
     }
 }
 
-export async function getUserEvents(req, res) {
-    const userId = req.user._id;
-    const {status, page = 1, limit = 10} = req.query; // expected values: "pending", "confirmed", "completed", "cancelled"
-    try {
-        const [registrations, total] = await Promise.all([
-            Registration.find({userId, ...(status ? {status} : {})})
-                .populate({
-                    path: 'eventId',
-                    populate: [
-                        { path: 'managerId', select: 'username email avatar' },
-                        { path: 'category', select: 'name slug' }
-                    ]
-                })
-                .sort({ createdAt: -1 })
-                .skip((page - 1) * limit)
-                .limit(limit)
-                .lean(),
-            Registration.countDocuments({userId, ...(status ? {status} : {})})
-        ]);
-        if(!registrations || registrations.length === 0) {
-            return res.status(200).json({success:true, message:"No events found", events: []});
-        }
-        
-        // Return events with registration info
-        const eventsWithRegistration = registrations.map(reg => ({
-            ...reg.eventId.toObject(),
-            registrationStatus: reg.status,
-            registrationDate: reg.createdAt,
-            registrationId: reg._id
-        }));
-        
-        res.status(200).json({
-            success: true,
-            events: eventsWithRegistration,
-            pagination: {
-                total,
-                page: Number(page),
-                pages: Math.ceil(total / limit),
-                limit: Number(limit)
-            }
-        })
-    }
-    catch(err) {
-        console.error("Error fetching user events:", err);
-        res.status(500).json({success: false, message: "Server error" });
-    }
-}
 
 export async function addBookMark(req, res) {
     try {
-        const userId = req.user.id || req.user._id;
-        const eventId = req.params.eventId;
-        if(!eventId) {
-            return res.status(400).json({success:false, message:"Event ID is required"})
+        const userId = req.user._id; // ✅ Consistent - chỉ dùng _id
+        const eventId = req.params.eventId; // Đã được validate bởi middleware
+        
+        // ✅ Check if event exists
+        const eventExists = await Event.exists({ _id: eventId });
+        if (!eventExists) {
+            return res.status(404).json({success: false, message: "Event not found"});
         }
+        
         const user = await User.findById(userId);
         if(!user) {
-            return res.status(404).json({success:false, message:"User not found"})
+            return res.status(404).json({success: false, message: "User not found"});
         }
+        
         const isBookmarked = user.bookmarks.some(b => b.toString() === eventId);
         if(isBookmarked) {
-            return res.status(400).json({success:false, message:"Event already bookmarked"})
+            return res.status(400).json({success: false, message: "Event already bookmarked"});
         }
+        
         user.bookmarks.push(eventId);
         await user.save();
-        return res.status(201).json({success:true, message:"Bookmark added successfully"})
+        return res.status(201).json({success: true, message: "Bookmark added successfully"});
     }
     catch(error) {
-        console.log('Error adding bookmark:', error);
+        console.error('Error adding bookmark:', error);
         res.status(500).json({success: false, message: 'Server error'});
     }
 }
 
 export async function removeBookMark(req, res) {
     try {
-        const userId = req.user.id || req.user._id;
-        const eventId = req.params.eventId;
-        if(!eventId) {
-            return res.status(400).json({success:false, message:"Event ID is required"})
-        }
+        const userId = req.user._id; // ✅ Consistent
+        const eventId = req.params.eventId; // Đã được validate
+        
         const user = await User.findById(userId);
         if(!user) {
-            return res.status(404).json({success:false, message:"User not found"})
+            return res.status(404).json({success: false, message: "User not found"});
         }
+        
         const isBookmarked = user.bookmarks.some(b => b.toString() === eventId);
         if(!isBookmarked) {
-            return res.status(404).json({success:false, message:"Bookmark not found"})
+            return res.status(404).json({success: false, message: "Bookmark not found"});
         }
+        
         user.bookmarks = user.bookmarks.filter(b => b.toString() !== eventId);
         await user.save();
-        return res.status(200).json({success:true, message:"Bookmark removed successfully"})
+        return res.status(200).json({success: true, message: "Bookmark removed successfully"});
     }
     catch(error) {
-        console.log('Error removing bookmark:', error);
+        console.error('Error removing bookmark:', error);
         res.status(500).json({success: false, message: 'Server error'});
     }
 }

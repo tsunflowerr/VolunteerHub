@@ -14,9 +14,6 @@ export async function likeEvent(req, res) {
     try {
         const {eventId} = req.params;
         const userId = req.user._id;
-        if (!mongoose.Types.ObjectId.isValid(eventId)) {
-            return res.status(400).json({success: false, message: 'Invalid event ID'});
-        }
         
         const isLike = await Like.findOne({userId, likeableId: eventId, likeableType: 'event'}).session(session);
         
@@ -45,18 +42,30 @@ export async function likeEvent(req, res) {
         const event = await Event.findByIdAndUpdate(
             eventId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, session}
+            {new: true, select: 'likesCount name managerId', session}
         );
         if(!event) {
             await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Event not found'});
         }
         
-        // Notification (với session)
-        const cacheKey = `like_notification:${userId}:${event.managerId}:like:${eventId}`;
-        try {
-            const isRecent = await redisClient.exists(cacheKey);
-            if (!isRecent) {
+        // Notification (với session) - FIXED LOGIC
+        // Không gửi notification nếu user tự like event của mình
+        if(!userId.equals(event.managerId)) {
+            const cacheKey = `like_notification:${userId}:${event.managerId}:like:${eventId}`;
+            let shouldSendNotification = true;
+            
+            try {
+                const isRecent = await redisClient.exists(cacheKey);
+                if(isRecent) {
+                    shouldSendNotification = false;
+                }
+            } catch(redisError) {
+                console.error('Redis error:', redisError);
+                // Fallback: vẫn gửi notification nếu Redis lỗi
+            }
+
+            if(shouldSendNotification) {
                 const newNotification = new Notification({
                     sender: userId,
                     recipient: event.managerId,
@@ -65,18 +74,13 @@ export async function likeEvent(req, res) {
                     event: eventId,
                 });
                 await newNotification.save({ session });
-                await redisClient.setEx(cacheKey, 300, '1');
+                
+                try {
+                    await redisClient.setEx(cacheKey, 300, '1');
+                } catch (redisError) {
+                    console.error('Redis setEx error:', redisError);
+                }
             }
-        } catch (redisError) {
-            console.error('Redis error:', redisError);
-            const newNotification = new Notification({
-                sender: userId,
-                recipient: event.managerId,
-                type: 'like',
-                content: `${req.user.username} liked your event "${event.name}".`,
-                event: eventId,
-            });
-            await newNotification.save({ session });
         }
         
         // ✅ COMMIT
@@ -101,9 +105,6 @@ export async function likePost(req, res) {
     try {
         const {postId} = req.params;
         const userId = req.user._id;
-        if (!mongoose.Types.ObjectId.isValid(postId)) {
-            return res.status(400).json({success: false, message: 'Invalid post ID'});
-        }
         
         const isLike = await Like.findOne({userId, likeableId: postId, likeableType: 'post'}).session(session);
         
@@ -132,7 +133,7 @@ export async function likePost(req, res) {
         const post = await Post.findByIdAndUpdate(
             postId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, session}
+            {new: true, select: 'likesCount author', session}
         );
         if(!post) {
             await session.abortTransaction();
@@ -140,10 +141,21 @@ export async function likePost(req, res) {
         }
 
         // Notification (với session)
-        const cacheKey = `like_notification:${userId}:${post.author}:like:${postId}`;
-        try {
-            const isRecent = await redisClient.exists(cacheKey);
-            if (!isRecent) {
+        // Không gửi notification nếu user tự like post của mình
+        if(!userId.equals(post.author)) {
+            const cacheKey = `like_notification:${userId}:${post.author}:like:${postId}`;
+            let shouldSendNotification = true;
+            
+            try {
+                const isRecent = await redisClient.exists(cacheKey);
+                if (isRecent) {
+                    shouldSendNotification = false;
+                }
+            } catch (redisError) {
+                console.error('Redis error:', redisError);
+            }
+            
+            if(shouldSendNotification) {
                 const newNotification = new Notification({
                     sender: userId,
                     recipient: post.author,
@@ -152,18 +164,13 @@ export async function likePost(req, res) {
                     post: postId,
                 });
                 await newNotification.save({ session });
-                await redisClient.setEx(cacheKey, 300, '1');
+                
+                try {
+                    await redisClient.setEx(cacheKey, 300, '1');
+                } catch (redisError) {
+                    console.error('Redis setEx error:', redisError);
+                }
             }
-        } catch (redisError) {
-            console.error('Redis error:', redisError);
-            const newNotification = new Notification({
-                sender: userId,
-                recipient: post.author,
-                type: 'like',
-                content: `${req.user.username} liked your post.`,
-                post: postId,
-            });
-            await newNotification.save({ session });
         }
         
         // ✅ COMMIT
@@ -188,9 +195,6 @@ export async function likeComment(req, res) {
     try {
         const {commentId} = req.params;
         const userId = req.user._id;
-        if (!mongoose.Types.ObjectId.isValid(commentId)) {
-            return res.status(400).json({success: false, message: 'Invalid comment ID'});
-        }
         
         const isLike = await Like.findOne({userId, likeableId: commentId, likeableType: 'comment'}).session(session);
         
@@ -219,7 +223,7 @@ export async function likeComment(req, res) {
         const comment = await Comment.findByIdAndUpdate(
             commentId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, session}
+            {new: true, select: 'likesCount author postId', session}
         );
         if(!comment) {
             await session.abortTransaction();
@@ -227,10 +231,22 @@ export async function likeComment(req, res) {
         }
         
         // Notification (với session)
-        const cacheKey = `like_notification:${userId}:${comment.author}:like:${commentId}`;
-        try {
-            const isRecent = await redisClient.exists(cacheKey);
-            if (!isRecent) {
+        // Không gửi notification nếu user tự like comment của mình
+        if(!userId.equals(comment.author)) {
+            const cacheKey = `like_notification:${userId}:${comment.author}:like:${commentId}`;
+            let shouldSendNotification = true;
+            
+            try {
+                const isRecent = await redisClient.exists(cacheKey);
+                if (isRecent) {
+                    shouldSendNotification = false;
+                }
+            } catch (redisError) {
+                console.error('Redis error:', redisError);
+                // Fallback: vẫn gửi notification nếu Redis lỗi
+            }
+            
+            if(shouldSendNotification) {
                 const newNotification = new Notification({
                     sender: userId,
                     recipient: comment.author,
@@ -239,18 +255,13 @@ export async function likeComment(req, res) {
                     post: comment.postId,
                 });
                 await newNotification.save({ session });
-                await redisClient.setEx(cacheKey, 300, '1');
+                
+                try {
+                    await redisClient.setEx(cacheKey, 300, '1');
+                } catch (redisError) {
+                    console.error('Redis setEx error:', redisError);
+                }
             }
-        } catch (redisError) {
-            console.error('Redis error:', redisError);
-            const newNotification = new Notification({
-                sender: userId,
-                recipient: comment.author,
-                type: 'like',
-                content: `${req.user.username} liked your comment.`,
-                post: comment.postId,
-            });
-            await newNotification.save({ session });
         }
         
         // ✅ COMMIT

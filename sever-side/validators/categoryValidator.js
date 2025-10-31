@@ -16,3 +16,14 @@ export const categorySchema = Joi.object({
         "string.max": "Description must be at most 500 characters long",
     })
 });
+
+export const categorySlugSchema = Joi.object({
+    slug: Joi.string().min(2).max(100).pattern(/^[a-z0-9-]+$/).required().messages({
+        'string.base': `"slug" must be a string`,
+        'string.pattern.base': `"slug" must contain only lowercase letters, numbers, and hyphens`,
+        'string.min': `"slug" must be at least 2 characters`,
+        'string.max': `"slug" cannot exceed 100 characters`,
+        'any.required': `"slug" is required`,
+    }),
+});
+

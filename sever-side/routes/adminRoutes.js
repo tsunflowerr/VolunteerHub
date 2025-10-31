@@ -5,7 +5,9 @@ import { createCategory,  updateCategory } from '../controller/admin/adminCatego
 import { getPendingEvents, updateStatusEvent, deleteEvent } from '../controller/admin/adminEventController.js';
 import { exportUsersData, exportEvents } from '../controller/admin/adminExportController.js';
 import { getAllUsersAndManagers, toggleUserLockStatus } from '../controller/admin/adminUserController.js';
-import { validateCategory } from '../validators/categoryValidator.js';
+import { categorySchema } from '../validators/categoryValidator.js';
+import { objectIdSchema, updateEventStatusSchema } from '../validators/eventValidator.js';
+import { userIdSchema } from '../validators/userValidator.js';
 import { validate } from '../middleware/validate.js';
 
 const router = express.Router();
@@ -14,13 +16,13 @@ const router = express.Router();
 router.use(authMiddleware, adminMiddleware);
 
 // ====== Category Routes ======
-router.post('/categories', validateCategory, validate, createCategory);
-router.put('/categories/:id', validateCategory, validate, updateCategory);
+router.post('/categories', validate(categorySchema), createCategory);
+router.put('/categories/:id', validate(objectIdSchema, 'params'), validate(categorySchema), updateCategory);
 
 // ====== Event Routes ======
 router.get('/events/pending', getPendingEvents);
-router.patch('/events/:id/status', updateStatusEvent);
-router.delete('/events/:id', deleteEvent);
+router.patch('/events/:id/status', validate(objectIdSchema, 'params'), validate(updateEventStatusSchema), updateStatusEvent);
+router.delete('/events/:id', validate(objectIdSchema, 'params'), deleteEvent);
 
 // ====== Export Routes ======
 router.get('/export/users', exportUsersData);
@@ -28,6 +30,6 @@ router.get('/export/events', exportEvents);
 
 // ====== User Management Routes ======
 router.get('/users', getAllUsersAndManagers);
-router.patch('/users/:userId/lock', toggleUserLockStatus);
+router.patch('/users/:userId/lock', validate(userIdSchema, 'params'), toggleUserLockStatus);
 
 export default router;

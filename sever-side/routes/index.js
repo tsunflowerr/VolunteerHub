@@ -14,7 +14,7 @@ router.use('/manager', managerRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/categories', categoryRoutes);
-router.use('/events', eventRoutes); // Includes posts, comments, likes, registrations
+router.use('/events', eventRoutes);
 
 router.get('/health', (req, res) => {
     res.status(200).json({ 

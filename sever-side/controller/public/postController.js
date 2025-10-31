@@ -7,7 +7,6 @@ import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 
 export async function createPost(req, res) {
-    // 🔒 START TRANSACTION
     const session = await mongoose.startSession();
     session.startTransaction();
     
@@ -31,8 +30,7 @@ export async function createPost(req, res) {
                 message: 'Cannot create post when event is not approved' 
             });
         }
-        
-        // 🔹 Step 1: Create post (với session)
+   
         const post = new Post({
             title,
             content,
@@ -44,14 +42,12 @@ export async function createPost(req, res) {
         let saved = await post.save({ session });
         saved = await saved.populate('author', 'username email avatar');
 
-        // 🔹 Step 2: Increase postsCount in Event (với session)
         await Event.findByIdAndUpdate(
             eventId, 
             { $inc: { postsCount: 1 } },
             { session }
         );
 
-        // 🔹 Step 3: Create notification (với session, nếu cần)
         let shouldSendNotification = true;
         const cacheKey = `new_post_event_${eventId}:${req.user._id}`;
         try {
@@ -80,7 +76,6 @@ export async function createPost(req, res) {
             }
         }
 
-        // ✅ Tất cả thành công → COMMIT
         await session.commitTransaction();
 
         res.status(201).json({
@@ -88,7 +83,6 @@ export async function createPost(req, res) {
             post: saved
         });
     } catch (error) {
-        // ❌ Có lỗi → ROLLBACK tất cả
         await session.abortTransaction();
         console.error('Error creating post:', error);
         res.status(500).json({
@@ -96,7 +90,6 @@ export async function createPost(req, res) {
             message: 'Server error'
         });
     } finally {
-        // 🔓 Đóng session
         session.endSession();
     }
 }
@@ -105,6 +98,10 @@ export async function getAllPosts(req, res) {
     const eventId = req.params.eventId;
     const {page = 1, limit = 10} = req.query;
     try {
+        const event = await Event.findById(eventId);
+        if(!event) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
         const [posts, total] = await Promise.all([
             Post.find({ eventId })
                 .populate('author', 'username email avatar')
@@ -132,17 +129,22 @@ export async function getAllPosts(req, res) {
 }
 
 export async function updatePost(req, res) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    
     try {
         const { eventId, postId } = req.params;
         const { title, content, image } = req.body;
         
-        const event = await Event.findById(eventId);
+        const event = await Event.findById(eventId).session(session);
         if (!event) {
+            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Event not found' });
         }
         
         const now = new Date();
         if (event.endDate && now > event.endDate) {
+            await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot update post after event has ended' 
@@ -156,28 +158,35 @@ export async function updatePost(req, res) {
             updatedAt: new Date()
         };
         
-        const updatedPost = await Post.findByIdAndUpdate(
+        const updatedPost = await Post.findOneAndUpdate(
             {
                 _id: postId,
                 eventId: eventId,
                 author: req.user._id
             },
             updateData,
-            { new: true, runValidators: true }
+            { new: true, runValidators: true, session }
         ).populate('author', 'username email avatar');
+        
         if (!updatedPost) {
+            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Post not found or you are not the author' });
         }
+        
+        await session.commitTransaction();
+        
         res.status(200).json({ success: true, post: updatedPost });
         
     } catch(error) {
+        await session.abortTransaction();
         console.error('Error updating post:', error);
         res.status(500).json({ success: false, message: 'Server error' });
+    } finally {
+        session.endSession();
     }
 }
 
 export async function deletePost(req, res) {
-    // 🔒 START TRANSACTION
     const session = await mongoose.startSession();
     session.startTransaction();
     
@@ -205,24 +214,22 @@ export async function deletePost(req, res) {
             });
         }
         
-        // 🔹 CASCADE DELETE (tất cả với session)
         const [deletedComments, deletedLikes, deletedNotifications] = await Promise.all([
             Comment.deleteMany({ postId: postId }, { session }),
             Like.deleteMany({ 
                 likeableId: postId.toString(), 
                 likeableType: 'post' 
             }, { session }),
-            Notification.deleteMany({ post: postId }, { session }),
-            Post.findByIdAndDelete(postId, { session })
+            Notification.deleteMany({ post: postId }, { session })
         ]);
         
-        // Update event postsCount
-        await Event.findByIdAndUpdate(eventId, { 
-            $inc: { postsCount: -1 },
-            $max: { postsCount: 0 }  
-        }, { session });
-        
-        // ✅ Tất cả thành công → COMMIT
+        await Promise.all([
+            Post.findByIdAndDelete(postId, { session }),
+            Event.findByIdAndUpdate(eventId, { 
+                $inc: { postsCount: -1 },
+                $max: { postsCount: 0 }  
+            }, { session })
+        ]);
         await session.commitTransaction();
         
         res.status(200).json({ 
@@ -236,12 +243,10 @@ export async function deletePost(req, res) {
         });
         
     } catch(error) {
-        // ❌ Có lỗi → ROLLBACK tất cả
         await session.abortTransaction();
         console.error('Error deleting post:', error);
         res.status(500).json({ success: false, message: 'Server error' });
     } finally {
-        // 🔓 Đóng session
         session.endSession();
     }
 }

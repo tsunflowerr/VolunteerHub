@@ -1,5 +1,6 @@
 import Joi from 'joi';
 
+// ====== Validation cho CREATE/UPDATE Event (Body) ======
 export const createAndUpdateEventSchema = Joi.object(
     {
         name: Joi.string().min(3).max(100).required().messages({
@@ -47,4 +48,71 @@ export const createAndUpdateEventSchema = Joi.object(
             'date.greater': `"endDate" must be greater than startDate`,
         }),
     }
-)
+);
+
+// ====== Validation cho Pagination (Query Params) ======
+export const paginationSchema = Joi.object({
+    page: Joi.number().integer().min(1).default(1).messages({
+        'number.base': `"page" must be a number`,
+        'number.integer': `"page" must be an integer`,
+        'number.min': `"page" must be at least 1`,
+    }),
+    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+        'number.base': `"limit" must be a number`,
+        'number.integer': `"limit" must be an integer`,
+        'number.min': `"limit" must be at least 1`,
+        'number.max': `"limit" cannot exceed 100 items`,
+    }),
+});
+
+// ====== Validation cho MongoDB ObjectId (Params) ======
+export const objectIdSchema = Joi.object({
+    id: Joi.string().hex().length(24).required().messages({
+        'string.base': `"id" must be a string`,
+        'string.hex': `"id" must be a valid ObjectId`,
+        'string.length': `"id" must be 24 characters long`,
+        'any.required': `"id" is required`,
+    }),
+});
+
+// ====== Validation cho eventId trong params ======
+export const eventIdSchema = Joi.object({
+    eventId: Joi.string().hex().length(24).required().messages({
+        'string.base': `"eventId" must be a string`,
+        'string.hex': `"eventId" must be a valid ObjectId`,
+        'string.length': `"eventId" must be 24 characters long`,
+        'any.required': `"eventId" is required`,
+    }),
+});
+
+
+// ====== Validation cho getUserEvents query params ======
+export const userEventsQuerySchema = Joi.object({
+    status: Joi.string().valid('pending', 'confirmed', 'completed', 'cancelled').optional().messages({
+        'string.base': `"status" must be a string`,
+        'any.only': `"status" must be one of: pending, confirmed, completed, cancelled`,
+    }),
+    page: Joi.number().integer().min(1).default(1).messages({
+        'number.base': `"page" must be a number`,
+        'number.integer': `"page" must be an integer`,
+        'number.min': `"page" must be at least 1`,
+    }),
+    limit: Joi.number().integer().min(1).max(100).default(10).messages({
+        'number.base': `"limit" must be a number`,
+        'number.integer': `"limit" must be an integer`,
+        'number.min': `"limit" must be at least 1`,
+        'number.max': `"limit" cannot exceed 100 items`,
+    }),
+})
+
+// ====== Validation cho update event status (body) - Admin only ======
+export const updateEventStatusSchema = Joi.object({
+    status: Joi.string()
+        .valid('pending', 'approved', 'rejected')
+        .required()
+        .messages({
+            'string.base': `"status" must be a string`,
+            'any.only': `"status" must be one of: pending, approved, rejected`,
+            'any.required': `"status" is required`,
+        }),
+})
