@@ -25,6 +25,7 @@ eventSchema.index({ status: 1, endDate: 1 });        // For trending events
 eventSchema.index({ managerId: 1, status: 1 });      // For manager queries
 eventSchema.index({ category: 1, status: 1 });       // For category queries
 eventSchema.index({ createdAt: -1 });      
+eventSchema.index({ name: 'text', description: 'text', location: 'text' });  // For text search      
 
 const eventModel = mongoose.models.event || mongoose.model("event", eventSchema);
 
