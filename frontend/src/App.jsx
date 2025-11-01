@@ -3,11 +3,12 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Routes, Route } from 'react-router';
 import MainLayout from './layout/MainLayout';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import Home from './pages/Home';
+import LoginPage from './pages/LoginPage/LoginPage';
+import RegisterPage from './pages/RegisterPage/RegisterPage';
+import Home from './pages/Home/Home';
 import UserInfo from './components/UserInfo/UserInfo';
-import Events from './pages/Events';
+import Events from './pages/Events/Events';
+import MyEvents from './pages/MyEvents/MyEvents';
 const App = () => {
   AOS.init({
     duration: 1000,
@@ -23,6 +24,7 @@ const App = () => {
           <Route path="/" element={<Home />}></Route>
           <Route path="/userinfo" element={<UserInfo />}></Route>
           <Route path="/events" element={<Events />}></Route>
+          <Route path="/myevents" element={<MyEvents />}></Route>
         </Route>
       </Route>
     </Routes>

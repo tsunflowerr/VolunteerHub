@@ -4,8 +4,8 @@ export const CategoryIcons = {
       <path
         fill="none"
         stroke="currentColor"
-        stroke-linejoin="round"
-        stroke-width="3"
+        strokeLinejoin="round"
+        strokeWidth="3"
         d="M18 6H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2ZM40 6H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Z"
       />
     </svg>
@@ -32,8 +32,8 @@ export const CategoryIcons = {
         />
         <path
           stroke="currentColor"
-          stroke-linecap="round"
-          stroke-width="1"
+          strokeLinecap="round"
+          strokeWidth="1"
           d="M5 20.388h2.26c1.01 0 2.033.106 3.016.308a14.9 14.9 0 0 0 5.33.118c.868-.14 1.72-.355 2.492-.727c.696-.337 1.549-.81 2.122-1.341c.572-.53 1.168-1.397 1.59-2.075c.364-.582.188-1.295-.386-1.728a1.89 1.89 0 0 0-2.22 0l-1.807 1.365c-.7.53-1.465 1.017-2.376 1.162q-.165.026-.345.047m0 0l-.11.012m.11-.012a1 1 0 0 0 .427-.24a1.49 1.49 0 0 0 .126-2.134a1.9 1.9 0 0 0-.45-.367c-2.797-1.669-7.15-.398-9.779 1.467m9.676 1.274a.5.5 0 0 1-.11.012m0 0a9.3 9.3 0 0 1-1.814.004"
         />
         <rect
@@ -42,7 +42,7 @@ export const CategoryIcons = {
           x="2"
           y="14"
           stroke="currentColor"
-          stroke-width="1.5"
+          strokeWidth="1.5"
           rx="1.5"
         />
       </g>
@@ -61,7 +61,7 @@ export const CategoryIcons = {
       <path
         fill="currentColor"
         d="M9.488 20q-.355 0-.585-.232q-.23-.233-.23-.576v-3.865H4.808q-.343 0-.576-.232T4 14.519V9.507q0-.355.232-.585t.576-.23h3.865V4.808q0-.343.232-.576T9.481 4h5.012q.355 0 .585.232q.23.233.23.576v3.884h3.884q.344 0 .576.233T20 9.5v5.012q0 .355-.232.585q-.233.23-.576.23h-3.884v3.865q0 .344-.233.576T14.5 20zm.185-1h4.635v-4.673H19V9.692h-4.692V5H9.673v4.692H5v4.635h4.673zM12 12"
-        stroke-width="1"
+        strokeWidth="1"
         stroke="currentColor"
       />
     </svg>
@@ -71,9 +71,9 @@ export const CategoryIcons = {
       <path
         fill="none"
         stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
         d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0M3 6v13m9-13v13m9-13v13"
       />
     </svg>
@@ -83,10 +83,10 @@ export const CategoryIcons = {
       <path
         fill="none"
         stroke="currentColor"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         d="M9.113.86h2.69v2.69M11.802.86L8.645 4.016M6.424 9.363v4.047M4.63 11.617h3.587M3.299 6.238a3.125 3.125 0 1 0 6.25 0a3.125 3.125 0 1 0-6.25 0m2.011-.835h2.227M5.31 7.073h2.227"
-        stroke-width="1"
+        strokeWidth="1"
       />
     </svg>
   ),
@@ -111,7 +111,7 @@ export const CategoryIcons = {
       <path
         fill="currentColor"
         stroke="currentColor"
-        stroke-width="1"
+        strokeWidth="1"
         d="M5.616 21q-.691 0-1.153-.462T4 19.385V6.615q0-.69.463-1.152T5.616 5h1.769V3.308q0-.233.153-.386t.385-.153t.386.153t.153.386V5h7.154V3.27q0-.214.143-.358t.357-.143t.356.143t.144.357V5h1.769q.69 0 1.153.463T20 6.616v12.769q0 .69-.462 1.153T18.384 21zm0-1h12.769q.23 0 .423-.192t.192-.424v-8.768H5v8.769q0 .23.192.423t.423.192M5 9.615h14v-3q0-.23-.192-.423T18.384 6H5.616q-.231 0-.424.192T5 6.616zm0 0V6zM8 13.5q-.213 0-.357-.143T7.5 13t.143-.357T8 12.5h8q.214 0 .357.143T16.5 13t-.143.357T16 13.5zm0 4q-.213 0-.357-.143T7.5 17t.143-.357T8 16.5h5q.214 0 .357.143T13.5 17t-.143.357T13 17.5z"
       />
     </svg>

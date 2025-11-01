@@ -198,7 +198,7 @@
 /* Responsive */
 @media (min-width: 1440px) {
   .event {
-    width: 450px;
+    width: 440px;
   }
 }
 @media (max-width: 640px) {

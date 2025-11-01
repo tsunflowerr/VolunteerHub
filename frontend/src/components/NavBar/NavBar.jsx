@@ -40,6 +40,14 @@ const NavBar = () => {
           </button>
           <button
             className={`${styles.navbar__navLink} ${
+              activeTab === 'My Events' ? styles['navbar__navLink--active'] : ''
+            }`}
+            onClick={() => setActiveTab('My Events')}
+          >
+            My Events
+          </button>
+          <button
+            className={`${styles.navbar__navLink} ${
               activeTab === 'Discussions'
                 ? styles['navbar__navLink--active']
                 : ''
@@ -149,6 +157,19 @@ const NavBar = () => {
               }}
             >
               Events
+            </button>
+            <button
+              className={`${styles.navbar__menuItem} ${
+                activeTab === 'My Events'
+                  ? styles['navbar__menuItem--active']
+                  : ''
+              }`}
+              onClick={() => {
+                setActiveTab('My Events');
+                setShowMenu(false);
+              }}
+            >
+              My Events
             </button>
             <button
               className={`${styles.navbar__menuItem} ${
