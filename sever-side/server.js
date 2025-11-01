@@ -1,24 +1,40 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv"
 import cookieParser from "cookie-parser";
 import {connectDB} from "./config/db.js";
 import webpush from 'web-push';
 import redisClient from './config/redis.js';
 import routes from './routes/index.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
 
 dotenv.config()
 const app = express()
 const port = process.env.PORT || 4000
 
-// CORS configuration - QUAN TRỌNG cho cookies
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+        },
+    },
+    crossOriginEmbedderPolicy: false, 
+}));
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000', // URL của frontend
-    credentials: true // Cho phép gửi cookies
+    origin: process.env.CLIENT_URL || 'http://localhost:3000', 
+    credentials: true 
 }))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // Thêm cookie parser middleware
+
+app.use('/api', apiLimiter);
+
+app.use(express.json({ limit: '10mb' })) 
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser()); 
 
 await redisClient.connect(); 
 

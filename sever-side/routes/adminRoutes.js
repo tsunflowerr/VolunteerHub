@@ -9,6 +9,7 @@ import { categorySchema } from '../validators/categoryValidator.js';
 import { objectIdSchema, updateEventStatusSchema } from '../validators/eventValidator.js';
 import { userIdSchema } from '../validators/userValidator.js';
 import { validate } from '../middleware/validate.js';
+import { createLimiter, uploadLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -16,20 +17,21 @@ const router = express.Router();
 router.use(authMiddleware, adminMiddleware);
 
 // ====== Category Routes ======
-router.post('/categories', validate(categorySchema), createCategory);
-router.put('/categories/:id', validate(objectIdSchema, 'params'), validate(categorySchema), updateCategory);
+router.post('/categories', createLimiter, validate(categorySchema), createCategory);
+router.put('/categories/:id', updateLimiter, validate(objectIdSchema, 'params'), validate(categorySchema), updateCategory);
 
 // ====== Event Routes ======
 router.get('/events/pending', getPendingEvents);
-router.patch('/events/:id/status', validate(objectIdSchema, 'params'), validate(updateEventStatusSchema), updateStatusEvent);
-router.delete('/events/:id', validate(objectIdSchema, 'params'), deleteEvent);
+router.patch('/events/:id/status', updateLimiter, validate(objectIdSchema, 'params'), validate(updateEventStatusSchema), updateStatusEvent);
+router.delete('/events/:id', deleteLimiter, validate(objectIdSchema, 'params'), deleteEvent);
 
 // ====== Export Routes ======
-router.get('/export/users', exportUsersData);
-router.get('/export/events', exportEvents);
+// Áp dụng rate limiting cho export operations
+router.get('/export/users', uploadLimiter, exportUsersData);
+router.get('/export/events', uploadLimiter, exportEvents);
 
 // ====== User Management Routes ======
 router.get('/users', getAllUsersAndManagers);
-router.patch('/users/:userId/lock', validate(userIdSchema, 'params'), toggleUserLockStatus);
+router.patch('/users/:userId/lock', updateLimiter, validate(userIdSchema, 'params'), toggleUserLockStatus);
 
 export default router;

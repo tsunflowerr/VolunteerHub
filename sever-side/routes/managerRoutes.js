@@ -10,6 +10,7 @@ import {
     getRegistrationsByStatusSchema 
 } from '../validators/registrationValidator.js';
 import { validate } from '../middleware/validate.js';
+import { createLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -17,14 +18,15 @@ const router = express.Router();
 router.use(authMiddleware, managerMiddleware);
 
 // ====== Event Management Routes ======
-router.post('/events', validate(createAndUpdateEventSchema), createEvent);
-router.put('/events/:id', validate(objectIdSchema, 'params'), validate(createAndUpdateEventSchema), updateEvent);
-router.delete('/events/:id', validate(objectIdSchema, 'params'), deleteEvent);
+// Áp dụng rate limiting cho event creation
+router.post('/events', createLimiter, validate(createAndUpdateEventSchema), createEvent);
+router.put('/events/:id', updateLimiter, validate(objectIdSchema, 'params'), validate(createAndUpdateEventSchema), updateEvent);
+router.delete('/events/:id', deleteLimiter, validate(objectIdSchema, 'params'), deleteEvent);
 router.get('/events', getEventsByManager); 
 router.get('/stats/volunteers', getTotalConfirmedVolunteers); 
 
 // ====== Registration Management Routes ======
-router.patch('/registrations/:registrationId/status', validate(getRegistrationDetailSchema, 'params'), validate(updateRegistrationStatusSchema), updateRegistrationStatus); 
+router.patch('/registrations/:registrationId/status', updateLimiter, validate(getRegistrationDetailSchema, 'params'), validate(updateRegistrationStatusSchema), updateRegistrationStatus); 
 router.get('/events/:eventId/volunteers', validate(eventIdSchema, 'params'), getVolunteersForEvent); 
 router.get('/registrations', validate(getRegistrationsByStatusSchema, 'query'), getRegistrationsByStatus); 
 

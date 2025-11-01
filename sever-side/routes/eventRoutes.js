@@ -21,6 +21,7 @@ import {
     getRegistrationDetailSchema 
 } from '../validators/registrationValidator.js';
 import { categorySlugSchema } from '../validators/categoryValidator.js';
+import { createLimiter, likeLimiter, bookmarkLimiter, registrationActionLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 // ====== Public Event Routes ======
@@ -33,31 +34,33 @@ router.get('/:id', validate(objectIdSchema, 'params'), getEventById);
 // ====== User Event Routes (Requires Authentication) ======
 // Note: These routes should ideally be in userRoutes, but kept here for event-related operations
 
-router.post('/:eventId/bookmarks', authMiddleware, validate(eventIdSchema, 'params'), addBookMark);
-router.delete('/:eventId/bookmarks', authMiddleware, validate(eventIdSchema, 'params'), removeBookMark);
+router.post('/:eventId/bookmarks', authMiddleware, bookmarkLimiter, validate(eventIdSchema, 'params'), addBookMark);
+router.delete('/:eventId/bookmarks', authMiddleware, bookmarkLimiter, validate(eventIdSchema, 'params'), removeBookMark);
 
 
 // ====== Post Routes for Events ======
 router.get('/:eventId/posts', validate(eventIdSchema, 'params'), getAllPosts);
-router.post('/:eventId/posts', authMiddleware, validate(eventIdSchema, 'params'), validate(createandUpdatePostSchema), createPost);
-router.put('/:eventId/posts/:postId', authMiddleware, validate(eventPostParamsSchema, 'params'), validate(createandUpdatePostSchema), updatePost);
-router.delete('/:eventId/posts/:postId', authMiddleware, validate(eventPostParamsSchema, 'params'), deletePost);
+// Áp dụng rate limiting cho create, update và delete operations
+router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSchema, 'params'), validate(createandUpdatePostSchema), createPost);
+router.put('/:eventId/posts/:postId', authMiddleware, updateLimiter, validate(eventPostParamsSchema, 'params'), validate(createandUpdatePostSchema), updatePost);
+router.delete('/:eventId/posts/:postId', authMiddleware, deleteLimiter, validate(eventPostParamsSchema, 'params'), deletePost);
 
 // ====== Comment Routes for Posts ======
 router.get('/:eventId/posts/:postId/comments', validate(eventPostParamsSchema, 'params'), getCommentsByPost);
-router.post('/:eventId/posts/:postId/comments', authMiddleware, validate(eventPostParamsSchema, 'params'), validate(createAndUpdateCommentSchema), addComment);
-router.post('/:eventId/posts/:postId/comments/:commentId/reply', authMiddleware, validate(eventPostCommentParamsSchema, 'params'), validate(createAndUpdateCommentSchema), replyComment);
-router.put('/:eventId/posts/:postId/comments/:commentId', authMiddleware, validate(eventPostCommentParamsSchema, 'params'), validate(createAndUpdateCommentSchema), updateComment);
-router.delete('/:eventId/posts/:postId/comments/:commentId', authMiddleware, validate(eventPostCommentParamsSchema, 'params'), deleteComment);
+// Áp dụng rate limiting cho comment operations
+router.post('/:eventId/posts/:postId/comments', authMiddleware, createLimiter, validate(eventPostParamsSchema, 'params'), validate(createAndUpdateCommentSchema), addComment);
+router.post('/:eventId/posts/:postId/comments/:commentId/reply', authMiddleware, createLimiter, validate(eventPostCommentParamsSchema, 'params'), validate(createAndUpdateCommentSchema), replyComment);
+router.put('/:eventId/posts/:postId/comments/:commentId', authMiddleware, updateLimiter, validate(eventPostCommentParamsSchema, 'params'), validate(createAndUpdateCommentSchema), updateComment);
+router.delete('/:eventId/posts/:postId/comments/:commentId', authMiddleware, deleteLimiter, validate(eventPostCommentParamsSchema, 'params'), deleteComment);
 
 // ====== Like Routes for Events ======
-router.post('/:eventId/like', authMiddleware, validate(eventIdSchema, 'params'), likeEvent);
-router.post('/:eventId/posts/:postId/like', authMiddleware, validate(eventPostParamsSchema, 'params'), likePost);
-router.post('/:eventId/posts/:postId/comments/:commentId/like', authMiddleware, validate(eventPostCommentParamsSchema, 'params'), likeComment);
+router.post('/:eventId/like', authMiddleware, likeLimiter, validate(eventIdSchema, 'params'), likeEvent);
+router.post('/:eventId/posts/:postId/like', authMiddleware, likeLimiter, validate(eventPostParamsSchema, 'params'), likePost);
+router.post('/:eventId/posts/:postId/comments/:commentId/like', authMiddleware, likeLimiter, validate(eventPostCommentParamsSchema, 'params'), likeComment);
 
 // ====== Registration Routes for Events ======
-router.post('/:eventId/register', authMiddleware, validate(registerEventSchema, 'params'), registerEvent);
-router.delete('/:eventId/unregister', authMiddleware, validate(unregisterEventSchema, 'params'), unregisterEvent);
+router.post('/:eventId/register', authMiddleware, registrationActionLimiter, validate(registerEventSchema, 'params'), registerEvent);
+router.delete('/:eventId/unregister', authMiddleware, registrationActionLimiter, validate(unregisterEventSchema, 'params'), unregisterEvent);
 
 // ====== User Registration Management Routes ======
 router.get('/registrations/my', authMiddleware, validate(getMyRegistrationsSchema, 'query'), getMyRegistrations);

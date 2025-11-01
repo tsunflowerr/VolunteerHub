@@ -6,6 +6,7 @@ import userRoutes from './userRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import eventRoutes from './eventRoutes.js';
 import searchRoutes from './searchRoutes.js';
+import dashboardRoutes from './dashboardRoutes.js';
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.use('/users', userRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/events', eventRoutes);
 router.use('/search', searchRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 router.get('/health', (req, res) => {
     res.status(200).json({ 

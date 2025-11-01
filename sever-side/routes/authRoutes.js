@@ -3,12 +3,17 @@ import { registerUser, loginUser, logoutUser, getCurrentUser } from '../controll
 import { registerSchema, loginSchema } from '../validators/userValidator.js';
 import { validate } from '../middleware/validate.js';
 import {authMiddleware} from '../middleware/authMiddleware.js';
+import { authLimiter, registrationLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // ====== Authentication Routes ======
-router.post('/register', validate(registerSchema), registerUser);
-router.post('/login', validate(loginSchema), loginUser);
+// Áp dụng rate limiting nghiêm ngặt cho registration
+router.post('/register', registrationLimiter, validate(registerSchema), registerUser);
+
+// Áp dụng rate limiting cho login để chống brute force
+router.post('/login', authLimiter, validate(loginSchema), loginUser);
+
 router.post('/logout', logoutUser); 
 router.get('/me', authMiddleware, getCurrentUser); 
 
