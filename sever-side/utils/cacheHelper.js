@@ -81,7 +81,8 @@ export async function invalidateCacheByPattern(pattern) {
         }
         
         if (keys.length > 0) {
-            await redisClient.del(keys);
+            // Phải spread array thành các arguments riêng lẻ
+            await redisClient.del(...keys);
             console.log(`🗑️ Invalidated ${keys.length} cache key(s) matching pattern: ${pattern}`);
         } else {
             console.log(`ℹ️ No cache keys found for pattern: ${pattern}`);

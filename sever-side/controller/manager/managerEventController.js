@@ -183,7 +183,8 @@ export async function deleteEvent(req, res) {
 
 export async function getEventsByManager(req, res) {
     const managerId = req.user._id; // Get from authenticated user, not params
-    const { page = 1, limit = 10 } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     try {
         const [events, total] = await Promise.all([
             await Event.find({managerId})

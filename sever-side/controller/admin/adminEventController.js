@@ -6,11 +6,12 @@ import Registration from "../../models/registrationsModel.js";
 import Notification from "../../models/notificationModel.js";
 import User from "../../models/userModel.js";
 import redisClient from '../../config/redis.js';
-import { createAndSendNotification } from '../../utils/notificationHelper.js';
+import { createAndSendNotification, generateNotificationContent } from '../../utils/notificationHelper.js';
 import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function getPendingEvents(req, res) {
-    const {page = 1, limit = 20} = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
     try{
         const [events, total] = await Promise.all([
             Event.find({status: 'pending'})
@@ -53,18 +54,29 @@ export async function updateStatusEvent(req, res) {
         
         const updatedEvent = await Event.findByIdAndUpdate(eventId, { status }, { new: true });
         
+        // Use helper function to generate notification content
+        const notificationContent = generateNotificationContent(
+            'event_status_update',
+            status,
+            req.user.username,
+            updatedEvent.name
+        );
+        
         const notificationData = {
             recipient: updatedEvent.managerId,
             sender: req.user._id,
-            type: status,
-            content: `Your event "${updatedEvent.name}" has been ${status}.`,
+            type: 'event_status_update',
+            relatedStatus: status,
+            content: notificationContent.content,
             event: eventId,
         };
+        
         const adminPushPayload = {
-            title: `Event ${status.charAt(0).toUpperCase() + status.slice(1)}!`,
-            body: `Your event "${updatedEvent.name}" has been ${status}.`,
+            title: notificationContent.title,
+            body: notificationContent.body,
             icon: req.user.avatar || '/default-avatar.png'
         };
+        
         const cacheKey = `event:${eventId}:${status}`;
         let shouldSendNotification = true;
         try {

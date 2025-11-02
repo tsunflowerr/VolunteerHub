@@ -96,7 +96,8 @@ export async function createPost(req, res) {
 
 export async function getAllPosts(req, res) {
     const eventId = req.params.eventId;
-    const {page = 1, limit = 10} = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
     try {
         const event = await Event.findById(eventId);
         if(!event) {
@@ -226,8 +227,7 @@ export async function deletePost(req, res) {
         await Promise.all([
             Post.findByIdAndDelete(postId, { session }),
             Event.findByIdAndUpdate(eventId, { 
-                $inc: { postsCount: -1 },
-                $max: { postsCount: 0 }  
+                $inc: { postsCount: -1 }
             }, { session })
         ]);
         await session.commitTransaction();

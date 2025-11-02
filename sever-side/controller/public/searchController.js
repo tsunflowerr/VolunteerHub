@@ -24,10 +24,7 @@ export async function searchEvents(req, res) {
         const filter = {};
 
         if (keyword) {
-            filter.$or = [
-                { name: { $regex: keyword, $options: 'i' } },
-                { description: { $regex: keyword, $options: 'i' } }
-            ];
+            filter.$text = { $search: keyword };
         }
         if (category) {
             const categoryDoc = await Category.findOne({ slug: category }).lean();
@@ -62,6 +59,10 @@ export async function searchEvents(req, res) {
 
         let sortOptions = {};
         switch (sort) {
+            case 'relevance':
+                // Sort by text search relevance score (only works with text search)
+                sortOptions = keyword ? { score: { $meta: 'textScore' } } : { createdAt: -1 };
+                break;
             case 'newest':
                 sortOptions = { createdAt: -1 };
                 break;
@@ -84,8 +85,16 @@ export async function searchEvents(req, res) {
             cacheKey,
             CACHE_TTL.EVENTS_LIST,
             async () => {
+                // Build query with optional text score projection
+                let query = Event.find(filter);
+                
+                // Add text score projection if sorting by relevance
+                if (sort === 'relevance' && keyword) {
+                    query = query.select({ score: { $meta: 'textScore' } });
+                }
+                
                 const [events, total] = await Promise.all([
-                    Event.find(filter)
+                    query
                         .populate('managerId', 'username email avatar')
                         .populate('category', 'name slug')
                         .sort(sortOptions)
@@ -217,10 +226,8 @@ export async function searchPosts(req, res) {
         const filter = { eventId };
 
         if (keyword) {
-            filter.$or = [
-                { title: { $regex: keyword, $options: 'i' } },
-                { content: { $regex: keyword, $options: 'i' } }
-            ];
+            // Use text search for better performance with indexed fields
+            filter.$text = { $search: keyword };
         }
 
         let sortOptions = {};
@@ -278,12 +285,15 @@ export async function searchPosts(req, res) {
 
 export async function advancedSearch(req, res) {
     try {
-        const { keyword, type, page = 1, limit = 10 } = req.query;
+        const keyword = req.query.q;
+        const type = req.query.type;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
         // CASE 1: Tìm theo type cụ thể (có pagination đầy đủ)
-        if (type) {
-            if (type === 'event') {
+        if (type && type !== 'all') {
+            if (type === 'events') {
                 const [events, total] = await Promise.all([
                     Event.find({
                         $text: { $search: keyword },
@@ -315,37 +325,7 @@ export async function advancedSearch(req, res) {
                 });
             }
 
-            if (type === 'user') {
-                const [users, total] = await Promise.all([
-                    User.find({
-                        $text: { $search: keyword },
-                        status: 'active'
-                    })
-                    .select('username email avatar role')
-                    .skip(skip)
-                    .limit(parseInt(limit))
-                    .lean(),
-                    User.countDocuments({
-                        $text: { $search: keyword },
-                        status: 'active'
-                    })
-                ]);
-
-                return res.status(200).json({
-                    success: true,
-                    keyword,
-                    type: 'users',
-                    data: users,
-                    pagination: {
-                        currentPage: parseInt(page),
-                        totalPages: Math.ceil(total / limit),
-                        totalResults: total,
-                        limit: parseInt(limit)
-                    }
-                });
-            }
-
-            if (type === 'post') {
+            if (type === 'posts') {
                 const [posts, total] = await Promise.all([
                     Post.find({
                         $text: { $search: keyword }
@@ -374,9 +354,49 @@ export async function advancedSearch(req, res) {
                     }
                 });
             }
+
+            if (type === 'users') {
+                const userFilter = {
+                    $or: [
+                        { username: { $regex: keyword, $options: 'i' } },
+                        { email: { $regex: keyword, $options: 'i' } }
+                    ],
+                    status: 'active'
+                };
+
+                const [users, total] = await Promise.all([
+                    User.find(userFilter)
+                    .select('username email avatar role')
+                    .skip(skip)
+                    .limit(parseInt(limit))
+                    .lean(),
+                    User.countDocuments(userFilter)
+                ]);
+
+                return res.status(200).json({
+                    success: true,
+                    keyword,
+                    type: 'users',
+                    data: users,
+                    pagination: {
+                        currentPage: parseInt(page),
+                        totalPages: Math.ceil(total / limit),
+                        totalResults: total,
+                        limit: parseInt(limit)
+                    }
+                });
+            }
         }
 
-        // CASE 2: Tìm tất cả (không có type) - Preview mode (5 items mỗi loại)
+        // CASE 2: Tìm tất cả (type = 'all') - Preview mode (5 items mỗi loại)
+        const userFilter = {
+            $or: [
+                { username: { $regex: keyword, $options: 'i' } },
+                { email: { $regex: keyword, $options: 'i' } }
+            ],
+            status: 'active'
+        };
+
         const [events, users, posts, eventCount, userCount, postCount] = await Promise.all([
             Event.find({
                 $text: { $search: keyword },
@@ -388,10 +408,7 @@ export async function advancedSearch(req, res) {
             .limit(5)
             .lean(),
             
-            User.find({
-                $text: { $search: keyword },
-                status: 'active'
-            })
+            User.find(userFilter)
             .select('username email avatar role')
             .limit(5)
             .lean(),
@@ -410,10 +427,7 @@ export async function advancedSearch(req, res) {
                 $text: { $search: keyword },
                 status: { $in: ['approved', 'completed'] }
             }),
-            User.countDocuments({
-                $text: { $search: keyword },
-                status: 'active'
-            }),
+            User.countDocuments(userFilter),
             Post.countDocuments({
                 $text: { $search: keyword }
             })

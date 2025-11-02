@@ -55,11 +55,11 @@ export const getRegistrationDetailSchema = Joi.object({
 // ====== Validation cho update registration status (body) ======
 export const updateRegistrationStatusSchema = Joi.object({
     status: Joi.string()
-        .valid('pending', 'confirmed', 'completed', 'cancelled')
+        .valid('confirmed', 'completed', 'cancelled')
         .required()
         .messages({
             'string.base': '"status" must be a string',
-            'any.only': '"status" must be one of: pending, confirmed, completed, cancelled',
+            'any.only': '"status" must be one of: confirmed, completed, cancelled',
             'any.required': '"status" is required',
         }),
 });

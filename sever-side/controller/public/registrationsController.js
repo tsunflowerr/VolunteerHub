@@ -1,6 +1,6 @@
 import Registration from "../../models/registrationsModel.js";
 import Event from "../../models/eventModel.js";
-import { createAndSendNotification } from '../../utils/notificationHelper.js';
+import { createAndSendNotification, generateNotificationContent, generateNewRegistrationContent } from '../../utils/notificationHelper.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 
@@ -71,29 +71,45 @@ export async function registerEvent(req, res) {
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save({ session });
         
+        // Generate notification content for volunteer (registration confirmation)
+        const volunteerContent = generateNotificationContent(
+            'registration_status_update',
+            'pending',
+            req.user.username,
+            event.name
+        );
+        
         const volunteerNotificationData = {
             recipient: volunteerId,
             sender: event.managerId || volunteerId,
-            type: 'registration_confirmation',
-            content: `You have successfully registered for the event "${event.name}". Current status: Pending approval.`,
+            type: 'registration_status_update',
+            relatedStatus: 'pending',
+            content: volunteerContent.content,
             event: eventId,
         };
+        
         const volunteerPushPayload = {
-            title: 'Registration successful! ✅',
-            body: `You have just registered for the event "${event.name}".`,
-            icon:  req.user.avatar || '/default-avatar.png'
+            title: volunteerContent.title,
+            body: volunteerContent.body,
+            icon: req.user.avatar || '/default-avatar.png'
         };
+        
+        // Generate notification content for manager (new registration)
+        const managerContent = generateNewRegistrationContent(req.user.username, event.name);
+        
         const managerNotificationData = {
             recipient: event.managerId,
             sender: volunteerId,
-            type: 'new_registration',
-            content: `${req.user.username} has just registered for the event "${event.name}" that you manage.`,
+            type: 'registration_status_update',
+            relatedStatus: 'pending',
+            content: managerContent.content,
             event: eventId,
         };
+        
         const managerPushPayload = {
-            title: 'New volunteer registered! 🧑‍🤝‍🧑',
-            body: `${req.user.username} just registered for your event.`,
-            icon:  req.user.avatar || '/default-avatar.png'
+            title: managerContent.title,
+            body: managerContent.body,
+            icon: req.user.avatar || '/default-avatar.png'
         };
         
         let shouldSendNotification = true;
@@ -202,7 +218,9 @@ export async function unregisterEvent(req, res) {
 export async function getMyRegistrations(req, res) {
     try {
         const userId = req.user._id;
-        const { status, page = 1, limit = 10 } = req.query;
+        const status = req.query.status;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
 
         const query = { userId };
         if (status) {

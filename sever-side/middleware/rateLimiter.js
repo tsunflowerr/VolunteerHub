@@ -6,7 +6,7 @@ export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:auth:',
     }),
     message: {
@@ -23,7 +23,7 @@ export const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:api:',
     }),
     message: {
@@ -38,7 +38,7 @@ export const registrationLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 3,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:register:',
     }),
     message: {
@@ -54,7 +54,7 @@ export const createLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 10,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:create:',
     }),
     message: {
@@ -69,7 +69,7 @@ export const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 20,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:upload:',
     }),
     message: {
@@ -84,7 +84,7 @@ export const searchLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 30,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:search:',
     }),
     message: {
@@ -99,7 +99,7 @@ export const passwordResetLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 3,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:pwreset:',
     }),
     message: {
@@ -114,7 +114,7 @@ export const likeLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 60,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:like:',
     }),
     message: {
@@ -129,7 +129,7 @@ export const bookmarkLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 30,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:bookmark:',
     }),
     message: {
@@ -144,7 +144,7 @@ export const updateLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 20,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:update:',
     }),
     message: {
@@ -159,7 +159,7 @@ export const registrationActionLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 10,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:regaction:',
     }),
     message: {
@@ -174,7 +174,7 @@ export const deleteLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 5,
     store: new RedisStore({
-        client: redisClient,
+        sendCommand: (...args) => redisClient.sendCommand(args),
         prefix: 'rl:delete:',
     }),
     message: {

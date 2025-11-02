@@ -1,7 +1,8 @@
 import User from "../../models/userModel.js";
 import { getOrSetCache } from "../../utils/cacheHelper.js";
 export async function getAllUsersAndManagers(req, res) {
-    const {page = 1, limit = 20} = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
     try {
         // Find All users and managers
         const [users, total] = await Promise.all([

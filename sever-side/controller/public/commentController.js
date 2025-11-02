@@ -200,7 +200,8 @@ export async function replyComment(req, res) {
 export async function getCommentsByPost(req, res) {
     try {
         const { postId } = req.params;
-        const { page = 1, limit = 10 } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         
         const comments = await Comment.aggregate([
             // Stage 1: Match parent comments only

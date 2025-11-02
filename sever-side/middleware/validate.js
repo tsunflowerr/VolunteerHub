@@ -10,7 +10,8 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
     
     const { error, value } = schema.validate(dataToValidate, { 
         abortEarly: false,
-        stripUnknown: true 
+        stripUnknown: true,
+        convert: true  // Tự động convert kiểu dữ liệu (string -> number)
     });
     
     if (error) {
@@ -18,9 +19,18 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
         return res.status(400).json({ success: false, errors });
     }
     
-    if (source === 'query') req.query = value;
-    else if (source === 'params') req.params = value;
-    else req.body = value;
+    // Assign validated values without overwriting read-only properties
+    if (source === 'query') {
+        Object.keys(value).forEach(key => {
+            req.query[key] = value[key];
+        });
+    } else if (source === 'params') {
+        Object.keys(value).forEach(key => {
+            req.params[key] = value[key];
+        });
+    } else {
+        req.body = value;
+    }
     
     next();
 }

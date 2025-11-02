@@ -5,8 +5,20 @@ const notificationSchema = new mongoose.Schema({
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
     type: {
         type: String,
-        enum: ["like", "comment", "cancelled", "confirmed", "completed", "registration_confirmation", "new_registration", "comment_reply", "new_post"],
+        enum: [
+            "like",                      
+            "comment",                  
+            "comment_reply",            
+            "new_post",                  
+            "event_status_update",       
+            "registration_status_update" 
+        ],
         required: true
+    },
+    relatedStatus: { 
+        type: String, 
+        enum: ["pending", "approved", "rejected", "cancelled", "completed", "confirmed"],
+        default: null 
     },
     post: { type: mongoose.Schema.Types.ObjectId, ref: "post", default: null },
     event: { type: mongoose.Schema.Types.ObjectId, ref: "event", default: null },
@@ -16,6 +28,9 @@ const notificationSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
 notificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ type: 1, relatedStatus: 1 });
+
 const NotificationModel = mongoose.models.notification || mongoose.model("notification", notificationSchema);
 export default NotificationModel;

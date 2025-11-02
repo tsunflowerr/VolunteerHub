@@ -7,9 +7,9 @@ import { getOrSetCache, invalidateCache, invalidateCacheByPattern, CACHE_TTL } f
 
 export async function getAllEvents(req, res) {
     try {
-        // Pagination - đã được validate bởi middleware
-        const page = req.query.page; // Không cần parseInt vì middleware đã xử lý
-        const limit = req.query.limit;
+        // Pagination - đảm bảo là số nguyên
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
         // Cache key bao gồm page & limit
@@ -127,8 +127,9 @@ export async function getEventById(req, res) {
 //Trending events based on registrations, likes, views, posts count, and age
 export async function getTrendingEvents(req, res) {
     try {
-        const page = req.query.page; // Đã được validate
-        const limit = req.query.limit;
+        // Đảm bảo page và limit là số nguyên
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         
         const cacheKey = `events:trending:page:${page}:limit:${limit}`;
@@ -310,7 +311,8 @@ export async function getEventsByCategorySlug(req, res) {
 
 export async function getUpcomingEvents(req, res) { 
     try {
-        const {page = 1, limit = 10} = req.query; 
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
         const cacheKey = 'events:upcoming';
         
         const events = await getOrSetCache(

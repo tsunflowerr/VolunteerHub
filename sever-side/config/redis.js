@@ -12,4 +12,6 @@ client.on('connect', () => {
     console.log('✅ Redis connected successfully at', REDIS_URL);
 });
 
+await client.connect();
+
 export default client;

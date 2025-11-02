@@ -72,6 +72,7 @@ export async function registerUser(req, res) {
         res.status(201).json({
             success: true,
             message: "User registered successfully",
+            token: token, // Thêm token vào response để dễ test với Swagger
             user: {
                 _id: newUser._id,
                 username: newUser.username,
@@ -140,6 +141,7 @@ export async function loginUser(req, res) {
         res.status(200).json({
             success: true,
             message: "Login successful",
+            token: token, // Thêm token vào response để dễ test với Swagger
             user: {
                 _id: user._id,
                 username: user.username,

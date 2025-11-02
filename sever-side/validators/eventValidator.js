@@ -108,11 +108,11 @@ export const userEventsQuerySchema = Joi.object({
 // ====== Validation cho update event status (body) - Admin only ======
 export const updateEventStatusSchema = Joi.object({
     status: Joi.string()
-        .valid('pending', 'approved', 'rejected')
+        .valid('approved', 'rejected', 'cancelled', 'completed')
         .required()
         .messages({
             'string.base': `"status" must be a string`,
-            'any.only': `"status" must be one of: pending, approved, rejected`,
+            'any.only': `"status" must be one of: approved, rejected, cancelled, completed`,
             'any.required': `"status" is required`,
         }),
 })

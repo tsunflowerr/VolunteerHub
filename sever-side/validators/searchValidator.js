@@ -35,9 +35,9 @@ export const eventSearchSchema = Joi.object({
             'any.only': 'Trạng thái không hợp lệ'
         }),
     
-    sort: Joi.string().valid('newest', 'upcoming', 'popular', 'trending').default('newest')
+    sort: Joi.string().valid('relevance', 'newest', 'upcoming', 'popular', 'trending').default('newest')
         .messages({
-            'any.only': 'Kiểu sắp xếp không hợp lệ. Chỉ chấp nhận: newest, upcoming, popular, trending'
+            'any.only': 'Kiểu sắp xếp không hợp lệ. Chỉ chấp nhận: relevance, newest, upcoming, popular, trending'
         }),
     
     page: Joi.number().integer().min(1).default(1)
@@ -115,7 +115,7 @@ export const postSearchSchema = Joi.object({
 
 // ====== Validation cho Advanced Search ======
 export const advancedSearchSchema = Joi.object({
-    keyword: Joi.string().trim().min(1).max(100).required()
+    q: Joi.string().trim().min(1).max(100).required()
         .messages({
             'string.empty': 'Keyword is required',
             'string.min': 'Keyword must be at least 1 character',
@@ -123,9 +123,9 @@ export const advancedSearchSchema = Joi.object({
             'any.required': 'Please enter a search keyword'
         }),
     
-    type: Joi.string().valid('event', 'user', 'post').optional()
+    type: Joi.string().valid('events', 'posts', 'users', 'all').default('all')
         .messages({
-            'any.only': 'Invalid type. Only accepts: event, user, post'
+            'any.only': 'Invalid type. Only accepts: events, posts, users, all'
         }),
     
     page: Joi.number().integer().min(1).default(1)

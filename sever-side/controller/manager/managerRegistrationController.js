@@ -2,7 +2,7 @@ import Registration from "../../models/registrationsModel.js";
 import Notification from "../../models/notificationModel.js";
 import Event from "../../models/eventModel.js";
 import User from "../../models/userModel.js"; 
-import { createAndSendNotification } from '../../utils/notificationHelper.js';
+import { createAndSendNotification, generateNotificationContent } from '../../utils/notificationHelper.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 
@@ -56,38 +56,26 @@ export async function updateRegistrationStatus(req, res) {
         registration.reviewedAt = new Date();
         await registration.save({ session });
 
-        let content;
-        if (status === "confirmed") {
-            content = `Your registration for the event "${event.name}" has been confirmed.`;
-        } else if (status === "cancelled") {
-            content = `Your registration for the event "${event.name}" has been cancelled.`;
-        } else if (status === "completed") {
-            content = `Your registration for the event "${event.name}" has been completed.`;
-        }
+        // Use helper function to generate notification content
+        const notificationContent = generateNotificationContent(
+            'registration_status_update',
+            status,
+            req.user.username,
+            event.name
+        );
 
         const volunteerNotificationData = {
             recipient: registration.userId,
             sender: req.user._id,
-            type:  status,
-            content: content,
+            type: 'registration_status_update',
+            relatedStatus: status,
+            content: notificationContent.content,
             event: registration.eventId,
         };
 
-        let title, body;
-        if (status === "confirmed") {
-            title = 'Registration Confirmed! ✅';
-            body = `Your registration for "${event.name}" has been confirmed.`;
-        } else if (status === "cancelled") {
-            title = 'Registration Cancelled ❌';
-            body = `Your registration for "${event.name}" has been cancelled.`;
-        } else if (status === "completed") {
-            title = 'Registration Completed 🎉';
-            body = `Your registration for "${event.name}" has been completed.`;
-        }
-
         const volunteerPushPayload = {
-            title: title,
-            body: body,
+            title: notificationContent.title,
+            body: notificationContent.body,
             icon: req.user.avatar || '/default-avatar.png'
         };
 
@@ -129,7 +117,8 @@ export async function updateRegistrationStatus(req, res) {
 export async function getVolunteersForEvent(req, res) {
     try {
         const { eventId } = req.params;
-        const {page = 1, limit = 10} = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
 
         const event = await Event.findById(eventId).lean();
         if (!event) {
@@ -181,7 +170,8 @@ export async function getVolunteersForEvent(req, res) {
 export async function getRegistrationsByStatus(req, res) {
     try {
         const status = req.query.status;
-        const {page = 1, limit = 20} = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
         
         // Get all event IDs of this manager (use distinct to get IDs directly)
         const eventIds = await Event.find({ managerId: req.user._id }).distinct('_id');
