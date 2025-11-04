@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Search } from 'lucide-react';
 import styles from './SearchBox.module.css';
-import { CategoryIcons } from '../../utilities/CategoriesIcons.jsx';
+import { categories } from '../../utilities/CategoriesIcons.jsx';
 
 const SearchBox = ({
   onSearch,
@@ -16,23 +16,6 @@ const SearchBox = ({
     dateTo: '',
     searchQuery: '',
   });
-
-  const categories = [
-    { id: 'all', name: 'All', icon: CategoryIcons.all },
-    { id: 'animal', name: 'Animals', icon: CategoryIcons.animal },
-    { id: 'help', name: 'Help', icon: CategoryIcons.help },
-    { id: 'food', name: 'Food', icon: CategoryIcons.food },
-    { id: 'health', name: 'Health', icon: CategoryIcons.health },
-    { id: 'book', name: 'Education', icon: CategoryIcons.book },
-    { id: 'equality', name: 'Equality', icon: CategoryIcons.equality },
-    { id: 'climate', name: 'Climate', icon: CategoryIcons.climate },
-    {
-      id: 'communityDevelop',
-      name: 'Community Development',
-      icon: CategoryIcons.communityDevelop,
-    },
-    { id: 'organize', name: 'Event Organizer', icon: CategoryIcons.organize },
-  ];
 
   const [selectedCategory, setSelectedCategory] = useState('all');
 

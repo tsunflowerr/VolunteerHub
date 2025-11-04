@@ -14,6 +14,7 @@ export const volunteerEvents = [
     hostAvatar:
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
     registeredCount: 12,
+    categories: ['community-development', 'event-organizer'],
   },
   {
     _id: '2',
@@ -28,6 +29,7 @@ export const volunteerEvents = [
     hostAvatar:
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
     registeredCount: 8,
+    categories: ['food', 'help'],
   },
   {
     _id: '3',
@@ -41,6 +43,7 @@ export const volunteerEvents = [
     hostAvatar:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
     registeredCount: 15,
+    categories: ['help'],
   },
   {
     _id: '4',
@@ -55,6 +58,7 @@ export const volunteerEvents = [
     hostAvatar:
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
     registeredCount: 34,
+    categories: ['climate', 'community-development'],
   },
   {
     _id: '5',

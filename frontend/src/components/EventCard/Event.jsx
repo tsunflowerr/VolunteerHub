@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { format, parseISO, isValid } from 'date-fns';
 import { MapPin, Heart, Users } from 'lucide-react';
 import styles from './Event.module.css';
+import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
 
 export function Event({
   title,
@@ -13,12 +14,19 @@ export function Event({
   hostName,
   hostAvatar,
   registeredCount = 0,
+  categories,
   onLearnMore,
 }) {
   //   const [isHovered, setIsHovered] = useState(false);
 
   // Debug: Log the props
-  console.log('Event props:', { title, hostName, hostAvatar, registeredCount });
+  console.log('Event props:', {
+    title,
+    hostName,
+    hostAvatar,
+    registeredCount,
+    categories,
+  });
 
   const formatDate = (dateValue) => {
     const dateObj =
@@ -69,9 +77,31 @@ export function Event({
         {/* Title */}
         <h3 className={styles['event__title']}>{title}</h3>
 
+        {/* Categories */}
+
         {/* Description */}
         {description && (
           <p className={styles['event__description']}>{description}</p>
+        )}
+
+        {categories && (
+          <div className={styles['event__categories']}>
+            {categories.map((categoryId) => {
+              const category = categoriesById[categoryId];
+              if (!category) return null;
+
+              return (
+                <div key={categoryId} className={styles['event__category']}>
+                  {category.icon && (
+                    <span className={styles['event__category-icon']}>
+                      {category.icon}
+                    </span>
+                  )}
+                  {category.name}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* Footer with Host and Registered Count */}
@@ -116,6 +146,7 @@ Event.propTypes = {
   hostName: PropTypes.string.isRequired,
   hostAvatar: PropTypes.string,
   registeredCount: PropTypes.number,
+  categories: PropTypes.arrayOf(PropTypes.string),
   onLearnMore: PropTypes.func,
 };
 
@@ -123,6 +154,7 @@ Event.defaultProps = {
   description: '',
   hostAvatar: null,
   registeredCount: 0,
+  categories: [],
   onLearnMore: () => {},
   onFavorite: null,
   isFavorited: false,

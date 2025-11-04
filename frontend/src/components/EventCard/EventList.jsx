@@ -25,6 +25,7 @@ const EventList = ({ events }) => {
             hostName={event.hostName}
             hostAvatar={event.hostAvatar}
             registeredCount={event.registeredCount}
+            categories={event.categories}
             onLearnMore={() => {
               console.log('Learn more about:', event);
               // Handle learn more action - navigate to event details page

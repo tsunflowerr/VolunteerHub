@@ -10,7 +10,7 @@ export const CategoryIcons = {
       />
     </svg>
   ),
-  animal: (
+  animals: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
       <path
         fill="currentColor"
@@ -66,7 +66,7 @@ export const CategoryIcons = {
       />
     </svg>
   ),
-  book: (
+  education: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
       <path
         fill="none"
@@ -98,7 +98,7 @@ export const CategoryIcons = {
       />
     </svg>
   ),
-  communityDevelop: (
+  'community-development': (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
       <path
         fill="currentColor"
@@ -106,7 +106,7 @@ export const CategoryIcons = {
       />
     </svg>
   ),
-  organize: (
+  'event-organizer': (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
       <path
         fill="currentColor"
@@ -117,3 +117,32 @@ export const CategoryIcons = {
     </svg>
   ),
 };
+
+// Categories object for direct access by id
+export const categoriesById = {
+  all: { id: 'all', name: 'All', icon: CategoryIcons.all },
+  animals: { id: 'animals', name: 'Animals', icon: CategoryIcons.animals },
+  help: { id: 'help', name: 'Help', icon: CategoryIcons.help },
+  food: { id: 'food', name: 'Food', icon: CategoryIcons.food },
+  health: { id: 'health', name: 'Health', icon: CategoryIcons.health },
+  education: {
+    id: 'education',
+    name: 'Education',
+    icon: CategoryIcons.education,
+  },
+  equality: { id: 'equality', name: 'Equality', icon: CategoryIcons.equality },
+  climate: { id: 'climate', name: 'Climate', icon: CategoryIcons.climate },
+  'community-development': {
+    id: 'community-development',
+    name: 'Community Development',
+    icon: CategoryIcons['community-development'],
+  },
+  'event-organizer': {
+    id: 'event-organizer',
+    name: 'Event Organizer',
+    icon: CategoryIcons['event-organizer'],
+  },
+};
+
+// Categories list array for iteration (for backwards compatibility)
+export const categories = Object.values(categoriesById);

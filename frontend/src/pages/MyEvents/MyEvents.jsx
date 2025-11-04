@@ -90,7 +90,7 @@ const MyEvents = () => {
         <div className={styles['my-events__search']}>
           <SearchBox
             onSearch={handleSearch}
-            showCategories={false}
+            showCategories={true}
             showSearchByName={true}
           />
         </div>
