@@ -100,6 +100,7 @@ const MyEvents = () => {
           <div className={styles['my-events__list-container']}>
             <EventList events={currentEvents} />
             <Pagination
+              className={styles['my-events__pagination']}
               count={Math.ceil(totalEvents / eventsPerPage)}
               shape="rounded"
               page={currentPage}

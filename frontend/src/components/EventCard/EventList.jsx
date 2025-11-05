@@ -4,14 +4,14 @@ import Event from './Event';
 
 const EventList = ({ events }) => {
   return (
-    <section className={styles['event-list']}>
-      <div
+    <>
+      {/* <div
         data-aos="fade-left"
         data-aos-anchor-placement="top-bottom"
         data-aos-easing="linear"
         data-aos-duration="1000"
         className={styles['event-list__container']}
-      ></div>
+      ></div> */}
 
       <div className={styles['event-list__grid']}>
         {events.map((event) => (
@@ -33,7 +33,7 @@ const EventList = ({ events }) => {
           />
         ))}
       </div>
-    </section>
+    </>
   );
 };
 

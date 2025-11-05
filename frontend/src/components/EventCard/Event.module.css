@@ -241,11 +241,11 @@
 }
 
 /* Responsive */
-@media (min-width: 1440px) {
+/* @media (min-width: 1440px) {
   .event {
     width: 440px;
   }
-}
+} */
 @media (max-width: 640px) {
   .event__content {
     padding: 1rem;

@@ -26,7 +26,7 @@ const Events = () => {
   };
 
   return (
-    <div className={styles['events']}>
+    <>
       {/* Hero Section */}
       <section className={styles['events__hero']}>
         <div className={styles['events__hero-overlay']}></div>
@@ -53,13 +53,14 @@ const Events = () => {
       <div className={styles['events__list-container']}>
         <EventList events={currentEvents} />
         <Pagination
+          className={styles['events__pagination']}
           count={Math.ceil(totalEvents / eventsPerPage)}
           shape="rounded"
           page={currentPage}
           onChange={handleChangePage}
         />
       </div>
-    </div>
+    </>
   );
 };
 
