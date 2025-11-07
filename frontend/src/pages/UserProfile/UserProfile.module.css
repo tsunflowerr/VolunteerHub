@@ -32,7 +32,7 @@
 .profile__avatar-section {
   text-align: center;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .profile__avatar {
@@ -61,7 +61,7 @@
 /* Stats Section */
 .profile__stats {
   padding: 1.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-gray-200);
   display: flex;
   justify-content: space-around;
   gap: 1rem;
@@ -91,7 +91,7 @@
 /* About Section */
 .profile__about {
   padding: 1.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .profile__section-title {
@@ -112,7 +112,7 @@
 /* Contact Section */
 .profile__contact {
   padding: 1.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-gray-200);
 }
 
 .profile__contact-item {

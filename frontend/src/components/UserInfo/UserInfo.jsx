@@ -402,17 +402,17 @@ const UserInfo = () => {
             {/* Save Button */}
             <div className={styles['user-detail__actions']}>
               <button
+                onClick={revertChanges}
+                className={styles['user-detail__button--outline']}
+              >
+                Revert Changes
+              </button>
+              <button
                 type="submit"
                 disabled={isSaving}
                 className={styles['user-detail__button']}
               >
                 Save Changes
-              </button>
-              <button
-                onClick={revertChanges}
-                className={styles['user-detail__button--outline']}
-              >
-                Revert Changes
               </button>
             </div>
           </form>

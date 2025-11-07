@@ -10,6 +10,7 @@ import UserInfo from './components/UserInfo/UserInfo';
 import Events from './pages/Events/Events';
 import MyEvents from './pages/MyEvents/MyEvents';
 import UserProfile from './pages/UserProfile/UserProfile';
+import EventDetail from './pages/EventDetail/EventDetail';
 
 const App = () => {
   AOS.init({
@@ -26,6 +27,7 @@ const App = () => {
           <Route path="/" element={<Home />}></Route>
           <Route path="/userinfo" element={<UserInfo />}></Route>
           <Route path="/events" element={<Events />}></Route>
+          <Route path="/events/:id" element={<EventDetail />}></Route>
           <Route path="/myevents" element={<MyEvents />}></Route>
           <Route path="/profile" element={<UserProfile />}></Route>
         </Route>

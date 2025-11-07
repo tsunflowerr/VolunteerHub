@@ -15,6 +15,8 @@ export const volunteerEvents = [
       'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
     registeredCount: 12,
     categories: ['community-development', 'event-organizer'],
+    registered: 12,
+    capacity: 12,
   },
   {
     _id: '2',

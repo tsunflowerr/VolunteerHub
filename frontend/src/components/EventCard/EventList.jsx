@@ -1,8 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './EventList.module.css';
 import Event from './Event';
 
 const EventList = ({ events }) => {
+  const navigate = useNavigate();
+
+  const handleEventClick = (eventId) => {
+    navigate(`/events/${eventId}`);
+  };
+
   return (
     <>
       {/* <div
@@ -26,10 +33,7 @@ const EventList = ({ events }) => {
             hostAvatar={event.hostAvatar}
             registeredCount={event.registeredCount}
             categories={event.categories}
-            onLearnMore={() => {
-              console.log('Learn more about:', event);
-              // Handle learn more action - navigate to event details page
-            }}
+            onLearnMore={() => handleEventClick(event._id)}
           />
         ))}
       </div>
