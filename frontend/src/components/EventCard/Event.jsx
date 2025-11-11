@@ -6,26 +6,24 @@ import styles from './Event.module.css';
 import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
 
 export function Event({
-  title,
+  name,
   description,
-  date,
+  startDate,
   location,
-  image,
-  hostName,
-  hostAvatar,
-  registeredCount = 0,
-  categories,
+  thumbnail,
+  managerId,
+  registrationsCount = 0,
+  category,
   onLearnMore,
 }) {
   //   const [isHovered, setIsHovered] = useState(false);
 
   // Debug: Log the props
   console.log('Event props:', {
-    title,
-    hostName,
-    hostAvatar,
-    registeredCount,
-    categories,
+    name,
+    managerId,
+    registrationsCount,
+    category,
   });
 
   const formatDate = (dateValue) => {
@@ -42,7 +40,14 @@ export function Event({
     };
   };
 
-  const dateInfo = formatDate(date);
+  const dateInfo = formatDate(startDate);
+  
+  // Extract manager info
+  const hostName = managerId?.username || 'Unknown';
+  const hostAvatar = managerId?.avatar || null;
+  
+  // Extract category slugs
+  const categoryIds = category?.map(cat => cat.slug) || [];
 
   return (
     <div
@@ -53,8 +58,8 @@ export function Event({
     >
       {/* Image Section with Date Badge */}
       <div className={styles['event__image-wrapper']}>
-        {image && (
-          <img src={image} alt={title} className={styles['event__image']} />
+        {thumbnail && (
+          <img src={thumbnail} alt={name} className={styles['event__image']} />
         )}
 
         {/* Date Badge */}
@@ -75,7 +80,7 @@ export function Event({
         )}
 
         {/* Title */}
-        <h3 className={styles['event__title']}>{title}</h3>
+        <h3 className={styles['event__title']}>{name}</h3>
 
         {/* Categories */}
 
@@ -84,20 +89,20 @@ export function Event({
           <p className={styles['event__description']}>{description}</p>
         )}
 
-        {categories && (
+        {categoryIds && categoryIds.length > 0 && (
           <div className={styles['event__categories']}>
-            {categories.map((categoryId) => {
-              const category = categoriesById[categoryId];
-              if (!category) return null;
+            {categoryIds.map((categoryId) => {
+              const categoryData = categoriesById[categoryId];
+              if (!categoryData) return null;
 
               return (
                 <div key={categoryId} className={styles['event__category']}>
-                  {category.icon && (
+                  {categoryData.icon && (
                     <span className={styles['event__category-icon']}>
-                      {category.icon}
+                      {categoryData.icon}
                     </span>
                   )}
-                  {category.name}
+                  {categoryData.name}
                 </div>
               );
             })}
@@ -127,7 +132,7 @@ export function Event({
           <div className={styles['event__registered']}>
             <Users size={16} className={styles['event__registered-icon']} />
             <span className={styles['event__registered-count']}>
-              {registeredCount}
+              {registrationsCount}
             </span>
           </div>
         </div>
@@ -137,27 +142,34 @@ export function Event({
 }
 
 Event.propTypes = {
-  title: PropTypes.string.isRequired,
+  name: PropTypes.string.isRequired,
   description: PropTypes.string,
-  date: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string])
+  startDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string])
     .isRequired,
   location: PropTypes.string.isRequired,
-  image: PropTypes.string.isRequired,
-  hostName: PropTypes.string.isRequired,
-  hostAvatar: PropTypes.string,
-  registeredCount: PropTypes.number,
-  categories: PropTypes.arrayOf(PropTypes.string),
+  thumbnail: PropTypes.string.isRequired,
+  managerId: PropTypes.shape({
+    _id: PropTypes.string,
+    username: PropTypes.string,
+    avatar: PropTypes.string,
+  }),
+  registrationsCount: PropTypes.number,
+  category: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string,
+      name: PropTypes.string,
+      slug: PropTypes.string,
+    })
+  ),
   onLearnMore: PropTypes.func,
 };
 
 Event.defaultProps = {
   description: '',
-  hostAvatar: null,
-  registeredCount: 0,
-  categories: [],
+  managerId: null,
+  registrationsCount: 0,
+  category: [],
   onLearnMore: () => {},
-  onFavorite: null,
-  isFavorited: false,
 };
 
 export default Event;

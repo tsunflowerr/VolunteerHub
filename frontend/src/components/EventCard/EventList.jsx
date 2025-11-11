@@ -24,15 +24,14 @@ const EventList = ({ events }) => {
         {events.map((event) => (
           <Event
             key={event._id}
-            title={event.title}
+            name={event.name}
             description={event.description}
-            date={event.date}
+            startDate={event.startDate}
             location={event.location}
-            image={event.image}
-            hostName={event.hostName}
-            hostAvatar={event.hostAvatar}
-            registeredCount={event.registeredCount}
-            categories={event.categories}
+            thumbnail={event.thumbnail}
+            managerId={event.managerId}
+            registrationsCount={event.registrationsCount}
+            category={event.category}
             onLearnMore={() => handleEventClick(event._id)}
           />
         ))}

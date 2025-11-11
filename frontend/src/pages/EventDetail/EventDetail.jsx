@@ -99,8 +99,8 @@ const EventDetail = () => {
         {/* Hero Section */}
         <div className={styles['event-detail__hero']}>
           <img
-            src={event.image}
-            alt={event.title}
+            src={event.thumbnail}
+            alt={event.name}
             className={styles['event-detail__hero-image']}
           />
         </div>
@@ -108,14 +108,14 @@ const EventDetail = () => {
         <div className={styles['event-detail__content']}>
           {/* Main Content */}
           <div className={styles['event-detail__main']}>
-            <h1 className={styles['event-detail__title']}>{event.title}</h1>
+            <h1 className={styles['event-detail__title']}>{event.name}</h1>
             <div className={styles['event-detail__host']}>
               <img
                 src={
-                  event.hostAvatar ||
+                  event.managerId?.avatar ||
                   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80'
                 }
-                alt={event.hostName}
+                alt={event.managerId?.username || 'Manager'}
                 className={styles['event-detail__host-avatar']}
               />
               <div className={styles['event-detail__host-info']}>
@@ -123,7 +123,7 @@ const EventDetail = () => {
                   Organized by
                 </span>
                 <span className={styles['event-detail__host-name']}>
-                  {event.hostName}
+                  {event.managerId?.username || 'Unknown'}
                 </span>
               </div>
             </div>
@@ -139,7 +139,7 @@ const EventDetail = () => {
                       Start Date
                     </span>
                     <span className={styles['event-detail__datetime-value']}>
-                      {formatDate(event.date)}
+                      {formatDate(event.startDate)}
                     </span>
                   </div>
                 </div>
@@ -151,7 +151,7 @@ const EventDetail = () => {
                       End Date
                     </span>
                     <span className={styles['event-detail__datetime-value']}>
-                      {formatDate(event.date)}
+                      {formatDate(event.endDate || event.startDate)}
                     </span>
                   </div>
                 </div>
@@ -187,17 +187,17 @@ const EventDetail = () => {
                 CATEGORIES
               </h3>
               <div className={styles['event-detail__categories']}>
-                {event.categories &&
-                  event.categories.map((categoryId) => {
-                    const category = categoriesById[categoryId];
-                    if (!category) return null;
+                {event.category &&
+                  event.category.map((cat) => {
+                    const categoryData = categoriesById[cat.slug];
+                    if (!categoryData) return null;
                     return (
                       <div
-                        key={categoryId}
+                        key={cat._id}
                         className={styles['event-detail__category']}
                       >
                         <span className={styles['event-detail__category-name']}>
-                          {category.name}
+                          {cat.name}
                         </span>
                       </div>
                     );
@@ -276,7 +276,8 @@ const EventDetail = () => {
                   <span
                     className={styles['event-detail__sidebar-registered-count']}
                   >
-                    {event.registered || 0} / {event.capacity || 'Unlimited'}
+                    {event.registrationsCount || 0} /{' '}
+                    {event.capacity || 'Unlimited'}
                   </span>
                   <span
                     className={styles['event-detail__sidebar-registered-label']}
@@ -288,7 +289,8 @@ const EventDetail = () => {
 
               {userState == 'none' && (
                 <>
-                  {event.capacity && event.registered >= event.capacity ? (
+                  {event.capacity &&
+                  event.registrationsCount >= event.capacity ? (
                     <>
                       <div className={styles['event-detail__sidebar-status']}>
                         <span

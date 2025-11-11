@@ -28,14 +28,14 @@ const EventSection = () => {
         {volunteers.map((volunteer) => (
           <Event
             key={volunteer._id}
-            title={volunteer.title}
+            name={volunteer.name}
             description={volunteer.description}
-            date={volunteer.date}
+            startDate={volunteer.startDate}
             location={volunteer.location}
-            image={volunteer.image}
-            hostName={volunteer.hostName}
-            hostAvatar={volunteer.hostAvatar}
-            registeredCount={volunteer.registeredCount}
+            thumbnail={volunteer.thumbnail}
+            managerId={volunteer.managerId}
+            registrationsCount={volunteer.registrationsCount}
+            category={volunteer.category}
             onLearnMore={() => {
               console.log('Learn more about:', volunteer);
               // Handle learn more action - navigate to event details page
