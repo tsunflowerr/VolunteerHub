@@ -11,6 +11,7 @@ import Events from './pages/Events/Events';
 import MyEvents from './pages/MyEvents/MyEvents';
 import UserProfile from './pages/UserProfile/UserProfile';
 import EventDetail from './pages/EventDetail/EventDetail';
+import EventForm from './pages/EventForm/EventForm';
 
 const App = () => {
   AOS.init({
@@ -30,6 +31,7 @@ const App = () => {
           <Route path="/events/:id" element={<EventDetail />}></Route>
           <Route path="/myevents" element={<MyEvents />}></Route>
           <Route path="/profile" element={<UserProfile />}></Route>
+          <Route path="/events/create" element={<EventForm />}></Route>
         </Route>
       </Route>
     </Routes>
