@@ -1,23 +1,91 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as yup from 'yup';
 import {
   Calendar,
   MapPin,
   Users,
   FileText,
   Image as ImageIcon,
-  Upload,
-  X,
 } from 'lucide-react';
-import { categories } from '../../utilities/CategoriesIcons';
+import {
+  FormHeader,
+  FormField,
+  TextInput,
+  TextArea,
+  CategoryCheckboxes,
+  ImagePicker,
+  FormActions,
+} from '../../components/Form';
 import styles from './EventForm.module.css';
+
+// Yup validation schema
+const eventFormSchema = yup.object().shape({
+  name: yup
+    .string()
+    .required('Event name is required')
+    .min(5, 'Event name must be at least 5 characters')
+    .max(200, 'Event name must not exceed 200 characters')
+    .trim(),
+  about: yup
+    .string()
+    .required('About section is required')
+    .min(20, 'About must be at least 20 characters')
+    .max(2000, 'About must not exceed 2000 characters')
+    .trim(),
+  activities: yup
+    .string()
+    .required('Activities description is required')
+    .min(20, 'Activities must be at least 20 characters')
+    .max(2000, 'Activities must not exceed 2000 characters')
+    .trim(),
+  prepare: yup
+    .string()
+    .required('Preparation information is required')
+    .min(10, 'Preparation info must be at least 10 characters')
+    .max(1000, 'Preparation info must not exceed 1000 characters')
+    .trim(),
+  location: yup
+    .string()
+    .required('Location is required')
+    .min(5, 'Location must be at least 5 characters')
+    .trim(),
+  startDate: yup
+    .date()
+    .required('Start date is required')
+    .min(new Date(), 'Start date must be in the future'),
+  endDate: yup
+    .date()
+    .required('End date is required')
+    .min(yup.ref('startDate'), 'End date must be after start date'),
+  category: yup
+    .array()
+    .of(yup.string())
+    .min(1, 'Please select at least one category')
+    .required('Please select at least one category'),
+  capacity: yup
+    .number()
+    .required('Capacity is required')
+    .positive('Capacity must be positive')
+    .integer('Capacity must be an integer')
+    .min(1, 'Capacity must be at least 1')
+    .max(10000, 'Capacity must not exceed 10,000'),
+  thumbnail: yup
+    .mixed()
+    .required('Thumbnail image is required')
+    .test('fileType', 'Please select a valid image file', (value) => {
+      if (!value) return false;
+      return value instanceof File && value.type.startsWith('image/');
+    })
+    .test('fileSize', 'Image size must be less than 5MB', (value) => {
+      if (!value) return false;
+      return value instanceof File && value.size <= 5 * 1024 * 1024;
+    }),
+});
 
 const EventForm = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [apiError, setApiError] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,7 +95,7 @@ const EventForm = () => {
     location: '',
     startDate: '',
     endDate: '',
-    category: '',
+    category: [],
     capacity: '',
     thumbnail: null,
   });
@@ -52,11 +120,34 @@ const EventForm = () => {
     }
   };
 
+  // Handle category selection
+  const handleCategoryChange = (categoryId) => {
+    setFormData((prev) => {
+      const currentCategories = prev.category;
+      const isSelected = currentCategories.includes(categoryId);
+
+      const newCategories = isSelected
+        ? currentCategories.filter((id) => id !== categoryId)
+        : [...currentCategories, categoryId];
+
+      return {
+        ...prev,
+        category: newCategories,
+      };
+    });
+
+    if (errors.category) {
+      setErrors((prev) => ({
+        ...prev,
+        category: '',
+      }));
+    }
+  };
+
   // Handle image file selection
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setErrors((prev) => ({
           ...prev,
@@ -65,7 +156,6 @@ const EventForm = () => {
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setErrors((prev) => ({
           ...prev,
@@ -79,14 +169,12 @@ const EventForm = () => {
         thumbnail: file,
       }));
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setThumbnailPreview(reader.result);
       };
       reader.readAsDataURL(file);
 
-      // Clear error
       if (errors.thumbnail) {
         setErrors((prev) => ({
           ...prev,
@@ -103,144 +191,75 @@ const EventForm = () => {
       thumbnail: null,
     }));
     setThumbnailPreview('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
-  // Trigger file input click
-  const handleImagePickerClick = () => {
-    fileInputRef.current?.click();
-  };
+  // Validate form using Yup
+  const validateForm = async () => {
+    try {
+      const dataToValidate = {
+        ...formData,
+        startDate: formData.startDate ? new Date(formData.startDate) : null,
+        endDate: formData.endDate ? new Date(formData.endDate) : null,
+        capacity: formData.capacity ? parseInt(formData.capacity, 10) : 0,
+      };
 
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Event name is required';
-    } else if (formData.name.trim().length < 5) {
-      newErrors.name = 'Event name must be at least 5 characters';
-    }
-
-    if (!formData.about.trim()) {
-      newErrors.about = 'About section is required';
-    } else if (formData.about.trim().length < 20) {
-      newErrors.about = 'About must be at least 20 characters';
-    }
-
-    if (!formData.activities.trim()) {
-      newErrors.activities = 'Activities description is required';
-    } else if (formData.activities.trim().length < 20) {
-      newErrors.activities = 'Activities must be at least 20 characters';
-    }
-
-    if (!formData.prepare.trim()) {
-      newErrors.prepare = 'Preparation information is required';
-    } else if (formData.prepare.trim().length < 10) {
-      newErrors.prepare = 'Preparation info must be at least 10 characters';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
-    } else {
-      const startDate = new Date(formData.startDate);
-      const now = new Date();
-      if (startDate < now) {
-        newErrors.startDate = 'Start date must be in the future';
+      await eventFormSchema.validate(dataToValidate, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err) {
+      if (err instanceof yup.ValidationError) {
+        const validationErrors = {};
+        err.inner.forEach((error) => {
+          if (error.path) {
+            validationErrors[error.path] = error.message;
+          }
+        });
+        setErrors(validationErrors);
       }
+      return false;
     }
-
-    if (!formData.endDate) {
-      newErrors.endDate = 'End date is required';
-    } else if (formData.startDate) {
-      const startDate = new Date(formData.startDate);
-      const endDate = new Date(formData.endDate);
-      if (endDate <= startDate) {
-        newErrors.endDate = 'End date must be after start date';
-      }
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Please select a category';
-    }
-
-    if (!formData.capacity) {
-      newErrors.capacity = 'Capacity is required';
-    } else {
-      const capacity = parseInt(formData.capacity, 10);
-      if (isNaN(capacity) || capacity < 1) {
-        newErrors.capacity = 'Capacity must be at least 1';
-      }
-    }
-
-    if (!formData.thumbnail) {
-      newErrors.thumbnail = 'Thumbnail image is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setApiError('');
-    setSuccessMessage('');
+    const isValid = await validateForm();
+    if (!isValid) {
+      return;
+    }
 
-    // if (!validateForm()) {
-    //   return;
-    // }
+    setLoading(true);
 
-    // setLoading(true);
-
-    // try {
-    //   // Create FormData for file upload
-    //   const apiData = new FormData();
-    //   apiData.append('name', formData.name.trim());
-    //   apiData.append('about', formData.about.trim());
-    //   apiData.append('activities', formData.activities.trim());
-    //   apiData.append('prepare', formData.prepare.trim());
-    //   apiData.append('location', formData.location.trim());
-    //   apiData.append('startDate', new Date(formData.startDate).toISOString());
-    //   apiData.append('endDate', new Date(formData.endDate).toISOString());
-    //   apiData.append('category', formData.category);
-    //   apiData.append('capacity', parseInt(formData.capacity, 10));
-    //   apiData.append('thumbnail', formData.thumbnail);
-
-    //   console.log('Submitting event data...');
-
-    //   // TODO: Replace with actual API endpoint
-    //   const response = await fetch('/api/events', {
-    //     method: 'POST',
-    //     // Don't set Content-Type header - browser will set it automatically with boundary for FormData
-    //     body: apiData,
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (response.ok) {
-    //     setSuccessMessage('Event created successfully!');
-    //     console.log('Event created:', data);
-
-    //     setTimeout(() => {
-    //       navigate('/events');
-    //     }, 1500);
-    //   } else {
-    //     setApiError(data.message || 'Failed to create event');
-    //     console.error('API Error:', data);
-    //   }
-    // } catch (error) {
-    //   console.error('Error creating event:', error);
-    //   setApiError('Network error. Please check your connection and try again.');
-    // } finally {
-    //   setLoading(false);
-    // }
+    try {
+      // const apiData = new FormData();
+      // apiData.append('name', formData.name.trim());
+      // apiData.append('about', formData.about.trim());
+      // apiData.append('activities', formData.activities.trim());
+      // apiData.append('prepare', formData.prepare.trim());
+      // apiData.append('location', formData.location.trim());
+      // apiData.append('startDate', new Date(formData.startDate).toISOString());
+      // apiData.append('endDate', new Date(formData.endDate).toISOString());
+      // formData.category.forEach((categoryId) => {
+      //   apiData.append('category[]', categoryId);
+      // });
+      // apiData.append('capacity', parseInt(formData.capacity, 10));
+      // apiData.append('thumbnail', formData.thumbnail);
+      // console.log('Submitting event data...');
+      // TODO: Replace with actual API endpoint
+      // const response = await fetch('/api/events', {
+      //   method: 'POST',
+      //   body: apiData,
+      // });
+      // Simulate API call
+      // await new Promise((resolve) => setTimeout(resolve, 1500));
+      // console.log('Event created successfully!');
+      // navigate('/events');
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle cancel
@@ -257,307 +276,175 @@ const EventForm = () => {
   return (
     <div className={styles['event-form']}>
       <div className={styles['event-form__container']}>
-        {/* Header */}
-        <div className={styles['event-form__header']}>
-          <h1 className={styles['event-form__title']}>Create New Event</h1>
-          <p className={styles['event-form__subtitle']}>
-            Fill in the details below to create a new volunteer event
-          </p>
-        </div>
+        <FormHeader
+          title="Create New Event"
+          subtitle="Fill in the details below to create a new volunteer event"
+        />
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className={styles['event-form__form']}>
           {/* Event Name */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <FileText size={20} />
-              Event Name
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-            <input
-              type="text"
+          <FormField
+            icon={FileText}
+            label="Event Name"
+            required
+            error={errors.name}
+          >
+            <TextInput
               name="name"
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter event name"
-              className={`${styles['event-form__input']} ${
-                errors.name ? styles['event-form__input--error'] : ''
-              }`}
+              error={errors.name}
             />
-            {errors.name && (
-              <span className={styles['event-form__error']}>{errors.name}</span>
-            )}
-          </div>
+          </FormField>
 
           {/* About */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <FileText size={20} />
-              About the Event
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-            <textarea
+          <FormField
+            icon={FileText}
+            label="About the Event"
+            required
+            error={errors.about}
+          >
+            <TextArea
               name="about"
               value={formData.about}
               onChange={handleChange}
               placeholder="Describe what this event is about"
               rows={4}
-              className={`${styles['event-form__textarea']} ${
-                errors.about ? styles['event-form__input--error'] : ''
-              }`}
+              error={errors.about}
             />
-            {errors.about && (
-              <span className={styles['event-form__error']}>
-                {errors.about}
-              </span>
-            )}
-          </div>
+          </FormField>
 
           {/* Activities */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <FileText size={20} />
-              What will volunteers do?
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-            <textarea
+          <FormField
+            icon={FileText}
+            label="What will volunteers do?"
+            required
+            error={errors.activities}
+          >
+            <TextArea
               name="activities"
               value={formData.activities}
               onChange={handleChange}
               placeholder="Describe the activities volunteers will participate in"
               rows={4}
-              className={`${styles['event-form__textarea']} ${
-                errors.activities ? styles['event-form__input--error'] : ''
-              }`}
+              error={errors.activities}
             />
-            {errors.activities && (
-              <span className={styles['event-form__error']}>
-                {errors.activities}
-              </span>
-            )}
-          </div>
+          </FormField>
 
           {/* Prepare */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <FileText size={20} />
-              What to bring or wear?
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-            <textarea
+          <FormField
+            icon={FileText}
+            label="What to bring or wear?"
+            required
+            error={errors.prepare}
+          >
+            <TextArea
               name="prepare"
               value={formData.prepare}
               onChange={handleChange}
               placeholder="What volunteers need to bring or wear"
               rows={3}
-              className={`${styles['event-form__textarea']} ${
-                errors.prepare ? styles['event-form__input--error'] : ''
-              }`}
+              error={errors.prepare}
             />
-            {errors.prepare && (
-              <span className={styles['event-form__error']}>
-                {errors.prepare}
-              </span>
-            )}
-          </div>
+          </FormField>
 
           {/* Location */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <MapPin size={20} />
-              Location
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-            <input
-              type="text"
+          <FormField
+            icon={MapPin}
+            label="Location"
+            required
+            error={errors.location}
+          >
+            <TextInput
               name="location"
               value={formData.location}
               onChange={handleChange}
               placeholder="Enter event location"
-              className={`${styles['event-form__input']} ${
-                errors.location ? styles['event-form__input--error'] : ''
-              }`}
+              error={errors.location}
             />
-            {errors.location && (
-              <span className={styles['event-form__error']}>
-                {errors.location}
-              </span>
-            )}
-          </div>
+          </FormField>
 
           {/* Date Range */}
           <div className={styles['event-form__row']}>
-            <div className={styles['event-form__group']}>
-              <label className={styles['event-form__label']}>
-                <Calendar size={20} />
-                Start Date & Time
-                <span className={styles['event-form__required']}>*</span>
-              </label>
-              <input
+            <FormField
+              icon={Calendar}
+              label="Start Date & Time"
+              required
+              error={errors.startDate}
+            >
+              <TextInput
                 type="datetime-local"
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className={`${styles['event-form__input']} ${
-                  errors.startDate ? styles['event-form__input--error'] : ''
-                }`}
+                error={errors.startDate}
               />
-              {errors.startDate && (
-                <span className={styles['event-form__error']}>
-                  {errors.startDate}
-                </span>
-              )}
-            </div>
+            </FormField>
 
-            <div className={styles['event-form__group']}>
-              <label className={styles['event-form__label']}>
-                <Calendar size={20} />
-                End Date & Time
-                <span className={styles['event-form__required']}>*</span>
-              </label>
-              <input
+            <FormField
+              icon={Calendar}
+              label="End Date & Time"
+              required
+              error={errors.endDate}
+            >
+              <TextInput
                 type="datetime-local"
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
-                className={`${styles['event-form__input']} ${
-                  errors.endDate ? styles['event-form__input--error'] : ''
-                }`}
+                error={errors.endDate}
               />
-              {errors.endDate && (
-                <span className={styles['event-form__error']}>
-                  {errors.endDate}
-                </span>
-              )}
-            </div>
+            </FormField>
           </div>
 
-          {/* Category and Capacity */}
-          <div className={styles['event-form__row']}>
-            <div className={styles['event-form__group']}>
-              <label className={styles['event-form__label']}>
-                Category
-                <span className={styles['event-form__required']}>*</span>
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className={`${styles['event-form__select']} ${
-                  errors.category ? styles['event-form__input--error'] : ''
-                }`}
-              >
-                <option value="">Select a category</option>
-                {categories
-                  .filter((cat) => cat.id !== 'all')
-                  .map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-              </select>
-              {errors.category && (
-                <span className={styles['event-form__error']}>
-                  {errors.category}
-                </span>
-              )}
-            </div>
-
-            <div className={styles['event-form__group']}>
-              <label className={styles['event-form__label']}>
-                <Users size={20} />
-                Capacity
-                <span className={styles['event-form__required']}>*</span>
-              </label>
-              <input
-                type="number"
-                name="capacity"
-                value={formData.capacity}
-                onChange={handleChange}
-                placeholder="Max volunteers"
-                min="1"
-                className={`${styles['event-form__input']} ${
-                  errors.capacity ? styles['event-form__input--error'] : ''
-                }`}
-              />
-              {errors.capacity && (
-                <span className={styles['event-form__error']}>
-                  {errors.capacity}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Thumbnail Image Picker */}
-          <div className={styles['event-form__group']}>
-            <label className={styles['event-form__label']}>
-              <ImageIcon size={20} />
-              Event Thumbnail
-              <span className={styles['event-form__required']}>*</span>
-            </label>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className={styles['event-form__file-input']}
+          {/* Categories */}
+          <FormField label="Categories" required error={errors.category}>
+            <CategoryCheckboxes
+              selectedCategories={formData.category}
+              onCategoryChange={handleCategoryChange}
             />
+          </FormField>
 
-            {!thumbnailPreview ? (
-              <div
-                onClick={handleImagePickerClick}
-                className={`${styles['event-form__image-picker']} ${
-                  errors.thumbnail ? styles['event-form__input--error'] : ''
-                }`}
-              >
-                <Upload size={48} />
-                <p className={styles['event-form__image-picker-text']}>
-                  Click to upload image
-                </p>
-                <p className={styles['event-form__image-picker-hint']}>
-                  PNG, JPG, GIF up to 5MB
-                </p>
-              </div>
-            ) : (
-              <div className={styles['event-form__image-preview']}>
-                <img src={thumbnailPreview} alt="Thumbnail preview" />
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className={styles['event-form__image-remove']}
-                >
-                  <X size={20} />
-                  Remove Image
-                </button>
-              </div>
-            )}
+          {/* Capacity */}
+          <FormField
+            icon={Users}
+            label="Capacity"
+            required
+            error={errors.capacity}
+          >
+            <TextInput
+              type="number"
+              name="capacity"
+              value={formData.capacity}
+              onChange={handleChange}
+              placeholder="Max volunteers"
+              min="1"
+              error={errors.capacity}
+            />
+          </FormField>
 
-            {errors.thumbnail && (
-              <span className={styles['event-form__error']}>
-                {errors.thumbnail}
-              </span>
-            )}
-          </div>
+          {/* Thumbnail */}
+          <FormField
+            icon={ImageIcon}
+            label="Event Thumbnail"
+            required
+            error={errors.thumbnail}
+          >
+            <ImagePicker
+              preview={thumbnailPreview}
+              onImageChange={handleImageChange}
+              onRemoveImage={handleRemoveImage}
+              error={errors.thumbnail}
+            />
+          </FormField>
 
-          {/* Form Actions */}
-          <div className={styles['event-form__actions']}>
-            <button
-              type="button"
-              onClick={handleCancel}
-              className={styles['event-form__button--cancel']}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className={styles['event-form__button--submit']}
-              disabled={loading}
-            >
-              {loading ? 'Creating...' : 'Create Event'}
-            </button>
-          </div>
+          {/* Actions */}
+          <FormActions
+            onCancel={handleCancel}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
         </form>
       </div>
     </div>
