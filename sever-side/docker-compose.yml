@@ -1,0 +1,42 @@
+services:
+  # Redis Service - Chỉ dùng cho cache
+  redis:
+    image: redis:latest
+    container_name: volunteerhub-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - volunteerhub-network
+
+  # Backend Node.js Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: volunteerhub-backend
+    restart: always
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - volunteerhub-network
+
+# Volumes
+volumes:
+  redis_data:
+
+# Networks
+networks:
+  volunteerhub-network:
+    driver: bridge
