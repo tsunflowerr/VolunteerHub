@@ -8,6 +8,7 @@ const TextInput = ({
   error,
   type = 'text',
   min,
+  disabled = false,
 }) => {
   return (
     <input
@@ -20,6 +21,7 @@ const TextInput = ({
       className={`${styles['form__input']} ${
         error ? styles['form__input--error'] : ''
       }`}
+      disabled={disabled}
     />
   );
 };

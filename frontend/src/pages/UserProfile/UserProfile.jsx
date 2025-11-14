@@ -14,16 +14,17 @@ import { volunteerEvents } from '../../dummy/volunteerEvents';
 import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
 import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
+import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 
 const UserProfile = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [open, setOpen] = useState(false);
   const eventsPerPage = 9;
-
-  // Mock user data - this would come from context/API in production
-  const user = {
-    name: 'John Doe',
+  const [user, setUser] = useState({
+    username: 'John Doe',
     email: 'john.doe@example.com',
     location: 'San Francisco, CA',
+    phoneNumber: '09342343',
     avatar:
       'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
     joinedDate: '2022',
@@ -33,10 +34,10 @@ const UserProfile = () => {
     stats: {
       events: 24,
       hours: 156,
-      causes: 12,
+      hosts: 12,
     },
     interests: ['health', 'education', 'community-development'],
-  };
+  });
 
   // Filter events that user has contributed to (mock filter)
   // In production, this would be filtered by user ID from the backend
@@ -53,9 +54,13 @@ const UserProfile = () => {
 
   const handleChangePage = (e, value) => setCurrentPage(value);
 
-  const handleEditProfile = () => {
-    // TODO: Implement edit profile functionality
-    console.log('Edit profile clicked');
+  const handleEditProfile = (e) => {
+    e.preventDefault();
+    let data = Object.fromEntries(new FormData(e.currentTarget));
+    console.log(data);
+    // TODO: handle update userProfile
+
+    setOpen(false);
   };
 
   const handleDeleteAccount = () => {
@@ -81,7 +86,7 @@ const UserProfile = () => {
               alt={user.name}
               className={styles['profile__avatar']}
             />
-            <h1 className={styles['profile__name']}>{user.name}</h1>
+            <h1 className={styles['profile__name']}>{user.username}</h1>
             <p className={styles['profile__role']}>{user.bio}</p>
           </div>
 
@@ -103,9 +108,9 @@ const UserProfile = () => {
 
             <div className={styles['profile__stat']}>
               <div className={styles['profile__stat-value']}>
-                {user.stats.causes}
+                {user.stats.hosts}
               </div>
-              <div className={styles['profile__stat-label']}>Causes</div>
+              <div className={styles['profile__stat-label']}>Hosts</div>
             </div>
           </div>
 
@@ -120,6 +125,11 @@ const UserProfile = () => {
             <div className={styles['profile__contact-item']}>
               <Mail size={18} />
               <span>{user.email}</span>
+            </div>
+
+            <div className={styles['profile__contact-item']}>
+              <Phone size={18} />
+              <span>{user.phoneNumber}</span>
             </div>
 
             <div className={styles['profile__contact-item']}>
@@ -162,13 +172,17 @@ const UserProfile = () => {
 
           {/* Action Buttons */}
           <div className={styles['profile__actions']}>
-            <button
-              className={styles['profile__btn-edit']}
-              onClick={handleEditProfile}
+            <UserInfoDialog
+              user={user}
+              onSubmit={handleEditProfile}
+              open={open}
+              onOpenChange={setOpen}
             >
-              <Edit2 size={18} />
-              Edit Profile
-            </button>
+              <button className={styles['profile__btn-edit']}>
+                <Edit2 size={18} />
+                Edit Profile
+              </button>
+            </UserInfoDialog>
             <button
               className={styles['profile__btn-delete']}
               onClick={handleDeleteAccount}

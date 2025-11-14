@@ -442,7 +442,7 @@ const EventForm = () => {
           {/* Actions */}
           <FormActions
             onCancel={handleCancel}
-            onSubmit={handleSubmit}
+            // onSubmit={handleSubmit}
             loading={loading}
           />
         </form>

@@ -2,8 +2,9 @@ import styles from './Form.module.css';
 
 const FormActions = ({
   onCancel,
-  onSubmit,
+  // onSubmit,
   loading,
+  cancelText = 'Cancel',
   submitText = 'Submit',
   loadingText = 'Creating...',
 }) => {
@@ -15,11 +16,11 @@ const FormActions = ({
         className={styles['form__button--cancel']}
         disabled={loading}
       >
-        Cancel
+        {cancelText}
       </button>
       <button
         type="submit"
-        onClick={onSubmit}
+        // onClick={onSubmit}
         className={styles['form__button--submit']}
         disabled={loading}
       >

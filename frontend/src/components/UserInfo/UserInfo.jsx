@@ -4,15 +4,23 @@ import toast from 'react-hot-toast';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import styles from './UserInfo.module.css';
-import { ArrowLeft, Camera } from 'lucide-react';
+import { ArrowLeft, Camera, Mail, MapPin, Phone, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
+import {
+  FormHeader,
+  FormField,
+  TextInput,
+  TextArea,
+  CategoryCheckboxes,
+  ImagePicker,
+  FormActions,
+} from '../Form';
 // Validation schema
 const userInfoSchema = Yup.object().shape({
-  fullName: Yup.string()
-    .matches(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces')
-    .required('Full name is required'),
-  phone: Yup.string()
+  username: Yup.string()
+    .matches(/^[a-zA-Z\s]+$/, 'Username can only contain letters and spaces')
+    .required('Username is required'),
+  phoneNumber: Yup.string()
     .matches(
       /^[0-9+\-\s()]*$/,
       'Phone number can only contain numbers, +, -, spaces, and parentheses'
@@ -20,29 +28,29 @@ const userInfoSchema = Yup.object().shape({
     .nullable(),
   location: Yup.string().nullable(),
   bio: Yup.string().max(160, 'Bio must not exceed 160 characters').nullable(),
-  aboutMe: Yup.string()
-    .max(500, 'About Me must not exceed 500 characters')
+  about: Yup.string()
+    .max(500, 'About must not exceed 500 characters')
     .nullable(),
 });
-const UserInfo = () => {
+const UserInfo = ({ user, onSubmit }) => {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(user);
   const { updateUserInfo } = useAuth();
-  const [formData, setFormData] = useState(null);
+  const [formData, setFormData] = useState(user);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const storedData = localStorage.getItem('currentUser');
-    if (storedData) {
-      const parsed = JSON.parse(storedData);
-      console.log(parsed);
-      setUserData(parsed);
-      setFormData(parsed);
-    } else {
-      navigate('/register');
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const storedData = localStorage.getItem('currentUser');
+  //   if (storedData) {
+  //     const parsed = JSON.parse(storedData);
+  //     console.log(parsed);
+  //     setUserData(parsed);
+  //     setFormData(parsed);
+  //   } else {
+  //     navigate('/register');
+  //   }
+  // }, [navigate]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -74,11 +82,11 @@ const UserInfo = () => {
 
   const revertChanges = () => {
     const hasChanged =
-      formData.fullName !== userData.fullName ||
-      (formData.phone || '') !== (userData.phone || '') ||
+      formData.username !== userData.username ||
+      (formData.phoneNumber || '') !== (userData.phoneNumber || '') ||
       (formData.location || '') !== (userData.location || '') ||
       (formData.bio || '') !== (userData.bio || '') ||
-      (formData.aboutMe || '') !== (userData.aboutMe || '') ||
+      (formData.about || '') !== (userData.about || '') ||
       (formData.avatar || '') !== (userData.avatar || '');
 
     if (!hasChanged) {
@@ -96,21 +104,21 @@ const UserInfo = () => {
     try {
       await userInfoSchema.validate(
         {
-          fullName: formData.fullName,
-          phone: formData.phone || null,
+          username: formData.username,
+          phoneNumber: formData.phoneNumber || null,
           location: formData.location || null,
           bio: formData.bio || null,
-          aboutMe: formData.aboutMe || null,
+          about: formData.about || null,
         },
         { abortEarly: false }
       );
 
       const hasChanged =
-        formData.fullName !== userData.fullName ||
-        (formData.phone || '') !== (userData.phone || '') ||
+        formData.username !== userData.username ||
+        (formData.phoneNumber || '') !== (userData.phoneNumber || '') ||
         (formData.location || '') !== (userData.location || '') ||
         (formData.bio || '') !== (userData.bio || '') ||
-        (formData.aboutMe || '') !== (userData.aboutMe || '') ||
+        (formData.about || '') !== (userData.about || '') ||
         (formData.avatar || '') !== (userData.avatar || '');
 
       if (!hasChanged) {
@@ -148,277 +156,157 @@ const UserInfo = () => {
 
   if (!formData) {
     return (
-      <div className={styles['user-detail__loading']}>
-        <p className={styles['user-detail__loading-text']}>Loading...</p>
+      <div className={styles['user-info-form__loading']}>
+        <p className={styles['user-info-form__loading-text']}>Loading...</p>
       </div>
     );
   }
 
-  const initials = formData.fullName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-
-  console.log('render');
   return (
-    <div className={styles['user-detail']}>
-      <div className={styles['user-detail__container']}>
-        {/* Header */}
-        <div className={styles['user-detail__header']}>
-          <Link to="/profile" className={styles['user-detail__back-button']}>
-            <ArrowLeft />
-          </Link>
-          <div className={styles['user-detail__header-content']}>
-            <h1 className={styles['user-detail__title']}>User Details</h1>
-            <p className={styles['user-detail__subtitle']}>
-              Manage your profile information
-            </p>
+    <form onSubmit={onSubmit} className={styles['user-info-form__form']}>
+      {/* Avatar Section */}
+      <div className={styles['user-info-form__card']}>
+        <div className={styles['user-info-form__card-header']}>
+          <h2 className={styles['user-info-form__card-title']}>
+            Profile Picture
+          </h2>
+          <p className={styles['user-info-form__card-description']}>
+            Upload or change your avatar
+          </p>
+        </div>
+        <div className={styles['user-info-form__card-content']}>
+          <div className={styles['user-info-form__avatar-section']}>
+            <div className={styles['user-info-form__avatar-wrapper']}>
+              <div className={styles['user-info-form__avatar']}>
+                <img
+                  src={formData.avatar}
+                  alt={formData.username}
+                  className={styles['user-info-form__avatar-image']}
+                />
+              </div>
+              <label
+                htmlFor="avatar-upload"
+                className={styles['user-info-form__avatar-overlay']}
+              >
+                <Camera />
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className={styles['user-info-form__avatar-input']}
+              />
+            </div>
+            <div className={styles['user-info-form__avatar-info']}>
+              <p className={styles['user-info-form__avatar-title']}>
+                Change your avatar
+              </p>
+              <p className={styles['user-info-form__avatar-hint']}>
+                Hover over the image and click the camera icon
+              </p>
+            </div>
           </div>
         </div>
+      </div>
+      {/* Personal Information */}
+      <div className={styles['user-info-form__card']}>
+        <div className={styles['user-info-form__card-header']}>
+          <h2 className={styles['user-info-form__card-title']}>
+            Personal Information
+          </h2>
+          <p className={styles['user-info-form__card-description']}>
+            Update your basic profile details
+          </p>
+        </div>
+        <div className={styles['user-info-form__card-content']}>
+          <FormField
+            icon={User}
+            label="Username"
+            required
+            error={errors.username}
+          >
+            <TextInput
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              errror={errors.name}
+            />
+          </FormField>
+          <FormField icon={Mail} label="email" required error={errors.email}>
+            <TextInput
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              errror={errors.email}
+              disabled
+            />
+          </FormField>
 
-        <div className={styles['user-detail__form-container']}>
-          <form onSubmit={handleSubmit} className={styles['user-detail__form']}>
-            {/* Avatar Section */}
-            <div className={styles['user-detail__card']}>
-              <div className={styles['user-detail__card-header']}>
-                <h2 className={styles['user-detail__card-title']}>
-                  Profile Picture
-                </h2>
-                <p className={styles['user-detail__card-description']}>
-                  Upload or change your avatar
-                </p>
-              </div>
-              <div className={styles['user-detail__card-content']}>
-                <div className={styles['user-detail__avatar-section']}>
-                  <div className={styles['user-detail__avatar-wrapper']}>
-                    <div className={styles['user-detail__avatar']}>
-                      {formData.avatar ? (
-                        <img
-                          src={formData.avatar}
-                          alt={formData.fullName}
-                          className={styles['user-detail__avatar-image']}
-                        />
-                      ) : (
-                        <div className={styles['user-detail__avatar-fallback']}>
-                          {initials}
-                        </div>
-                      )}
-                    </div>
-                    <label
-                      htmlFor="avatar-upload"
-                      className={styles['user-detail__avatar-overlay']}
-                    >
-                      <Camera />
-                    </label>
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className={styles['user-detail__avatar-input']}
-                    />
-                  </div>
-                  <div className={styles['user-detail__avatar-info']}>
-                    <p className={styles['user-detail__avatar-title']}>
-                      Change your avatar
-                    </p>
-                    <p className={styles['user-detail__avatar-hint']}>
-                      Hover over the image and click the camera icon
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Personal Information */}
-            <div className={styles['user-detail__card']}>
-              <div className={styles['user-detail__card-header']}>
-                <h2 className={styles['user-detail__card-title']}>
-                  Personal Information
-                </h2>
-                <p className={styles['user-detail__card-description']}>
-                  Update your basic profile details
-                </p>
-              </div>
-              <div className={styles['user-detail__card-content']}>
-                <div className={styles['user-detail__field']}>
-                  <label
-                    htmlFor="fullName"
-                    className={styles['user-detail__label']}
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    className={`${styles['user-detail__input']} ${
-                      errors.fullName ? styles['user-detail__input--error'] : ''
-                    }`}
-                  />
-                  {errors.fullName && (
-                    <p className={styles['user-detail__error']}>
-                      {errors.fullName}
-                    </p>
-                  )}
-                </div>
-                <div className={styles['user-detail__field']}>
-                  <label
-                    htmlFor="email"
-                    className={styles['user-detail__label']}
-                  >
-                    Email Address
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="john@example.com"
-                    required
-                    disabled
-                    className={`${styles['user-detail__input']} ${styles['user-detail__input--disabled']}`}
-                  />
-                  <p className={styles['user-detail__hint']}>
-                    Email cannot be changed
-                  </p>
-                </div>
-                <div className={styles['user-detail__field']}>
-                  <label
-                    htmlFor="phone"
-                    className={styles['user-detail__label']}
-                  >
-                    Phone
-                  </label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="text"
-                    value={formData.phone || ''}
-                    onChange={handleChange}
-                    placeholder="+1 (555) 123-4567"
-                    className={`${styles['user-detail__input']} ${
-                      errors.phone ? styles['user-detail__input--error'] : ''
-                    }`}
-                  />
-                  {errors.phone && (
-                    <p className={styles['user-detail__error']}>
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-                <div className={styles['user-detail__field']}>
-                  <label
-                    htmlFor="location"
-                    className={styles['user-detail__label']}
-                  >
-                    Country
-                  </label>
-                  <input
-                    id="location"
-                    name="location"
-                    type="text"
-                    value={formData.location || ''}
-                    onChange={handleChange}
-                    placeholder="United States"
-                    className={`${styles['user-detail__input']} ${
-                      errors.location ? styles['user-detail__input--error'] : ''
-                    }`}
-                  />
-                  {errors.location && (
-                    <p className={styles['user-detail__error']}>
-                      {errors.location}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Bio and About */}
-            <div className={styles['user-detail__card']}>
-              <div className={styles['user-detail__card-header']}>
-                <h2 className={styles['user-detail__card-title']}>About You</h2>
-                <p className={styles['user-detail__card-description']}>
-                  Tell others about yourself
-                </p>
-              </div>
-              <div className={styles['user-detail__card-content']}>
-                <div className={styles['user-detail__field']}>
-                  <label htmlFor="bio" className={styles['user-detail__label']}>
-                    Bio
-                  </label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio || ''}
-                    onChange={handleChange}
-                    placeholder="A short bio about yourself..."
-                    rows={3}
-                    className={`${styles['user-detail__textarea']} ${
-                      errors.bio ? styles['user-detail__input--error'] : ''
-                    }`}
-                  />
-                  {errors.bio ? (
-                    <p className={styles['user-detail__error']}>{errors.bio}</p>
-                  ) : (
-                    <p className={styles['user-detail__hint']}>
-                      {(formData.bio || '').length}/160 characters
-                    </p>
-                  )}
-                </div>
-                <div className={styles['user-detail__field']}>
-                  <label
-                    htmlFor="aboutMe"
-                    className={styles['user-detail__label']}
-                  >
-                    About Me
-                  </label>
-                  <textarea
-                    id="aboutMe"
-                    name="aboutMe"
-                    value={formData.aboutMe || ''}
-                    onChange={handleChange}
-                    placeholder="Tell us more about yourself, your interests, and what you do..."
-                    rows={5}
-                    className={`${styles['user-detail__textarea']} ${
-                      errors.aboutMe ? styles['user-detail__input--error'] : ''
-                    }`}
-                  />
-                  {errors.aboutMe ? (
-                    <p className={styles['user-detail__error']}>
-                      {errors.aboutMe}
-                    </p>
-                  ) : (
-                    <p className={styles['user-detail__hint']}>
-                      {(formData.aboutMe || '').length}/500 characters
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Save Button */}
-            <div className={styles['user-detail__actions']}>
-              <button
-                onClick={revertChanges}
-                className={styles['user-detail__button--outline']}
-              >
-                Revert Changes
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className={styles['user-detail__button']}
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
+          <FormField
+            icon={Phone}
+            label="Phone Number"
+            required
+            error={errors.phoneNumber}
+          >
+            <TextInput
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              errror={errors.phoneNumber}
+            />
+          </FormField>
+
+          <FormField
+            icon={MapPin}
+            label="location"
+            required
+            error={errors.location}
+          >
+            <TextInput
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              errror={errors.location}
+            />
+          </FormField>
         </div>
       </div>
-    </div>
+      {/* Bio and About */}
+      <div className={styles['user-info-form__card']}>
+        <div className={styles['user-info-form__card-header']}>
+          <h2 className={styles['user-info-form__card-title']}>About You</h2>
+          <p className={styles['user-info-form__card-description']}>
+            Tell others about yourself
+          </p>
+        </div>
+        <div className={styles['user-info-form__card-content']}>
+          <FormField icon={Phone} label="Bio" error={errors.bio}>
+            <TextArea
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              errror={errors.bio}
+              placeholder="A short bio about yourself..."
+            />
+          </FormField>
+          <FormField icon={Phone} label="about" error={errors.about}>
+            <TextArea
+              name="about"
+              value={formData.about}
+              onChange={handleChange}
+              errror={errors.about}
+              placeholder="Tell us more about yourself, your interests, and what you do..."
+            />
+          </FormField>
+        </div>
+      </div>
+      <FormActions
+        onCancel={revertChanges}
+        submitText="Save"
+        loadingText="Saving..."
+      />
+    </form>
   );
 };
 
