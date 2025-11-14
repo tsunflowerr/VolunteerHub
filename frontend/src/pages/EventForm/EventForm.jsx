@@ -18,6 +18,7 @@ import {
   FormActions,
 } from '../../components/Form';
 import styles from './EventForm.module.css';
+import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 
 // Yup validation schema
 const eventFormSchema = yup.object().shape({
@@ -86,7 +87,6 @@ const eventFormSchema = yup.object().shape({
 const EventForm = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-
   const [formData, setFormData] = useState({
     name: '',
     about: '',
@@ -193,6 +193,34 @@ const EventForm = () => {
     setThumbnailPreview('');
   };
 
+  const createPreviewEvent = () => {
+    return {
+      _id: 'preview',
+      name: formData.name || 'Untitled Event',
+      thumbnail:
+        thumbnailPreview ||
+        'https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&q=80',
+      location: formData.location || 'Location not specified',
+      startDate: formData.startDate || new Date().toISOString(),
+      endDate: formData.endDate || new Date().toISOString(),
+      category: formData.category.map((catId) => ({
+        _id: catId,
+        slug: catId,
+        name: catId.charAt(0).toUpperCase() + catId.slice(1).replace('-', ' '),
+      })),
+      capacity: parseInt(formData.capacity) || 0,
+      registrationsCount: 0,
+      managerId: {
+        username: 'You',
+        avatar:
+          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+      },
+
+      about: formData.about || 'No description provided',
+      activities: formData.activities || 'No activities specified',
+      prepare: formData.prepare || 'No preparation info provided',
+    };
+  };
   // Validate form using Yup
   const validateForm = async () => {
     try {
@@ -440,11 +468,32 @@ const EventForm = () => {
           </FormField>
 
           {/* Actions */}
-          <FormActions
-            onCancel={handleCancel}
-            // onSubmit={handleSubmit}
-            loading={loading}
-          />
+          <div className={styles['event-form__actions']}>
+            <button
+              type="button"
+              className={styles['event-form__button--cancel']}
+              onClick={handleCancel}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <EventPreviewDialog event={createPreviewEvent()}>
+              <button
+                type="button"
+                className={styles['event-form__button--preview']}
+                disabled={loading}
+              >
+                Preview
+              </button>
+            </EventPreviewDialog>
+            <button
+              type="submit"
+              className={styles['event-form__button--submit']}
+              disabled={loading}
+            >
+              {loading ? 'Create...' : 'Create'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

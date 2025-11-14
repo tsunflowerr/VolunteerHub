@@ -29,6 +29,68 @@
   gap: 1.5rem;
 }
 
+/* Form Actions */
+.event-form__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.event-form__button--cancel,
+.event-form__button--preview,
+.event-form__button--submit {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.event-form__button--preview {
+  background: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.event-form__button--preview:hover:not(:disabled) {
+  background: var(--color-gray-300);
+  border-color: var(--color-gray-500);
+}
+
+.event-form__button--cancel {
+  background: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.event-form__button--cancel:hover:not(:disabled) {
+  background: var(--color-gray-300);
+  border-color: var(--color-gray-500);
+}
+
+.event-form__button--submit {
+  background: var(--primary-color);
+  color: var(--text-white-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.event-form__button--submit:hover:not(:disabled) {
+  background: var(--secondary-color);
+}
+
+.event-form__button--cancel:disabled,
+.event-form__button--preview:disabled,
+.event-form__button--submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .event-form {
