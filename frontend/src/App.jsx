@@ -2,7 +2,7 @@ import React from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Routes, Route } from 'react-router';
-import MainLayout from './layout/MainLayout';
+import MainLayout from './layout/MainLayout/MainLayout';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import Home from './pages/Home/Home';
@@ -19,19 +19,25 @@ const App = () => {
     once: false,
     mirror: true,
   });
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />}></Route>
-      <Route path="/register" element={<RegisterPage />}></Route>
+      {/* Auth Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Main Layout Routes */}
       <Route path="/" element={<MainLayout />}>
-        <Route>
-          <Route path="/" element={<Home />}></Route>
-          <Route path="/userinfo" element={<UserInfo />}></Route>
-          <Route path="/events" element={<Events />}></Route>
-          <Route path="/events/:id" element={<EventDetail />}></Route>
-          <Route path="/myevents" element={<MyEvents />}></Route>
-          <Route path="/profile" element={<UserProfile />}></Route>
-          <Route path="/events/create" element={<EventForm />}></Route>
+        <Route index element={<Home />} />
+        <Route path="userinfo" element={<UserInfo />} />
+        <Route path="profile" element={<UserProfile />} />
+        <Route path="myevents" element={<MyEvents />} />
+
+        {/* Events Routes */}
+        <Route path="events">
+          <Route index element={<Events />} />
+          <Route path="create" element={<EventForm />} />
+          <Route path=":id" element={<EventDetail />} />
         </Route>
       </Route>
     </Routes>
