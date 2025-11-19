@@ -68,7 +68,6 @@
   border-radius: 50px;
   border: 1px solid var(--color-gray-300);
   padding: 8px 20px;
-  margin-left: 20px;
   gap: 0.5rem;
   min-width: 280px;
   max-width: 360px;
@@ -212,6 +211,7 @@
 /* Icon Buttons */
 .navbar__menuButton,
 .navbar__notiButton {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -229,6 +229,21 @@
 .navbar__notiButton:hover {
   transform: scale(1.05);
   background: var(--color-gray-300);
+}
+
+.navbar__notiBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--secondary-color);
+  color: var(--text-white-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  border: 2px solid var(--background-color);
 }
 
 /* Hide menu button on desktop */
@@ -359,7 +374,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1400px) {
+@media (max-width: 1440px) {
   .navbar__nav {
     display: none;
     position: static;

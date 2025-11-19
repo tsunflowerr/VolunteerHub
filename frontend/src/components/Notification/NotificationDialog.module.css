@@ -1,0 +1,182 @@
+@import '../../styles/global.css';
+
+.noti-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.noti-dialog-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100vh;
+  background: var(--background-color);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.noti-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid var(--color-gray-300);
+  background: var(--text-white-color);
+}
+
+.noti-dialog-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-black-color);
+  margin: 0;
+}
+
+.noti-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.noti-dialog-close:hover {
+  background: var(--color-gray-200);
+  transform: scale(1.05);
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--text-white-color);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.filterTab {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--color-gray-700);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+}
+
+.filterTab:hover {
+  background: var(--color-gray-100);
+}
+
+.filterTabActive {
+  background: var(--secondary-color);
+  color: var(--text-white-color);
+}
+
+.filterTabActive:hover {
+  background: var(--secondary-color);
+}
+
+.markAllRead {
+  margin-left: auto;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--secondary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+}
+
+.markAllRead:hover {
+  text-decoration: underline;
+}
+
+/* Notification List */
+.notificationList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.notificationList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notificationList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notificationList::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: 3px;
+}
+
+.notificationList::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-500);
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.emptyText {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: var(--color-gray-500);
+}
+
+@media (max-width: 768px) {
+  .noti-dialog-content {
+    width: 100vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .noti-dialog-header {
+    padding: 1.25rem 1rem;
+  }
+}

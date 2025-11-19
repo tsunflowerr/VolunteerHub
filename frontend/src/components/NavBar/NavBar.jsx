@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './NavBar.module.css';
+import NotificationDialog from '../Notification/NotificationDialog.jsx';
 
 import { User, LogOut, Bell, Menu, Search, UserStar } from 'lucide-react';
 
 const NavBar = ({ showNavButtons = true }) => {
   const [activeTab, setActiveTab] = useState('home');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -141,13 +144,16 @@ const NavBar = ({ showNavButtons = true }) => {
               >
                 <Menu size={20} />
               </button>
-              <button
-                className={styles.navbar__notiButton}
-                onClick={() => console.log('Notifications clicked')}
-                aria-label="Notifications"
-              >
-                <Bell size={20} />
-              </button>
+              <NotificationDialog open={open} onOpenChange={setOpen}>
+                <button
+                  className={styles.navbar__notiButton}
+                  // onClick={() => setShowNotifications(!showNotifications)}
+                  // aria-label="Notifications"
+                >
+                  <Bell size={20} />
+                  <span className={styles.navbar__notiBadge}>3</span>
+                </button>
+              </NotificationDialog>
 
               <div className={styles.navbar__userAvatarContainer}>
                 <img
