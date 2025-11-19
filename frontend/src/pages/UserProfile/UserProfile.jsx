@@ -21,6 +21,7 @@ const UserProfile = () => {
   const [open, setOpen] = useState(false);
   const eventsPerPage = 9;
   const [user, setUser] = useState({
+    id: 1,
     username: 'John Doe',
     email: 'john.doe@example.com',
     location: 'San Francisco, CA',
