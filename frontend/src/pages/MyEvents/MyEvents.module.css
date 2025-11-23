@@ -135,19 +135,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  /* .my-events {
-    padding: 1rem 0.5rem;
-  } */
-
   .my-events__header {
     flex-direction: column;
     align-items: flex-start;
   }
-
-  /* .my-events__pagination {
-    margin-top: 2rem;
-    padding: 1rem 0;
-  } */
 }
 
 @media (max-width: 480px) {
