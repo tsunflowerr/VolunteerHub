@@ -68,7 +68,7 @@
 .my-events__tabs {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin: 20px 0;
   border-bottom: 2px solid var(--border-color);
 }
 
@@ -99,7 +99,6 @@
 .my-events__search {
   margin: 0 auto;
   max-width: 1400px;
-  text-align: center;
 }
 
 .my-events__list-container {
@@ -145,11 +144,6 @@
     align-items: flex-start;
   }
 
-  .my-events__view-toggle {
-    width: 100%;
-    justify-content: center;
-  }
-
   /* .my-events__pagination {
     margin-top: 2rem;
     padding: 1rem 0;
@@ -157,10 +151,6 @@
 }
 
 @media (max-width: 480px) {
-  .my-events__view-btn {
-    padding: 0.4rem 0.75rem;
-    gap: 0.25rem;
-  }
   .my-events__tab {
     /* padding: 0.75rem 1.5rem; */
     font-size: 1rem;

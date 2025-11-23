@@ -58,6 +58,15 @@ const MyEvents = () => {
           </div> */}
         </div>
 
+        {/* Search Box */}
+        <div className={styles['my-events__search']}>
+          <SearchBox
+            onSearch={handleSearch}
+            showCategories={true}
+            showSearchByName={true}
+          />
+        </div>
+
         {/* Tabs */}
         <div className={styles['my-events__tabs']}>
           <button
@@ -85,16 +94,6 @@ const MyEvents = () => {
             Past Events
           </button>
         </div>
-
-        {/* Search Box */}
-        <div className={styles['my-events__search']}>
-          <SearchBox
-            onSearch={handleSearch}
-            showCategories={true}
-            showSearchByName={true}
-          />
-        </div>
-
         {/* Events Content */}
         {currentEvents.length > 0 ? (
           <div className={styles['my-events__list-container']}>

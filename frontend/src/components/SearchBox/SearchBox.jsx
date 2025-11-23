@@ -18,6 +18,15 @@ const SearchBox = ({
   });
 
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  const sortOptions = [
+    { value: 'relevance', label: 'Relevance' },
+    { value: 'newest', label: 'Newest' },
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'popular', label: 'Popular' },
+    { value: 'trending', label: 'Trending' },
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,8 +41,13 @@ const SearchBox = ({
       onSearch({
         ...searchData,
         category: selectedCategory,
+        sortBy: sortBy,
       });
     }
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
   };
 
   const handleCategoryClick = (categoryId) => {
@@ -44,7 +58,9 @@ const SearchBox = ({
     <div className={styles['search-box']}>
       {/* Search Inputs */}
       <div className={styles['search-box__inputs']}>
-        <div className={styles['search-box__input-group']}>
+        <div
+          className={`${styles['search-box__input-group']} ${styles['search-box__input-group-startDate']}`}
+        >
           <label className={styles['search-box__label']}>From</label>
           <input
             type="date"
@@ -56,7 +72,9 @@ const SearchBox = ({
           />
         </div>
 
-        <div className={styles['search-box__input-group']}>
+        <div
+          className={`${styles['search-box__input-group']} ${styles['search-box__input-group-endDate']}`}
+        >
           <label className={styles['search-box__label']}>To</label>
           <input
             type="date"
@@ -67,6 +85,37 @@ const SearchBox = ({
             min={searchData.dateFrom}
             className={styles['search-box__input']}
           />
+        </div>
+
+        <div
+          className={`${styles['search-box__input-group']} ${styles['search-box__input-group-location']}`}
+        >
+          <label className={styles['search-box__label']}>Location</label>
+          <input
+            type="text"
+            name="location"
+            value={searchData.location}
+            onChange={handleInputChange}
+            placeholder="Enter location"
+            className={styles['search-box__input']}
+          />
+        </div>
+
+        <div
+          className={`${styles['search-box__input-group']} ${styles['search-box__input-group-location']}`}
+        >
+          <label className={styles['search-box__label']}>Sort By</label>
+          <select
+            value={sortBy}
+            onChange={handleSortChange}
+            className={styles['search-box__select']}
+          >
+            {sortOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button
