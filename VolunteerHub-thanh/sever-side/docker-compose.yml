@@ -1,4 +1,16 @@
 services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:latest
+    container_name: volunteerhub-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - volunteerhub-network
+
   # Redis Service - Chỉ dùng cho cache
   redis:
     image: redis:latest
@@ -24,7 +36,9 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://mongodb:27017/volunteerhub
     depends_on:
+      - mongodb
       - redis
     volumes:
       - .:/app
@@ -34,6 +48,7 @@ services:
 
 # Volumes
 volumes:
+  mongo_data:
   redis_data:
 
 # Networks
