@@ -1,11 +1,23 @@
-# VolunteerHub API 🤝
+# VolunteerHub 🤝
 
-Nền tảng quản lý tình nguyện viên được xây dựng với Node.js và Express, hỗ trợ quản lý sự kiện, đăng ký tình nguyện, tương tác xã hội và thông báo thời gian thực.
+Nền tảng quản lý tình nguyện viên được xây dựng với Node.js/Express (Backend) và React/Vite (Frontend).
+
+---
+
+## 📁 Cấu trúc dự án
+
+```
+VolunteerHub/
+├── frontend/          # React + Vite frontend
+├── sever-side/        # Node.js + Express backend
+└── README.md
+```
 
 ---
 
 ## ✨ Tính năng chính
 
+### Backend
 - 🔐 **Xác thực JWT** với hệ thống phân quyền 3 cấp (User, Manager, Admin)
 - 📅 **Quản lý sự kiện** với CRUD đầy đủ, phân loại, trạng thái và phê duyệt
 - 📝 **Đăng ký tình nguyện** với quản lý trạng thái và kiểm soát capacity
@@ -15,11 +27,20 @@ Nền tảng quản lý tình nguyện viên được xây dựng với Node.js 
 - 📊 **Dashboard và analytics** cho Users, Managers và Admins
 - 📤 **Export dữ liệu** sang CSV (users, events, registrations)
 
+### Frontend
+- 🏠 **Trang chủ** với banner, event list, partner slider
+- 📋 **Quản lý sự kiện** với tìm kiếm, lọc, chi tiết sự kiện
+- 👤 **Hồ sơ người dùng** với quản lý thông tin cá nhân
+- 📝 **Đăng ký sự kiện** với form và preview
+- 🎛️ **Manager Dashboard** với thống kê, biểu đồ, quản lý volunteers
+
 ---
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Node.js, Express.js v5.1.0
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js v5.1.0
 - **Database**: MongoDB với Mongoose v8.19.1
 - **Cache**: Redis v5.8.3
 - **Authentication**: JWT v9.0.2, bcrypt
@@ -28,22 +49,24 @@ Nền tảng quản lý tình nguyện viên được xây dựng với Node.js 
 - **Notifications**: web-push v3.6.7
 - **Documentation**: Swagger
 
+### Frontend
+- **Framework**: React 19
+- **Build Tool**: Vite 7
+- **Styling**: CSS Modules
+- **Charts**: Recharts
+- **Animation**: Framer Motion, AOS
+- **UI Components**: Radix UI, Lucide React
+- **Routing**: React Router v7
+
 ---
 
 ## 🚀 Cài đặt
 
-### Yêu cầu
-- Node.js (v16+)
-- MongoDB
-- Redis
-- npm hoặc yarn
+### Backend
 
-### Các bước cài đặt
-
-1. **Clone repository**
+1. **Di chuyển vào thư mục backend**
    ```bash
-   git clone https://github.com/tsunflowerr/VolunteerHub.git
-   cd VolunteerHub/sever-side
+   cd sever-side
    ```
 
 2. **Cài đặt dependencies**
@@ -54,7 +77,7 @@ Nền tảng quản lý tình nguyện viên được xây dựng với Node.js 
 3. **Tạo file `.env`**
    ```env
    PORT=4000
-   CLIENT_URL=http://localhost:3000
+   CLIENT_URL=http://localhost:5173
    NODE_ENV=development
    MONGODB_URI=mongodb://localhost:27017/volunteerhub
    REDIS_URL=redis://localhost:6379
@@ -63,22 +86,34 @@ Nền tảng quản lý tình nguyện viên được xây dựng với Node.js 
    VAPID_PRIVATE_KEY=your_vapid_private_key
    ```
 
-4. **Generate VAPID keys** (tùy chọn)
-   ```bash
-   npx web-push generate-vapid-keys
-   ```
-
-5. **Khởi động server**
+4. **Khởi động server**
    ```bash
    npm start
    ```
-
    Server chạy tại `http://localhost:4000`
 
-6. **Truy cập API Documentation**
+5. **API Documentation**
    ```
    http://localhost:4000/api-docs
    ```
+
+### Frontend
+
+1. **Di chuyển vào thư mục frontend**
+   ```bash
+   cd frontend
+   ```
+
+2. **Cài đặt dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Khởi động development server**
+   ```bash
+   npm run dev
+   ```
+   Frontend chạy tại `http://localhost:5173`
 
 ---
 
@@ -113,9 +148,6 @@ http://localhost:4000/api
 - Auth Endpoints: 5 requests/15 phút
 - Registration: 3 requests/15 phút
 - Search: 50 requests/15 phút
-
-### Swagger Documentation
-Chi tiết đầy đủ tại: `http://localhost:4000/api-docs`
 
 ---
 

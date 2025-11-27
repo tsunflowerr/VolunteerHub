@@ -1,0 +1,65 @@
+/* Banner Container */
+.banner {
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Swiper container - remove default margins */
+.banner :global(.mySwiper) {
+  margin: 0;
+  padding: 0;
+}
+
+/* Position pagination below the banner */
+.banner :global(.swiper-pagination) {
+  position: relative;
+  bottom: 0 !important;
+  padding: 1.5rem 0;
+  background-color: transparent;
+}
+
+/* Style pagination bullets */
+.banner :global(.swiper-pagination-bullet) {
+  width: 12px;
+  height: 12px;
+  background-color: rgba(0, 0, 0, 0.3);
+  opacity: 1;
+}
+
+.banner :global(.swiper-pagination-bullet-active) {
+  background-color: var(--secondary-color);
+  width: 30px;
+  border-radius: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .banner :global(.swiper-pagination) {
+    padding: 1rem 0;
+  }
+
+  .banner :global(.swiper-pagination-bullet) {
+    width: 10px;
+    height: 10px;
+  }
+
+  .banner :global(.swiper-pagination-bullet-active) {
+    width: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner :global(.swiper-pagination) {
+    padding: 0.75rem 0;
+  }
+
+  .banner :global(.swiper-pagination-bullet) {
+    width: 8px;
+    height: 8px;
+  }
+
+  .banner :global(.swiper-pagination-bullet-active) {
+    width: 20px;
+  }
+}

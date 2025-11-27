@@ -1,0 +1,103 @@
+/* Event Section Component - BEM Convention */
+@import '../../styles/global.css';
+
+.event-section {
+  padding: 4rem 0;
+}
+
+/* Container */
+.event-section__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Title */
+.event-section__title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-black-color);
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .event-section__title {
+    font-size: 3rem;
+  }
+}
+
+/* Description */
+.event-section__description {
+  width: 66.666667%;
+  margin: 1rem auto 0;
+  text-align: center;
+  line-height: 1.625;
+  color: var(--color-gray-700);
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .event-section__description {
+    width: 90%;
+  }
+}
+
+/* Grid */
+.event-section__grid {
+  max-width: 1400px;
+  margin: 4rem auto 0;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .event-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3rem 1.5rem;
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 1024px) {
+  .event-section__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+}
+
+/* Actions */
+.event-section__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+/* Link */
+.event-section__link {
+  text-decoration: none;
+}
+
+/* Button */
+.event-section__button {
+  padding: 0.75rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-white-color);
+  background: var(--secondary-color);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px var(--secondary-shadow-color);
+}
+
+.event-section__button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px var(--secondary-shadow-color);
+}

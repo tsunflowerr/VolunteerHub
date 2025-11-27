@@ -37,6 +37,7 @@ const App = () => {
           <Route path="/events/:id" element={<EventDetail />}></Route>
           <Route path="/myevents" element={<MyEvents />}></Route>
           <Route path="/profile" element={<UserProfile />}></Route>
+          <Route path="/events/create" element={<EventForm />}></Route>
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>
