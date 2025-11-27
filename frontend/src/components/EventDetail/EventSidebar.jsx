@@ -1,4 +1,4 @@
-import { Users, Bookmark, BookmarkCheck, Check, Ellipsis, X } from 'lucide-react';
+import { Users, Bookmark, BookmarkCheck, Check, Ellipsis, X, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import styles from './EventDetail.module.css';
 
@@ -40,6 +40,29 @@ const EventSidebar = ({
 
   return (
     <aside className={styles['event-detail__sidebar']}>
+      {/* Discussion Card - Available for everyone */}
+      {!previewMode && (
+        <div className={styles['event-detail__sidebar-card']}>
+          <div className={styles['event-detail__sidebar-discussion-header']}>
+            <MessageSquare size={24} />
+            <div>
+              <h3 className={styles['event-detail__sidebar-card-title']}>
+                Event Discussion
+              </h3>
+              <p className={styles['event-detail__sidebar-card-subtitle']}>
+                Join the conversation with other volunteers
+              </p>
+            </div>
+          </div>
+          <button
+            className={`${styles['event-detail__sidebar-card-btn']} ${styles['discussion-btn']}`}
+            onClick={handleDiscussion}
+          >
+            Go to Discussion
+          </button>
+        </div>
+      )}
+
       {/* Bookmark Card */}
       {!previewMode && (
         <div className={styles['event-detail__sidebar-card']}>
@@ -150,21 +173,6 @@ const EventSidebar = ({
           </>
         )}
       </div>
-
-      {/* Discussion Card */}
-      {userState === 'approved' && !previewMode && (
-        <div className={styles['event-detail__sidebar-card']}>
-          <h3 className={styles['event-detail__sidebar-card-title']}>
-            Go to discussion
-          </h3>
-          <button
-            className={styles['event-detail__sidebar-card-btn']}
-            onClick={handleDiscussion}
-          >
-            Go
-          </button>
-        </div>
-      )}
     </aside>
   );
 };

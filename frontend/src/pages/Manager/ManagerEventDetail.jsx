@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  MessageSquare,
 } from 'lucide-react';
 import VolunteerListDialog from '../../components/Manager/VolunteerListDialog';
 import styles from './ManagerEventDetail.module.css';
@@ -117,6 +118,10 @@ const ManagerEventDetail = () => {
     navigate(`/manager/events/edit/${id}`);
   };
 
+  const handleDiscussion = () => {
+    navigate(`/events/${id}/discussion`);
+  };
+
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       // TODO: API call to delete event
@@ -164,6 +169,10 @@ const ManagerEventDetail = () => {
           Back
         </button>
         <div className={styles.actions}>
+          <button className={styles.discussionBtn} onClick={handleDiscussion}>
+            <MessageSquare size={18} />
+            Discussion
+          </button>
           <button className={styles.editBtn} onClick={handleEdit}>
             <Edit size={18} />
             Edit

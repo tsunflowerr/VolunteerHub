@@ -340,6 +340,37 @@ h2.event-detail__section-subtitle {
   transform: scale(0.98);
 }
 
+/* Discussion Header */
+.event-detail__sidebar-discussion-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.event-detail__sidebar-discussion-header svg {
+  color: var(--primary-color);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.event-detail__sidebar-card-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+  margin-top: 0.25rem;
+  font-weight: 400;
+}
+
+.event-detail__sidebar-card-btn.discussion-btn {
+  background-color: var(--primary-color);
+}
+
+.event-detail__sidebar-card-btn.discussion-btn:hover {
+  background-color: var(--primary-hover-color, #2a4019);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 79, 31, 0.3);
+}
+
 /* Categories Section */
 .event-detail__categories {
   display: flex;

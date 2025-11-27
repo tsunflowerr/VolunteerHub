@@ -90,7 +90,8 @@
 }
 
 .editBtn,
-.deleteBtn {
+.deleteBtn,
+.discussionBtn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -101,6 +102,16 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.discussionBtn {
+  background-color: var(--secondary-color);
+  color: var(--text-white-color);
+}
+
+.discussionBtn:hover {
+  background-color: #e08a15;
+  box-shadow: 0 4px 12px rgba(244, 153, 26, 0.3);
 }
 
 .editBtn {

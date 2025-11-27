@@ -13,6 +13,7 @@ import MyEvents from './pages/MyEvents/MyEvents';
 import UserProfile from './pages/UserProfile/UserProfile';
 import EventDetail from './pages/EventDetail/EventDetail';
 import EventForm from './pages/EventForm/EventForm';
+import EventDiscussion from './pages/EventDiscussion/EventDiscussion';
 import ManagerDashboard from './pages/Manager/ManagerDashboard';
 import ManagerEvents from './pages/Manager/ManagerEvents';
 import ManagerEventForm from './pages/Manager/ManagerEventForm';
@@ -35,6 +36,7 @@ const App = () => {
           <Route path="/userinfo" element={<UserInfo />}></Route>
           <Route path="/events" element={<Events />}></Route>
           <Route path="/events/:id" element={<EventDetail />}></Route>
+          <Route path="/events/:id/discussion" element={<EventDiscussion />}></Route>
           <Route path="/myevents" element={<MyEvents />}></Route>
           <Route path="/profile" element={<UserProfile />}></Route>
           <Route path="/events/create" element={<EventForm />}></Route>

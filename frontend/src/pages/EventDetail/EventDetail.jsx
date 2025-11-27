@@ -104,7 +104,11 @@ const EventDetail = () => {
         <EventHero thumbnail={event.thumbnail} />
         <div className={styles['event-detail__content']}>
           <EventContent event={event} />
-          <EventSidebar event={event} />
+          <EventSidebar 
+            event={event} 
+            userState={userState}
+            onGoToDiscussion={handleGoToDiscussion}
+          />
         </div>
       </div>
     </div>
