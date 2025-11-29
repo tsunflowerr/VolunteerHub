@@ -1,6 +1,11 @@
 import { useState } from 'react'
+import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import StatCard from '../../components/StatCard/StatCard'
 import EventsTable from '../../components/EventsTable/EventsTable'
+import UsersTable from '../../components/UsersTable/UsersTable'
+import CategoriesTable from '../../components/CategoriesTable/CategoriesTable'
+import ExportData from '../../components/ExportData/ExportData'
 import '../../components/StatCard/StatCard.css'
 import '../../components/EventsTable/EventsTable.css'
 import './AdminDashboard.css'
@@ -15,9 +20,16 @@ import './AdminDashboard.css'
  */
 
 function AdminDashboard() {
-  // useState trả về [giá trị, hàm để thay đổi giá trị]
-  // 'dashboard' là giá trị khởi tạo
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [activeMenu, setActiveMenu] = useState('dashboard')
+
+  const handleLogout = () => {
+    if (confirm('Bạn có chắc muốn đăng xuất?')) {
+      logout()
+      navigate('/login')
+    }
+  }
 
   // Danh sách menu - trong thực tế có thể lấy từ API
   const menuItems = [
@@ -97,28 +109,13 @@ function AdminDashboard() {
         return <EventsTable />
       
       case 'users':
-        return (
-          <div className="placeholder">
-            <h2>👥 Quản lý Người dùng</h2>
-            <p>Trang này sẽ được phát triển ở bước sau</p>
-          </div>
-        )
+        return <UsersTable />
       
       case 'categories':
-        return (
-          <div className="placeholder">
-            <h2>📁 Quản lý Danh mục</h2>
-            <p>Trang này sẽ được phát triển ở bước sau</p>
-          </div>
-        )
+        return <CategoriesTable />
       
       case 'export':
-        return (
-          <div className="placeholder">
-            <h2>📥 Xuất Dữ liệu</h2>
-            <p>Trang này sẽ được phát triển ở bước sau</p>
-          </div>
-        )
+        return <ExportData />
       
       default:
         return <div>Không tìm thấy trang</div>
@@ -131,6 +128,7 @@ function AdminDashboard() {
       <aside className="sidebar">
         <div className="sidebar-header">
           <h2>🎯 Admin Panel</h2>
+          <p className="user-info">👤 {user?.fullName || 'Admin'}</p>
         </div>
         
         <nav className="sidebar-menu">
@@ -146,15 +144,14 @@ function AdminDashboard() {
             </button>
           ))}
         </nav>
+
+        <button className="logout-btn" onClick={handleLogout}>
+          🚪 Đăng xuất
+        </button>
       </aside>
 
       {/* MAIN CONTENT - Nội dung chính */}
       <main className="main-content">
-        <header className="content-header">
-          <h1>Chào mừng đến Admin Dashboard</h1>
-          <p>Menu đang chọn: <strong>{activeMenu}</strong></p>
-        </header>
-        
         {/* Gọi hàm renderContent() để hiển thị nội dung tương ứng */}
         {/* Nội dung sẽ thay đổi dựa vào activeMenu */}
         {renderContent()}

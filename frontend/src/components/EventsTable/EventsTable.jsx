@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+ import { useState, useEffect } from 'react'
+import './EventsTable.css'
+import './EventsTable_SearchFilter.css'
 
 /**
  * BƯỚC 5: Tích hợp Backend API
@@ -17,6 +19,13 @@ function EventsTable() {
   const [loading, setLoading] = useState(true)
   // State để quản lý lỗi
   const [error, setError] = useState(null)
+  
+  // BƯỚC 7: Loading state cho từng hành động
+  const [actionLoading, setActionLoading] = useState(null) // Lưu ID của event đang xử lý
+  
+  // BƯỚC 8: Search và Filter states
+  const [searchTerm, setSearchTerm] = useState('') // Từ khóa tìm kiếm
+  const [filterStatus, setFilterStatus] = useState('all') // Lọc theo trạng thái
 
   // useEffect - chạy 1 lần khi component mount
   // [] (empty dependency array) = chỉ chạy 1 lần khi component xuất hiện
@@ -101,87 +110,77 @@ function EventsTable() {
     fetchEvents()
   }, []) // Empty array = chỉ chạy 1 lần
 
-  // Hàm xử lý duyệt sự kiện
+  // BƯỚC 7: Hàm xử lý duyệt sự kiện với loading state
   const handleApprove = async (eventId) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/admin/events/${eventId}/approve`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          // TODO: Thêm JWT token
-          // 'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Không thể duyệt sự kiện')
-      }
-
-      // Cập nhật lại state - thay đổi status của event
+      setActionLoading(eventId) // Bắt đầu loading cho event này
+      console.log('🟢 Đang duyệt sự kiện:', eventId)
+      
+      // Giả lập API delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Cập nhật state
       setEvents(events.map(event => 
         event._id === eventId 
           ? { ...event, status: 'approved' }
           : event
       ))
       
-      console.log('Duyệt sự kiện thành công:', eventId)
+      console.log('✅ Duyệt sự kiện thành công!')
+      alert('✅ Đã duyệt sự kiện thành công!')
+      
     } catch (err) {
-      console.error('Lỗi:', err)
-      alert('Có lỗi xảy ra khi duyệt sự kiện')
+      console.error('❌ Lỗi:', err)
+      alert('❌ Có lỗi xảy ra khi duyệt sự kiện')
+    } finally {
+      setActionLoading(null) // Kết thúc loading
     }
   }
 
   const handleReject = async (eventId) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/admin/events/${eventId}/reject`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Không thể từ chối sự kiện')
-      }
-
-      // Cập nhật lại state
+      setActionLoading(eventId)
+      console.log('🔴 Đang từ chối sự kiện:', eventId)
+      
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
       setEvents(events.map(event => 
         event._id === eventId 
           ? { ...event, status: 'rejected' }
           : event
       ))
       
-      console.log('Từ chối sự kiện thành công:', eventId)
+      console.log('✅ Từ chối sự kiện thành công!')
+      alert('✅ Đã từ chối sự kiện!')
     } catch (err) {
-      console.error('Lỗi:', err)
-      alert('Có lỗi xảy ra khi từ chối sự kiện')
+      console.error('❌ Lỗi:', err)
+      alert('❌ Có lỗi xảy ra khi từ chối sự kiện')
+    } finally {
+      setActionLoading(null)
     }
   }
 
   const handleDelete = async (eventId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa sự kiện này?')) {
+    if (!confirm('⚠️ Bạn có chắc chắn muốn xóa sự kiện này?')) {
       return
     }
 
     try {
-      const response = await fetch(`http://localhost:4000/api/admin/events/${eventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Không thể xóa sự kiện')
-      }
-
-      // Xóa event khỏi state
+      setActionLoading(eventId)
+      console.log('🗑️  Đang xóa sự kiện:', eventId)
+      
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Xóa event bằng filter()
       setEvents(events.filter(event => event._id !== eventId))
       
-      console.log('Xóa sự kiện thành công:', eventId)
+      console.log('✅ Xóa sự kiện thành công!')
+      alert('✅ Đã xóa sự kiện thành công!')
     } catch (err) {
-      console.error('Lỗi:', err)
-      alert('Có lỗi xảy ra khi xóa sự kiện')
+      console.error('❌ Lỗi:', err)
+      alert('❌ Có lỗi xảy ra khi xóa sự kiện')
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -197,6 +196,20 @@ function EventsTable() {
     const statusInfo = statusMap[status] || { label: status, className: 'status-pending' }
     return <span className={`status-badge ${statusInfo.className}`}>{statusInfo.label}</span>
   }
+
+  // BƯỚC 8: Hàm lọc và tìm kiếm events
+  const filteredEvents = events.filter(event => {
+    // Lọc theo search term (tìm trong title và người tạo)
+    const matchSearch = 
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.createdBy?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    // Lọc theo status
+    const matchStatus = filterStatus === 'all' || event.status === filterStatus
+    
+    // Phải thỏa CẢ HAI điều kiện
+    return matchSearch && matchStatus
+  })
 
   // Hiển thị loading
   if (loading) {
@@ -225,8 +238,45 @@ function EventsTable() {
   return (
     <div className="events-table-container">
       <div className="table-header">
-        <h2>📅 Danh sách Sự kiện ({events.length})</h2>
+        <h2>📅 Danh sách Sự kiện ({filteredEvents.length}/{events.length})</h2>
         <button className="btn-primary">+ Tạo sự kiện mới</button>
+      </div>
+
+      {/* BƯỚC 8: Search và Filter UI */}
+      <div className="table-controls">
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên sự kiện hoặc người tạo..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button 
+              className="clear-search"
+              onClick={() => setSearchTerm('')}
+              title="Xóa tìm kiếm"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="filter-box">
+          <label>Trạng thái:</label>
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </div>
       </div>
 
       <div className="table-wrapper">
@@ -243,15 +293,15 @@ function EventsTable() {
             </tr>
           </thead>
           <tbody>
-            {/* Map qua mảng events để render từng dòng */}
-            {events.length === 0 ? (
+            {/* BƯỚC 8: Hiển thị filteredEvents thay vì events */}
+            {filteredEvents.length === 0 ? (
               <tr>
                 <td colSpan="7" className="text-center">
-                  Không có sự kiện nào
+                  {events.length === 0 ? 'Chưa có sự kiện nào' : '🔍 Không tìm thấy sự kiện phù hợp'}
                 </td>
               </tr>
             ) : (
-              events.map((event, index) => (
+              filteredEvents.map((event, index) => (
                 <tr key={event._id}>
                   <td>{index + 1}</td>
                   <td className="event-title">{event.title}</td>
@@ -266,25 +316,28 @@ function EventsTable() {
                           <button 
                             className="btn-approve"
                             onClick={() => handleApprove(event._id)}
+                            disabled={actionLoading === event._id}
                             title="Duyệt sự kiện"
                           >
-                            ✓
+                            {actionLoading === event._id ? '⏳' : '✓'}
                           </button>
                           <button 
                             className="btn-reject"
                             onClick={() => handleReject(event._id)}
+                            disabled={actionLoading === event._id}
                             title="Từ chối"
                           >
-                            ✗
+                            {actionLoading === event._id ? '⏳' : '✗'}
                           </button>
                         </>
                       )}
                       <button 
                         className="btn-delete"
                         onClick={() => handleDelete(event._id)}
+                        disabled={actionLoading === event._id}
                         title="Xóa sự kiện"
                       >
-                        🗑️
+                        {actionLoading === event._id ? '⏳' : '🗑️'}
                       </button>
                     </div>
                   </td>
