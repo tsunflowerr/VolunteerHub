@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { CheckCircle2, XCircle, Trash2, Loader2, Search, Filter, Plus, Calendar, MapPin, Users } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { CheckCircle2, XCircle, Trash2, Loader2, Search, Filter, Plus, Calendar, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react'
 import './EventsTable.css'
 import './EventsTable_SearchFilter.css'
 
@@ -27,6 +27,10 @@ function EventsTable() {
   // BƯỚC 8: Search và Filter states
   const [searchTerm, setSearchTerm] = useState('') // Từ khóa tìm kiếm
   const [filterStatus, setFilterStatus] = useState('all') // Lọc theo trạng thái
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   // useEffect - chạy 1 lần khi component mount
   // [] (empty dependency array) = chỉ chạy 1 lần khi component xuất hiện
@@ -44,40 +48,33 @@ function EventsTable() {
         // Giả lập API call delay
         await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Dữ liệu mock
+        // Dữ liệu mock - Nhiều dữ liệu để test phân trang
         const mockData = [
-          {
-            _id: '1',
-            title: 'Dọn dẹp bãi biển Vũng Tàu',
-            createdBy: { fullName: 'Nguyễn Văn A' },
-            eventDate: '2025-12-01',
-            maxParticipants: 50,
-            status: 'pending'
-          },
-          {
-            _id: '2',
-            title: 'Trồng cây xanh công viên Lê Văn Tám',
-            createdBy: { fullName: 'Trần Thị B' },
-            eventDate: '2025-12-05',
-            maxParticipants: 30,
-            status: 'approved'
-          },
-          {
-            _id: '3',
-            title: 'Trao quà từ thiện cho trẻ em vùng cao',
-            createdBy: { fullName: 'Lê Văn C' },
-            eventDate: '2025-12-10',
-            maxParticipants: 20,
-            status: 'pending'
-          },
-          {
-            _id: '4',
-            title: 'Hiến máu nhân đạo',
-            createdBy: { fullName: 'Phạm Thị D' },
-            eventDate: '2025-12-15',
-            maxParticipants: 100,
-            status: 'approved'
-          }
+          { _id: '1', title: 'Dọn dẹp bãi biển Vũng Tàu', createdBy: { fullName: 'Nguyễn Văn A' }, eventDate: '2025-12-01', maxParticipants: 50, status: 'pending' },
+          { _id: '2', title: 'Trồng cây xanh công viên Lê Văn Tám', createdBy: { fullName: 'Trần Thị B' }, eventDate: '2025-12-05', maxParticipants: 30, status: 'approved' },
+          { _id: '3', title: 'Trao quà từ thiện cho trẻ em vùng cao', createdBy: { fullName: 'Lê Văn C' }, eventDate: '2025-12-10', maxParticipants: 20, status: 'pending' },
+          { _id: '4', title: 'Hiến máu nhân đạo', createdBy: { fullName: 'Phạm Thị D' }, eventDate: '2025-12-15', maxParticipants: 100, status: 'approved' },
+          { _id: '5', title: 'Dạy học cho trẻ em nghèo', createdBy: { fullName: 'Hoàng Văn E' }, eventDate: '2025-12-20', maxParticipants: 15, status: 'pending' },
+          { _id: '6', title: 'Xây nhà tình thương', createdBy: { fullName: 'Ngô Thị F' }, eventDate: '2025-12-25', maxParticipants: 40, status: 'approved' },
+          { _id: '7', title: 'Khám bệnh miễn phí cho người già', createdBy: { fullName: 'Đỗ Văn G' }, eventDate: '2025-12-28', maxParticipants: 200, status: 'rejected' },
+          { _id: '8', title: 'Phát cơm từ thiện', createdBy: { fullName: 'Vũ Thị H' }, eventDate: '2026-01-02', maxParticipants: 25, status: 'pending' },
+          { _id: '9', title: 'Dọn vệ sinh khu phố', createdBy: { fullName: 'Bùi Văn I' }, eventDate: '2026-01-05', maxParticipants: 35, status: 'approved' },
+          { _id: '10', title: 'Tặng sách cho thư viện vùng sâu', createdBy: { fullName: 'Lý Thị K' }, eventDate: '2026-01-10', maxParticipants: 10, status: 'pending' },
+          { _id: '11', title: 'Hỗ trợ nạn nhân bão lũ', createdBy: { fullName: 'Trương Văn L' }, eventDate: '2026-01-15', maxParticipants: 80, status: 'approved' },
+          { _id: '12', title: 'Tổ chức Tết cho trẻ mồ côi', createdBy: { fullName: 'Mai Thị M' }, eventDate: '2026-01-20', maxParticipants: 60, status: 'pending' },
+          { _id: '13', title: 'Trồng rừng phòng hộ', createdBy: { fullName: 'Đinh Văn N' }, eventDate: '2026-01-25', maxParticipants: 45, status: 'rejected' },
+          { _id: '14', title: 'Dạy nghề cho người khuyết tật', createdBy: { fullName: 'Hồ Thị O' }, eventDate: '2026-02-01', maxParticipants: 20, status: 'approved' },
+          { _id: '15', title: 'Quyên góp quần áo ấm', createdBy: { fullName: 'Dương Văn P' }, eventDate: '2026-02-05', maxParticipants: 30, status: 'pending' },
+          { _id: '16', title: 'Tổ chức hội thao từ thiện', createdBy: { fullName: 'Phan Thị Q' }, eventDate: '2026-02-10', maxParticipants: 150, status: 'approved' },
+          { _id: '17', title: 'Xây cầu vượt lũ', createdBy: { fullName: 'Võ Văn R' }, eventDate: '2026-02-15', maxParticipants: 55, status: 'pending' },
+          { _id: '18', title: 'Tặng xe đạp cho học sinh nghèo', createdBy: { fullName: 'Đặng Thị S' }, eventDate: '2026-02-20', maxParticipants: 25, status: 'approved' },
+          { _id: '19', title: 'Khám mắt miễn phí', createdBy: { fullName: 'Nguyễn Văn T' }, eventDate: '2026-02-25', maxParticipants: 100, status: 'rejected' },
+          { _id: '20', title: 'Dọn rác sông Sài Gòn', createdBy: { fullName: 'Trần Thị U' }, eventDate: '2026-03-01', maxParticipants: 70, status: 'pending' },
+          { _id: '21', title: 'Trao học bổng cho sinh viên', createdBy: { fullName: 'Lê Văn V' }, eventDate: '2026-03-05', maxParticipants: 40, status: 'approved' },
+          { _id: '22', title: 'Phát quà trung thu cho trẻ em', createdBy: { fullName: 'Phạm Thị X' }, eventDate: '2026-03-10', maxParticipants: 90, status: 'pending' },
+          { _id: '23', title: 'Xây dựng sân chơi trẻ em', createdBy: { fullName: 'Hoàng Văn Y' }, eventDate: '2026-03-15', maxParticipants: 35, status: 'approved' },
+          { _id: '24', title: 'Hỗ trợ người vô gia cư', createdBy: { fullName: 'Ngô Thị Z' }, eventDate: '2026-03-20', maxParticipants: 20, status: 'pending' },
+          { _id: '25', title: 'Tổ chức lớp học tình thương', createdBy: { fullName: 'Đỗ Văn AA' }, eventDate: '2026-03-25', maxParticipants: 15, status: 'rejected' },
         ]
         
         setEvents(mockData)
@@ -212,6 +209,101 @@ function EventsTable() {
     return matchSearch && matchStatus
   })
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedEvents = filteredEvents.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filter/search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterStatus])
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page)
+  }
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null
+    
+    const pages = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+
+    return (
+      <div className="pagination">
+        <div className="pagination-info">
+          Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredEvents.length)} / {filteredEvents.length} kết quả
+        </div>
+        <div className="pagination-controls">
+          <button 
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          
+          {startPage > 1 && (
+            <>
+              <button className="pagination-btn" onClick={() => handlePageChange(1)}>1</button>
+              {startPage > 2 && <span className="pagination-ellipsis">...</span>}
+            </>
+          )}
+          
+          {pages.map(page => (
+            <button
+              key={page}
+              className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </button>
+          ))}
+          
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <span className="pagination-ellipsis">...</span>}
+              <button className="pagination-btn" onClick={() => handlePageChange(totalPages)}>{totalPages}</button>
+            </>
+          )}
+          
+          <button 
+            className="pagination-btn"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <div className="pagination-size">
+          <select 
+            value={itemsPerPage} 
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value))
+              setCurrentPage(1)
+            }}
+          >
+            <option value={5}>5 / trang</option>
+            <option value={10}>10 / trang</option>
+            <option value={20}>20 / trang</option>
+            <option value={50}>50 / trang</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
   // Hiển thị loading
   if (loading) {
     return (
@@ -240,7 +332,6 @@ function EventsTable() {
     <div className="events-table-container">
       <div className="table-header">
         <h2>Danh sách Sự kiện</h2>
-        <button className="btn-primary">+ Tạo sự kiện mới</button>
       </div>
 
       {/* BƯỚC 8: Search và Filter UI */}
@@ -294,17 +385,17 @@ function EventsTable() {
             </tr>
           </thead>
           <tbody>
-            {/* BƯỚC 8: Hiển thị filteredEvents thay vì events */}
-            {filteredEvents.length === 0 ? (
+            {/* BƯỚC 8: Hiển thị paginatedEvents thay vì filteredEvents */}
+            {paginatedEvents.length === 0 ? (
               <tr>
                 <td colSpan="7" className="text-center">
                   {events.length === 0 ? 'Chưa có sự kiện nào' : 'Không tìm thấy sự kiện phù hợp'}
                 </td>
               </tr>
             ) : (
-              filteredEvents.map((event, index) => (
+              paginatedEvents.map((event, index) => (
                 <tr key={event._id}>
-                  <td>{index + 1}</td>
+                  <td>{startIndex + index + 1}</td>
                   <td className="event-title">{event.title}</td>
                   <td>{event.createdBy?.fullName || 'Không rõ'}</td>
                   <td>{new Date(event.eventDate).toLocaleDateString('vi-VN')}</td>
@@ -348,6 +439,8 @@ function EventsTable() {
           </tbody>
         </table>
       </div>
+      
+      {renderPagination()}
     </div>
   )
 }

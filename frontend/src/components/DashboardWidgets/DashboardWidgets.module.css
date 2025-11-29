@@ -1,0 +1,416 @@
+.widgetsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.widgetsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+/* Widget Card Base */
+.widget {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #eee;
+}
+
+.widgetFull {
+  grid-column: 1 / -1;
+}
+
+.widgetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.widgetTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #344f1f;
+}
+
+.widgetTitle .subtitle {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #888;
+}
+
+.flameIcon {
+  color: #f4991a;
+  animation: flameGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes flameGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(244, 153, 26, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(244, 153, 26, 0.8));
+  }
+}
+
+.viewAllBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid #344f1f;
+  border-radius: 20px;
+  color: #344f1f;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewAllBtn:hover {
+  background: #344f1f;
+  color: white;
+}
+
+/* Widget Content */
+.widgetContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Event Item */
+.eventItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.eventThumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.eventInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.eventName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.category {
+  background: #e8f5e9;
+  color: #344f1f;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.separator {
+  color: #ccc;
+}
+
+.organizer, .author {
+  color: #666;
+}
+
+.publishedTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* Post Preview */
+.postPreview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+  margin: 4px 0;
+}
+
+.postTitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badges */
+.newBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #f4991a, #ff6b35);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.postCountBadge {
+  background: #344f1f;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Trending Grid */
+.trendingGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.trendingCard {
+  background: linear-gradient(145deg, #fafafa, #ffffff);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.trendingRank {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #344f1f, #4a7c23);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(52, 79, 31, 0.3);
+}
+
+.trendingThumb {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.trendingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trendingName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 40px;
+}
+
+/* Stats Grid in Trending Card */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.statItem svg {
+  color: #888;
+}
+
+.statValue {
+  font-weight: 600;
+  color: #333;
+}
+
+.statGrowth {
+  color: #2ecc71;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #e8f8f0;
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+/* Responsive Styles */
+@media (max-width: 1400px) {
+  .trendingGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .widgetsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .trendingGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .eventName {
+    font-size: 0.9rem;
+  }
+  
+  .eventThumb {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .widgetsContainer {
+    gap: 16px;
+    margin-top: 16px;
+  }
+  
+  .widget {
+    padding: 16px;
+  }
+  
+  .widgetHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .viewAllBtn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .trendingGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .trendingCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .trendingThumb {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  
+  .trendingRank {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  
+  .trendingName {
+    min-height: auto;
+    -webkit-line-clamp: 1;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .widgetTitle {
+    font-size: 1rem;
+  }
+  
+  .widgetTitle .subtitle {
+    display: none;
+  }
+  
+  .eventItem {
+    padding: 10px;
+  }
+  
+  .eventThumb {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .eventName {
+    font-size: 0.85rem;
+  }
+  
+  .eventMeta {
+    font-size: 0.75rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .trendingCard {
+    flex-direction: column;
+  }
+  
+  .trendingThumb {
+    width: 100%;
+    height: 120px;
+  }
+}

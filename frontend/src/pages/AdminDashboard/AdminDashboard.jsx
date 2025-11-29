@@ -5,6 +5,7 @@ import { LayoutDashboard, Calendar, Users as UsersIcon, FolderOpen, Download, Ch
 import { motion } from 'framer-motion'
 import StatCardAnimated from '../../components/StatCard/StatCardAnimated'
 import DashboardCharts from '../../components/Charts/DashboardCharts'
+import DashboardWidgets from '../../components/DashboardWidgets/DashboardWidgets'
 import EventsTable from '../../components/EventsTable/EventsTable'
 import UsersTable from '../../components/UsersTable/UsersTable'
 import CategoriesTable from '../../components/CategoriesTable/CategoriesTable'
@@ -116,6 +117,7 @@ function AdminDashboard() {
               ))}
             </motion.div>
             <DashboardCharts />
+            <DashboardWidgets />
           </>
         )
       
@@ -142,7 +144,7 @@ function AdminDashboard() {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
           <h2>
-            {sidebarCollapsed ? 'AD' : 'Admin Dashboard'}
+            {sidebarCollapsed ? 'AD' : 'VolunteerHub Admin'}
             <button className="toggle-btn-inline" onClick={toggleSidebar} title={sidebarCollapsed ? 'Mở rộng' : 'Thu gọn'}>
               {sidebarCollapsed ? '−' : '−'}
             </button>
