@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Edit3, Trash2, Plus, X, Save, Loader2, Tag, FolderOpen } from 'lucide-react'
 import './CategoriesTable.css'
 
 /**
@@ -115,7 +116,7 @@ function CategoriesTable() {
   return (
     <div className="categories-container">
       <div className="table-header">
-        <h2>📁 Danh sách Danh mục ({categories.length})</h2>
+        <h2>Danh sách Danh mục</h2>
         <button 
           className="btn-primary"
           onClick={() => setShowForm(!showForm)}
@@ -154,7 +155,7 @@ function CategoriesTable() {
 
             <div className="form-actions">
               <button type="submit" className="btn-submit">
-                {editingId ? '💾 Cập nhật' : '✅ Thêm mới'}
+                {editingId ? 'Cập nhật' : 'Thêm mới'}
               </button>
               <button type="button" className="btn-cancel" onClick={handleCancel}>
                 ✕ Hủy
@@ -192,14 +193,16 @@ function CategoriesTable() {
                     <button 
                       className="btn-edit"
                       onClick={() => handleEdit(category)}
+                      title="Chỉnh sửa"
                     >
-                      ✏️
+                      <Edit3 size={16} strokeWidth={2.5} />
                     </button>
                     <button 
                       className="btn-delete"
                       onClick={() => handleDelete(category._id)}
+                      title="Xóa danh mục"
                     >
-                      🗑️
+                      <Trash2 size={16} strokeWidth={2.5} />
                     </button>
                   </div>
                 </td>

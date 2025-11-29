@@ -1,5 +1,14 @@
 @import '../../styles/global.css';
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 .export-container {
   padding: 20px;
 }
@@ -45,8 +54,11 @@
 }
 
 .card-icon {
-  font-size: 64px;
   margin-bottom: 20px;
+  color: var(--primary-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .export-card h3 {
@@ -69,36 +81,75 @@
 }
 
 .info-list li {
-  color: #555;
+  color: var(--primary-color);
   padding: 8px 0;
   font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  padding-left: 20px;
+}
+
+.info-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--secondary-color);
+  font-size: 20px;
+  line-height: 14px;
 }
 
 .btn-export {
-  width: 100%;
-  padding: 14px 24px;
+  padding: 12px 20px;
   background: var(--secondary-color);
   color: var(--text-white-color);
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   font-family: var(--font-family);
   box-shadow: 0 4px 12px var(--secondary-shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.btn-group {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-csv {
+  background: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(52, 79, 31, 0.3);
+}
+
+.btn-csv:hover:not(:disabled) {
+  background: #2a4018;
+}
+
+.btn-json {
+  background: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-json:hover:not(:disabled) {
+  background: #4f46e5;
 }
 
 .btn-export:hover:not(:disabled) {
-  background: #e08c15;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px var(--secondary-shadow-color);
 }
 
 .btn-export:disabled {
   background: #ccc;
   cursor: not-allowed;
   opacity: 0.7;
+  box-shadow: none;
 }
 
 /* Preview Section */

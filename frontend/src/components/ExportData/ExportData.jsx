@@ -1,15 +1,19 @@
 import { useState } from 'react'
+import { Users, Calendar, Download, Loader2, FileJson, FileSpreadsheet } from 'lucide-react'
+import { motion } from 'framer-motion'
 import './ExportData.css'
 
 /**
  * BƯỚC 15: Export Data
- * Chức năng xuất dữ liệu ra file CSV
+ * Chức năng xuất dữ liệu ra file CSV và JSON
  */
 
 function ExportData() {
   const [exporting, setExporting] = useState({
-    users: false,
-    events: false
+    usersCSV: false,
+    usersJSON: false,
+    eventsCSV: false,
+    eventsJSON: false
   })
 
   // Mock data để demo export
@@ -77,151 +81,178 @@ function ExportData() {
     document.body.removeChild(link)
   }
 
-  // Handle export users
-  const handleExportUsers = () => {
-    setExporting({ ...exporting, users: true })
+  // Download JSON file
+  const downloadJSON = (data, filename) => {
+    const jsonContent = JSON.stringify(data, null, 2)
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
-    // Giả lập thời gian xử lý
+  // Handle export users CSV
+  const handleExportUsersCSV = () => {
+    setExporting({ ...exporting, usersCSV: true })
+
     setTimeout(() => {
       const csv = convertToCSV(mockUsers, 'users')
       const filename = `users_${new Date().toISOString().split('T')[0]}.csv`
       downloadCSV(csv, filename)
       
-      setExporting({ ...exporting, users: false })
-      alert('✅ Đã xuất file danh sách Users!')
+      setExporting({ ...exporting, usersCSV: false })
+      alert('Đã xuất file Users CSV!')
     }, 1000)
   }
 
-  // Handle export events
-  const handleExportEvents = () => {
-    setExporting({ ...exporting, events: true })
+  // Handle export users JSON
+  const handleExportUsersJSON = () => {
+    setExporting({ ...exporting, usersJSON: true })
+
+    setTimeout(() => {
+      const filename = `users_${new Date().toISOString().split('T')[0]}.json`
+      downloadJSON(mockUsers, filename)
+      
+      setExporting({ ...exporting, usersJSON: false })
+      alert('Đã xuất file Users JSON!')
+    }, 1000)
+  }
+
+  // Handle export events CSV
+  const handleExportEventsCSV = () => {
+    setExporting({ ...exporting, eventsCSV: true })
 
     setTimeout(() => {
       const csv = convertToCSV(mockEvents, 'events')
       const filename = `events_${new Date().toISOString().split('T')[0]}.csv`
       downloadCSV(csv, filename)
       
-      setExporting({ ...exporting, events: false })
-      alert('✅ Đã xuất file danh sách Events!')
+      setExporting({ ...exporting, eventsCSV: false })
+      alert('Đã xuất file Events CSV!')
+    }, 1000)
+  }
+
+  // Handle export events JSON
+  const handleExportEventsJSON = () => {
+    setExporting({ ...exporting, eventsJSON: true })
+
+    setTimeout(() => {
+      const filename = `events_${new Date().toISOString().split('T')[0]}.json`
+      downloadJSON(mockEvents, filename)
+      
+      setExporting({ ...exporting, eventsJSON: false })
+      alert('Đã xuất file Events JSON!')
     }, 1000)
   }
 
   return (
     <div className="export-container">
       <div className="export-header">
-        <h2>📊 Xuất Dữ Liệu (Export Data)</h2>
-        <p>Tải xuống dữ liệu dưới dạng file CSV</p>
+        <h2>Xuất Dữ Liệu</h2>
+        <p>Tải xuống dữ liệu dưới dạng file CSV hoặc JSON</p>
       </div>
 
       <div className="export-cards">
         {/* Export Users Card */}
-        <div className="export-card">
-          <div className="card-icon">👥</div>
+        <motion.div 
+          className="export-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          whileHover={{ y: -5, boxShadow: '0 8px 25px rgba(52, 79, 31, 0.15)' }}
+        >
+          <div className="card-icon">
+            <Users size={48} strokeWidth={2} style={{ color: '#344f1f' }} />
+          </div>
           <h3>Danh sách Users</h3>
           <p>Xuất toàn bộ thông tin người dùng</p>
           <ul className="info-list">
-            <li>✓ Tên, Email, Vai trò</li>
-            <li>✓ Trạng thái tài khoản</li>
-            <li>✓ Ngày tạo tài khoản</li>
+            <li>Tên, Email, Vai trò</li>
+            <li>Trạng thái tài khoản</li>
+            <li>Ngày tạo tài khoản</li>
           </ul>
-          <button 
-            className="btn-export"
-            onClick={handleExportUsers}
-            disabled={exporting.users}
-          >
-            {exporting.users ? '⏳ Đang xuất...' : '📥 Xuất Users CSV'}
-          </button>
-        </div>
+          <div className="btn-group">
+            <motion.button 
+              className="btn-export btn-csv"
+              onClick={handleExportUsersCSV}
+              disabled={exporting.usersCSV}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {exporting.usersCSV ? (
+                <><Loader2 size={16} strokeWidth={2.5} className="animate-spin" />Đang xuất...</>
+              ) : (
+                <><FileSpreadsheet size={16} strokeWidth={2.5} />CSV</>
+              )}
+            </motion.button>
+            <motion.button 
+              className="btn-export btn-json"
+              onClick={handleExportUsersJSON}
+              disabled={exporting.usersJSON}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {exporting.usersJSON ? (
+                <><Loader2 size={16} strokeWidth={2.5} className="animate-spin" />Đang xuất...</>
+              ) : (
+                <><FileJson size={16} strokeWidth={2.5} />JSON</>
+              )}
+            </motion.button>
+          </div>
+        </motion.div>
 
         {/* Export Events Card */}
-        <div className="export-card">
-          <div className="card-icon">🎯</div>
+        <motion.div 
+          className="export-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          whileHover={{ y: -5, boxShadow: '0 8px 25px rgba(244, 153, 26, 0.15)' }}
+        >
+          <div className="card-icon">
+            <Calendar size={48} strokeWidth={2} style={{ color: '#f4991a' }} />
+          </div>
           <h3>Danh sách Events</h3>
           <p>Xuất toàn bộ thông tin sự kiện</p>
           <ul className="info-list">
-            <li>✓ Tên, Địa điểm, Thời gian</li>
-            <li>✓ Trạng thái duyệt</li>
-            <li>✓ Số lượng tham gia</li>
+            <li>Tên, Địa điểm, Thời gian</li>
+            <li>Trạng thái duyệt</li>
+            <li>Số lượng tham gia</li>
           </ul>
-          <button 
-            className="btn-export"
-            onClick={handleExportEvents}
-            disabled={exporting.events}
-          >
-            {exporting.events ? '⏳ Đang xuất...' : '📥 Xuất Events CSV'}
-          </button>
-        </div>
-      </div>
-
-      {/* Preview Data */}
-      <div className="preview-section">
-        <h3>👀 Xem trước dữ liệu</h3>
-        
-        <div className="preview-tables">
-          <div className="preview-table">
-            <h4>Users ({mockUsers.length} records)</h4>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Tên</th>
-                  <th>Email</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockUsers.map(user => (
-                  <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`badge ${user.role}`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${user.status}`}>
-                        {user.status === 'active' ? '✅ Active' : '🔒 Locked'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="btn-group">
+            <motion.button 
+              className="btn-export btn-csv"
+              onClick={handleExportEventsCSV}
+              disabled={exporting.eventsCSV}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {exporting.eventsCSV ? (
+                <><Loader2 size={16} strokeWidth={2.5} className="animate-spin" />Đang xuất...</>
+              ) : (
+                <><FileSpreadsheet size={16} strokeWidth={2.5} />CSV</>
+              )}
+            </motion.button>
+            <motion.button 
+              className="btn-export btn-json"
+              onClick={handleExportEventsJSON}
+              disabled={exporting.eventsJSON}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {exporting.eventsJSON ? (
+                <><Loader2 size={16} strokeWidth={2.5} className="animate-spin" />Đang xuất...</>
+              ) : (
+                <><FileJson size={16} strokeWidth={2.5} />JSON</>
+              )}
+            </motion.button>
           </div>
-
-          <div className="preview-table">
-            <h4>Events ({mockEvents.length} records)</h4>
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Tên sự kiện</th>
-                  <th>Địa điểm</th>
-                  <th>Ngày</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockEvents.map(event => (
-                  <tr key={event.id}>
-                    <td>{event.id}</td>
-                    <td>{event.name}</td>
-                    <td>{event.location}</td>
-                    <td>{event.date}</td>
-                    <td>
-                      <span className={`badge ${event.status}`}>
-                        {event.status === 'approved' ? '✅ Approved' : '⏳ Pending'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

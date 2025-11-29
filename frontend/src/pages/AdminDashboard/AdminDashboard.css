@@ -20,12 +20,81 @@
   height: 100vh;
   overflow-y: auto;
   border-right: 1px solid var(--color-gray-300);
+  transition: width 0.3s ease, padding 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  width: 80px;
+  padding: 20px 10px;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+    padding: 15px 8px;
+  }
+  
+  .sidebar:not(.collapsed) {
+    width: 200px;
+  }
+  
+  .sidebar.collapsed {
+    width: 60px;
+  }
+}
+
+.sidebar.collapsed .sidebar-header h2 {
+  text-align: center;
+  font-size: 32px;
+}
+
+.sidebar.collapsed .user-info {
+  display: none;
 }
 
 .sidebar-header h2 {
-  margin: 0 0 10px 0;
+  margin: 0 0 20px 0;
   font-size: 24px;
   text-align: center;
+  transition: font-size 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* Toggle Button Inline */
+.toggle-btn-inline {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-white-color);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  transition: all 0.3s ease;
+  font-family: var(--font-family);
+  font-weight: 400;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn-inline:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar.collapsed .toggle-btn-inline {
+  width: 32px;
+  height: 32px;
 }
 
 .user-info {
@@ -81,6 +150,17 @@
 
 .menu-label {
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .menu-item {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.sidebar.collapsed .menu-icon {
+  font-size: 24px;
 }
 
 /* ============ MAIN CONTENT STYLES ============ */
@@ -88,6 +168,37 @@
   flex: 1;
   margin-left: 260px; /* Bằng width của sidebar */
   padding: 30px;
+  transition: margin-left 0.3s ease;
+  min-width: 0; /* Prevent overflow */
+}
+
+.main-content.expanded {
+  margin-left: 80px; /* Khi sidebar collapsed */
+}
+
+/* Responsive Main Content */
+@media (max-width: 1200px) {
+  .main-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 70px;
+    padding: 15px;
+  }
+  
+  .main-content.expanded {
+    margin-left: 60px;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-content {
+    margin-left: 60px;
+    padding: 10px;
+  }
 }
 
 .content-header {
@@ -121,6 +232,28 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
+}
+
+/* Responsive Stats Grid */
+@media (max-width: 1200px) {
+  .stats-container {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 /* Placeholder cho các trang chưa làm */
@@ -168,4 +301,11 @@
   background: #e08c15;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px var(--secondary-shadow-color);
+}
+
+.sidebar.collapsed .logout-btn {
+  left: 10px;
+  right: 10px;
+  padding: 12px 8px;
+  font-size: 20px;
 }

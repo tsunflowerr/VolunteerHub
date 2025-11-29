@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Shield, ShieldOff, Trash2, Loader2, Search, Filter, UserPlus, CheckCircle2, XCircle } from 'lucide-react'
 import './UsersTable.css'
 
 /**
@@ -138,7 +139,7 @@ function UsersTable() {
   return (
     <div className="users-table-container">
       <div className="table-header">
-        <h2>👥 Danh sách Người dùng ({filteredUsers.length}/{users.length})</h2>
+        <h2>Danh sách Người dùng</h2>
         <button className="btn-primary">+ Tạo người dùng mới</button>
       </div>
 
@@ -147,7 +148,7 @@ function UsersTable() {
         <div className="search-box">
           <input
             type="text"
-            placeholder="🔍 Tìm kiếm theo tên hoặc email..."
+            placeholder="Tìm kiếm theo tên hoặc email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -184,7 +185,7 @@ function UsersTable() {
           {filteredUsers.length === 0 ? (
             <tr>
               <td colSpan="7" style={{ textAlign: 'center' }}>
-                {users.length === 0 ? 'Chưa có người dùng' : '🔍 Không tìm thấy người dùng phù hợp'}
+                {users.length === 0 ? 'Chưa có người dùng' : 'Không tìm thấy người dùng phù hợp'}
               </td>
             </tr>
           ) : (
@@ -196,7 +197,7 @@ function UsersTable() {
                 <td>{renderRole(user.role)}</td>
                 <td>
                   <span className={user.isLocked ? 'status-locked' : 'status-active'}>
-                    {user.isLocked ? '🔒 Đã khóa' : '✅ Hoạt động'}
+                    {user.isLocked ? 'Đã khóa' : 'Hoạt động'}
                   </span>
                 </td>
                 <td>{new Date(user.createdAt).toLocaleDateString('vi-VN')}</td>
@@ -206,15 +207,17 @@ function UsersTable() {
                       className={user.isLocked ? 'btn-unlock' : 'btn-lock'}
                       onClick={() => handleToggleLock(user._id, user.isLocked)}
                       disabled={actionLoading === user._id}
+                      title={user.isLocked ? 'Mở khóa' : 'Khóa tài khoản'}
                     >
-                      {actionLoading === user._id ? '⏳' : (user.isLocked ? '🔓' : '🔒')}
+                      {actionLoading === user._id ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin" /> : (user.isLocked ? <Shield size={16} strokeWidth={2.5} /> : <ShieldOff size={16} strokeWidth={2.5} />)}
                     </button>
                     <button
                       className="btn-delete"
                       onClick={() => handleDelete(user._id)}
                       disabled={actionLoading === user._id}
+                      title="Xóa người dùng"
                     >
-                      {actionLoading === user._id ? '⏳' : '🗑️'}
+                      {actionLoading === user._id ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2.5} />}
                     </button>
                   </div>
                 </td>

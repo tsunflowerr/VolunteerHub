@@ -1,4 +1,5 @@
- import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { CheckCircle2, XCircle, Trash2, Loader2, Search, Filter, Plus, Calendar, MapPin, Users } from 'lucide-react'
 import './EventsTable.css'
 import './EventsTable_SearchFilter.css'
 
@@ -238,14 +239,14 @@ function EventsTable() {
   return (
     <div className="events-table-container">
       <div className="table-header">
-        <h2>📅 Danh sách Sự kiện ({filteredEvents.length}/{events.length})</h2>
+        <h2>Danh sách Sự kiện</h2>
         <button className="btn-primary">+ Tạo sự kiện mới</button>
       </div>
 
       {/* BƯỚC 8: Search và Filter UI */}
       <div className="table-controls">
         <div className="search-box">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"></span>
           <input
             type="text"
             placeholder="Tìm kiếm theo tên sự kiện hoặc người tạo..."
@@ -297,7 +298,7 @@ function EventsTable() {
             {filteredEvents.length === 0 ? (
               <tr>
                 <td colSpan="7" className="text-center">
-                  {events.length === 0 ? 'Chưa có sự kiện nào' : '🔍 Không tìm thấy sự kiện phù hợp'}
+                  {events.length === 0 ? 'Chưa có sự kiện nào' : 'Không tìm thấy sự kiện phù hợp'}
                 </td>
               </tr>
             ) : (
@@ -319,7 +320,7 @@ function EventsTable() {
                             disabled={actionLoading === event._id}
                             title="Duyệt sự kiện"
                           >
-                            {actionLoading === event._id ? '⏳' : '✓'}
+                            {actionLoading === event._id ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin" /> : <CheckCircle2 size={16} strokeWidth={2.5} />}
                           </button>
                           <button 
                             className="btn-reject"
@@ -327,7 +328,7 @@ function EventsTable() {
                             disabled={actionLoading === event._id}
                             title="Từ chối"
                           >
-                            {actionLoading === event._id ? '⏳' : '✗'}
+                            {actionLoading === event._id ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin" /> : <XCircle size={16} strokeWidth={2.5} />}
                           </button>
                         </>
                       )}
@@ -337,7 +338,7 @@ function EventsTable() {
                         disabled={actionLoading === event._id}
                         title="Xóa sự kiện"
                       >
-                        {actionLoading === event._id ? '⏳' : '🗑️'}
+                        {actionLoading === event._id ? <Loader2 size={16} strokeWidth={2.5} className="animate-spin" /> : <Trash2 size={16} strokeWidth={2.5} />}
                       </button>
                     </div>
                   </td>
