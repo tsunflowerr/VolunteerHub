@@ -1,9 +1,10 @@
 import React from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Routes, Route } from 'react-router';
+import { Routes, Route, Navigate } from 'react-router';
 import MainLayout from './layout/MainLayout/MainLayout';
 import ManagerLayout from './layout/ManagerLayout';
+import AdminLayout from './layout/AdminLayout';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import Home from './pages/Home/Home';
@@ -24,7 +25,7 @@ import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
 // Admin imports
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
-import AdminProtectedRoute from './components/Admin/ProtectedRoute';
+import { EventsTable, UsersTable, CategoriesTable, ExportData } from './components/Admin';
 
 const App = () => {
   AOS.init({
@@ -66,14 +67,14 @@ const App = () => {
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLogin />} />
-      <Route
-        path="/admin"
-        element={
-          <AdminProtectedRoute>
-            <AdminDashboard />
-          </AdminProtectedRoute>
-        }
-      />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="events" element={<EventsTable />} />
+        <Route path="users" element={<UsersTable />} />
+        <Route path="categories" element={<CategoriesTable />} />
+        <Route path="export" element={<ExportData />} />
+      </Route>
     </Routes>
   );
 };
