@@ -33,6 +33,13 @@ export const volunteerEvents = [
     ],
     capacity: 50,
     status: 'approved',
+    images: [
+      'https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=800&q=80',
+      'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80',
+      'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800&q=80',
+      'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=80',
+      'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?w=800&q=80',
+    ],
   },
   {
     _id: 'new2',
@@ -65,6 +72,12 @@ export const volunteerEvents = [
     ],
     capacity: 30,
     status: 'approved',
+    images: [
+      'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&q=80',
+      'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&q=80',
+      'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=800&q=80',
+      'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&q=80',
+    ],
   },
   {
     _id: 'new3',
@@ -94,6 +107,14 @@ export const volunteerEvents = [
     ],
     capacity: 20,
     status: 'approved',
+    images: [
+      'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80',
+      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',
+      'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80',
+      'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80',
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+      'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=800&q=80',
+    ],
   },
   {
     _id: 'new4',
@@ -127,6 +148,11 @@ export const volunteerEvents = [
     ],
     capacity: 35,
     status: 'approved',
+    images: [
+      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&q=80',
+      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800&q=80',
+      'https://images.unsplash.com/photo-1415369629372-26f2fe60c467?w=800&q=80',
+    ],
   },
   {
     _id: 'new5',

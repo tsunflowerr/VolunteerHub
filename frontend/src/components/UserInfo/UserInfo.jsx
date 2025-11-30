@@ -5,7 +5,7 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import styles from './UserInfo.module.css';
 import { ArrowLeft, Camera, Mail, MapPin, Phone, User } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import useAuth from '../../hooks/useAuth';
 import {
   FormHeader,
   FormField,

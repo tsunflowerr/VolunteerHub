@@ -10,7 +10,7 @@
 }
 
 .navbar__container {
-  max-width: 1440px;
+  width: 100vw;
   margin: 0 auto;
   padding: 0 20px;
   display: flex;
@@ -19,10 +19,18 @@
   height: 60px;
 }
 
+.navbar__leftItems {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 0;
+}
 /* Logo Styles */
 .navbar__logo {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 0.5rem;
   color: var(--text-black-color);
   font-weight: 700;
@@ -31,13 +39,114 @@
 }
 
 .navbar__logoIcon {
-  font-size: 1.5rem;
-  transform: rotate(0deg);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  width: 100%;
+  height: 100%;
 }
 
 .navbar__logoText {
   letter-spacing: 0.05em;
+}
+
+.navbar__logoTextBlue {
+  color: #053c83;
+}
+
+.navbar__logoTextGreen {
+  color: var(--primary-color);
+}
+
+/* Search Bar */
+.navbar__searchWrapper {
+  position: relative;
+  flex-shrink: 2;
+}
+
+.navbar__searchContainer {
+  display: flex;
+  align-items: center;
+  background: var(--text-white-color);
+  border-radius: 50px;
+  border: 1px solid var(--color-gray-300);
+  padding: 8px 20px;
+  gap: 0.5rem;
+  min-width: 280px;
+  max-width: 360px;
+  transition: all 0.3s ease;
+}
+
+.navbar__searchContainer:focus-within {
+  border: 1px solid var(--secondary-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar__searchIcon {
+  color: var(--color-gray-600);
+  flex-shrink: 0;
+}
+
+.navbar__searchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 0.95rem;
+  color: var(--text-black-color);
+  font-family: inherit;
+}
+
+.navbar__searchInput::placeholder {
+  color: var(--color-gray-600);
+}
+
+/* Mobile Search Button */
+.navbar__searchButton {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-gray-500);
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.navbar__searchButton:hover {
+  transform: scale(1.05);
+  background: var(--color-gray-300);
+}
+
+/* Mobile Search Dropdown */
+.navbar__mobileSearchDropdown {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  background: var(--text-white-color);
+  border-bottom: 1px solid var(--color-gray-300);
+  padding: 12px 20px;
+  gap: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1002;
+  animation: dropdownFadeIn 0.2s ease;
+}
+
+.navbar__mobileSearchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 1rem;
+  color: var(--text-black-color);
+  font-family: inherit;
+}
+
+.navbar__mobileSearchInput::placeholder {
+  color: var(--color-gray-600);
 }
 
 /* Navigation Links */
@@ -47,6 +156,9 @@
   gap: 20px;
   flex: 1;
   justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .navbar__navLink {
@@ -83,10 +195,14 @@
 .navbar__actions {
   display: flex;
   align-items: center;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 /* User Menu */
 .navbar__userMenu {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -95,6 +211,7 @@
 /* Icon Buttons */
 .navbar__menuButton,
 .navbar__notiButton {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -112,6 +229,21 @@
 .navbar__notiButton:hover {
   transform: scale(1.05);
   background: var(--color-gray-300);
+}
+
+.navbar__notiBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--secondary-color);
+  color: var(--text-white-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  border: 2px solid var(--background-color);
 }
 
 /* Hide menu button on desktop */
@@ -152,7 +284,7 @@
   right: 0;
   background: var(--color-gray-50);
   border-radius: 8px;
-  min-width: 180px;
+  min-width: 240px;
   overflow: hidden;
   z-index: 1001;
   animation: dropdownFadeIn 0.2s ease;
@@ -242,25 +374,54 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1440px) {
+  .navbar__nav {
+    display: none;
+    position: static;
+    transform: none;
+  }
+
+  .navbar__menuButton {
+    display: flex;
+  }
+
+  /* Show mobile menu */
+  .navbar__menu {
+    display: flex;
+  }
+}
+@media (max-width: 1024px) {
   .navbar__container {
-    gap: 1rem;
+    gap: 0.5rem;
     position: relative;
+  }
+
+  .navbar__leftItems {
+    flex: unset;
+  }
+
+  .navbar__actions {
+    flex: unset;
   }
 
   .navbar__nav {
     display: none;
+    position: static;
+    transform: none;
   }
 
   .navbar__logoText {
     display: none;
   }
 
-  .navbar__userAvatar,
-  .navbar__notiButton,
-  .navbar__menuButton {
-    width: 36px;
-    height: 36px;
+  /* Hide full search bar on mobile */
+  .navbar__searchContainer {
+    display: none;
+  }
+
+  /* Show search button on mobile */
+  .navbar__searchButton {
+    display: flex;
   }
 
   /* Show menu button on mobile */
@@ -275,11 +436,12 @@
 }
 
 @media (max-width: 480px) {
-  .navbar__userAvatar,
-  .navbar__notiButton,
-  .navbar__menuButton {
-    width: 32px;
-    height: 32px;
+  .navbar__mobileSearchDropdown {
+    padding: 10px 16px;
+  }
+
+  .navbar__mobileSearchInput {
+    font-size: 0.95rem;
   }
 
   .navbar__userMenu {

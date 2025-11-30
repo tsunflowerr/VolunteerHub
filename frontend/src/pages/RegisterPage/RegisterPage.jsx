@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import * as Yup from 'yup';
-import { useAuth } from '../../contexts/AuthContext';
+import useAuth from '../../hooks/useAuth';
 import Sign, { styles } from '../../components/Sign';
 import EyeIcon from '../../assets/icons/eye.svg?react';
 import EyeOffIcon from '../../assets/icons/eye-off.svg?react';

@@ -2,7 +2,7 @@ import React from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Routes, Route } from 'react-router';
-import MainLayout from './layout/MainLayout';
+import MainLayout from './layout/MainLayout/MainLayout';
 import ManagerLayout from './layout/ManagerLayout';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
@@ -14,6 +14,7 @@ import UserProfile from './pages/UserProfile/UserProfile';
 import EventDetail from './pages/EventDetail/EventDetail';
 import EventForm from './pages/EventForm/EventForm';
 import EventDiscussion from './pages/EventDiscussion/EventDiscussion';
+import SearchResult from './pages/SearchResult/SearchResult';
 import ManagerDashboard from './pages/Manager/ManagerDashboard';
 import ManagerEvents from './pages/Manager/ManagerEvents';
 import ManagerEventForm from './pages/Manager/ManagerEventForm';
@@ -26,20 +27,27 @@ const App = () => {
     once: false,
     mirror: true,
   });
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />}></Route>
-      <Route path="/register" element={<RegisterPage />}></Route>
+      {/* Auth Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Main Layout Routes */}
       <Route path="/" element={<MainLayout />}>
-        <Route>
-          <Route path="/" element={<Home />}></Route>
-          <Route path="/userinfo" element={<UserInfo />}></Route>
-          <Route path="/events" element={<Events />}></Route>
-          <Route path="/events/:id" element={<EventDetail />}></Route>
-          <Route path="/events/:id/discussion" element={<EventDiscussion />}></Route>
-          <Route path="/myevents" element={<MyEvents />}></Route>
-          <Route path="/profile" element={<UserProfile />}></Route>
-          <Route path="/events/create" element={<EventForm />}></Route>
+        <Route index element={<Home />} />
+        <Route path="userinfo" element={<UserInfo />} />
+        <Route path="profile" element={<UserProfile />} />
+        <Route path="myevents" element={<MyEvents />} />
+        <Route path="result" element={<SearchResult />} />
+
+        {/* Events Routes */}
+        <Route path="events">
+          <Route index element={<Events />} />
+          <Route path="create" element={<EventForm />} />
+          <Route path=":id" element={<EventDetail />} />
+          <Route path=":id/discussion" element={<EventDiscussion />} />
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>

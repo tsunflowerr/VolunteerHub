@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import EventHero from './EventHero';
 import EventContent from './EventContent';
 import EventSidebar from './EventSidebar';
-import React from 'react';
 import styles from './EventDetail.module.css';
 
 const EventPreviewDialog = ({ event, children }) => {

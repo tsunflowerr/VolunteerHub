@@ -18,14 +18,6 @@ export function Event({
 }) {
   //   const [isHovered, setIsHovered] = useState(false);
 
-  // Debug: Log the props
-  console.log('Event props:', {
-    name,
-    managerId,
-    registrationsCount,
-    category,
-  });
-
   const formatDate = (dateValue) => {
     const dateObj =
       typeof dateValue === 'string' ? parseISO(dateValue) : dateValue;
@@ -41,13 +33,13 @@ export function Event({
   };
 
   const dateInfo = formatDate(startDate);
-  
+
   // Extract manager info
   const hostName = managerId?.username || 'Unknown';
   const hostAvatar = managerId?.avatar || null;
-  
+
   // Extract category slugs
-  const categoryIds = category?.map(cat => cat.slug) || [];
+  const categoryIds = category?.map((cat) => cat.slug) || [];
 
   return (
     <div

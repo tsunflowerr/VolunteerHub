@@ -1,15 +1,26 @@
-import { Users, Bookmark, BookmarkCheck, Check, Ellipsis, X, MessageSquare } from 'lucide-react';
+import {
+  Users,
+  Bookmark,
+  BookmarkCheck,
+  Check,
+  Ellipsis,
+  X,
+  MessageSquare,
+  Settings,
+} from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './EventDetail.module.css';
 
-const EventSidebar = ({ 
-  event, 
+const EventSidebar = ({
+  event,
   userState = 'none',
   onRegister,
   onCancel,
   onGoToDiscussion,
-  previewMode = false 
+  previewMode = false,
 }) => {
+  const navigate = useNavigate();
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   const handleBookmark = () => {
@@ -36,7 +47,13 @@ const EventSidebar = ({
     onGoToDiscussion?.();
   };
 
-  const isEventFull = event.capacity && event.registrationsCount >= event.capacity;
+  const isEventFull =
+    event.capacity && event.registrationsCount >= event.capacity;
+
+  //TODO: do role based access and handle manage events
+  const handleManageEvent = () => {
+    navigate(`/events/${event._id}/manage`);
+  };
 
   return (
     <aside className={styles['event-detail__sidebar']}>
@@ -89,6 +106,21 @@ const EventSidebar = ({
         </div>
       )}
 
+      {/* Manager Controls */}
+      {!previewMode && (
+        <div className={styles['event-detail__sidebar-card']}>
+          <h3 className={styles['event-detail__sidebar-card-title']}>
+            Manage Event
+          </h3>
+          <button
+            className={styles['event-detail__sidebar-card-btn']}
+            onClick={handleManageEvent}
+          >
+            <Settings size={20} />
+            Go to Management
+          </button>
+        </div>
+      )}
       {/* Registration Card */}
       <div className={styles['event-detail__sidebar-card']}>
         {/* Registration Count */}

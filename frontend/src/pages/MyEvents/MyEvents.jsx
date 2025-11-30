@@ -34,28 +34,15 @@ const MyEvents = () => {
         {/* Header */}
         <div className={styles['my-events__header']}>
           <h1 className={styles['my-events__title']}>My Events</h1>
-          {/* <div className={styles['my-events__view-toggle']}>
-            <button
-              className={`${styles['my-events__view-btn']} ${
-                viewMode === 'grid' ? styles['my-events__view-btn--active'] : ''
-              }`}
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3x3 size={20} />
-              Grid View
-            </button>
-            <button
-              className={`${styles['my-events__view-btn']} ${
-                viewMode === 'calendar'
-                  ? styles['my-events__view-btn--active']
-                  : ''
-              }`}
-              onClick={() => setViewMode('calendar')}
-            >
-              <Calendar size={20} />
-              Calendar View
-            </button>
-          </div> */}
+        </div>
+
+        {/* Search Box */}
+        <div className={styles['my-events__search']}>
+          <SearchBox
+            onSearch={handleSearch}
+            showCategories={true}
+            showSearchByName={true}
+          />
         </div>
 
         {/* Tabs */}
@@ -67,6 +54,14 @@ const MyEvents = () => {
             onClick={() => setActiveTab('enrolled')}
           >
             Enrolled Events
+          </button>
+          <button
+            className={`${styles['my-events__tab']} ${
+              activeTab === 'bookmarked' ? styles['my-events__tab--active'] : ''
+            }`}
+            onClick={() => setActiveTab('bookmarked')}
+          >
+            Bookmarked Events
           </button>
           <button
             className={`${styles['my-events__tab']} ${
@@ -85,16 +80,6 @@ const MyEvents = () => {
             Past Events
           </button>
         </div>
-
-        {/* Search Box */}
-        <div className={styles['my-events__search']}>
-          <SearchBox
-            onSearch={handleSearch}
-            showCategories={true}
-            showSearchByName={true}
-          />
-        </div>
-
         {/* Events Content */}
         {currentEvents.length > 0 ? (
           <div className={styles['my-events__list-container']}>

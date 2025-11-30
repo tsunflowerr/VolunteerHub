@@ -8,6 +8,7 @@ import {
   Heart,
   Edit2,
   Trash2,
+  Lock,
 } from 'lucide-react';
 import EventList from '../../components/EventCard/EventList';
 import { volunteerEvents } from '../../dummy/volunteerEvents';
@@ -15,12 +16,15 @@ import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
 import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
 import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
+import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
 
 const UserProfile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [open, setOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const eventsPerPage = 9;
   const [user, setUser] = useState({
+    id: 1,
     username: 'John Doe',
     email: 'john.doe@example.com',
     location: 'San Francisco, CA',
@@ -183,6 +187,17 @@ const UserProfile = () => {
                 Edit Profile
               </button>
             </UserInfoDialog>
+
+            <ChangePasswordDialog
+              open={passwordOpen}
+              onOpenChange={setPasswordOpen}
+            >
+              <button className={styles['profile__btn-password']}>
+                <Lock size={18} />
+                Change Password
+              </button>
+            </ChangePasswordDialog>
+
             <button
               className={styles['profile__btn-delete']}
               onClick={handleDeleteAccount}

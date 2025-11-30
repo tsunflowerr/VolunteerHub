@@ -22,6 +22,7 @@ const EventContent = ({ event }) => {
         about={event.about}
         activities={event.activities}
         prepare={event.prepare}
+        images={event.images}
       />
     </div>
   );

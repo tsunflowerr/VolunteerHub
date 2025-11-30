@@ -1,72 +1,132 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import useAuth from '../../hooks/useAuth.jsx';
 import styles from './NavBar.module.css';
-import defaultAvatar from '../../assets/avatar.jpeg';
-import { User, LogOut, Bell, Menu } from 'lucide-react';
+import NotificationDialog from '../Notification/NotificationDialog.jsx';
 
-const NavBar = () => {
-  const [activeTab, setActiveTab] = useState('home');
+import { User, LogOut, Bell, Menu, Search, UserStar } from 'lucide-react';
+
+const NavBar = ({ showNavButtons = true }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [open, setOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      console.log('Searching for:', searchQuery);
+      // Add your search logic here
+      // For example: navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowMobileSearch(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   return (
     <header className={styles.navbar}>
       <div className={styles.navbar__container}>
         {/* Logo */}
-        <div className={styles.navbar__logo}>
-          <span className={styles.navbar__logoText}>VolunteerHub</span>
+        <div className={styles.navbar__leftItems}>
+          <div className={styles.navbar__logo}>
+            <img src="/logo.png" className={styles.navbar_logoIcon} />
+            <span className={styles.navbar__logoText}>
+              <span className={styles.navbar__logoTextBlue}>olunteer</span>
+              <span className={styles.navbar__logoTextGreen}>Hub</span>
+            </span>
+          </div>
+          {/* Search Bar */}
+          <div className={styles.navbar__searchWrapper}>
+            <div className={styles.navbar__searchContainer}>
+              <Search className={styles.navbar__searchIcon} size={20} />
+              <input
+                type="text"
+                placeholder="Search VolunteerHub"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className={styles.navbar__searchInput}
+              />
+            </div>
+            <button
+              className={styles.navbar__searchButton}
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+            {showMobileSearch && (
+              <div className={styles.navbar__mobileSearchDropdown}>
+                <Search className={styles.navbar__searchIcon} size={20} />
+                <input
+                  type="text"
+                  placeholder="Search VolunteerHub"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className={styles.navbar__mobileSearchInput}
+                  autoFocus
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Navigation Items */}
-        <nav className={styles.navbar__nav}>
-          <button
-            className={`${styles.navbar__navLink} ${
-              activeTab === 'home' ? styles['navbar__navLink--active'] : ''
-            }`}
-            onClick={() => setActiveTab('home')}
-          >
-            Home
-          </button>
-          <button
-            className={`${styles.navbar__navLink} ${
-              activeTab === 'events' ? styles['navbar__navLink--active'] : ''
-            }`}
-            onClick={() => setActiveTab('events')}
-          >
-            Events
-          </button>
-          <button
-            className={`${styles.navbar__navLink} ${
-              activeTab === 'My Events' ? styles['navbar__navLink--active'] : ''
-            }`}
-            onClick={() => setActiveTab('My Events')}
-          >
-            My Events
-          </button>
-          <button
-            className={`${styles.navbar__navLink} ${
-              activeTab === 'Discussions'
-                ? styles['navbar__navLink--active']
-                : ''
-            }`}
-            onClick={() => setActiveTab('Discussions')}
-          >
-            Discussions
-          </button>
-          {/* <button
-            className={`${styles.navbar__navLink} ${
-              activeTab === 'integrations'
-                ? styles['navbar__navLink--active']
-                : ''
-            }`}
-            onClick={() => setActiveTab('integrations')}
-          >
-            Integrations
-          </button> */}
-        </nav>
+        {showNavButtons && (
+          <nav className={styles.navbar__nav}>
+            <button
+              className={`${styles.navbar__navLink} ${
+                isActive('/') ? styles['navbar__navLink--active'] : ''
+              }`}
+              onClick={() => navigate('/')}
+            >
+              Home
+            </button>
+            <button
+              className={`${styles.navbar__navLink} ${
+                isActive('/events') ? styles['navbar__navLink--active'] : ''
+              }`}
+              onClick={() => navigate('/events')}
+            >
+              Events
+            </button>
+            <button
+              className={`${styles.navbar__navLink} ${
+                isActive('/myevents') ? styles['navbar__navLink--active'] : ''
+              }`}
+              onClick={() => navigate('/myevents')}
+            >
+              My Events
+            </button>
+            <button
+              className={`${styles.navbar__navLink} ${
+                isActive('/discussions')
+                  ? styles['navbar__navLink--active']
+                  : ''
+              }`}
+              onClick={() => navigate('/discussions')}
+            >
+              Discussions
+            </button>
+          </nav>
+        )}
 
         {/* Sign Up Button */}
         <div className={styles.navbar__actions}>
@@ -79,13 +139,12 @@ const NavBar = () => {
               >
                 <Menu size={20} />
               </button>
-              <button
-                className={styles.navbar__notiButton}
-                onClick={() => console.log('Notifications clicked')}
-                aria-label="Notifications"
-              >
-                <Bell size={20} />
-              </button>
+              <NotificationDialog open={open} onOpenChange={setOpen}>
+                <button className={styles.navbar__notiButton}>
+                  <Bell size={20} />
+                  <span className={styles.navbar__notiBadge}>3</span>
+                </button>
+              </NotificationDialog>
 
               <div className={styles.navbar__userAvatarContainer}>
                 <img
@@ -100,7 +159,16 @@ const NavBar = () => {
                       className={styles.navbar__dropdownItem}
                       onClick={() => {
                         setShowDropdown(false);
-                        navigate('/userinfo');
+                      }}
+                    >
+                      <UserStar />
+                      Switch to Manager view
+                    </button>
+                    <button
+                      className={styles.navbar__dropdownItem}
+                      onClick={() => {
+                        setShowDropdown(false);
+                        navigate('/profile');
                       }}
                     >
                       <User />
@@ -136,50 +204,46 @@ const NavBar = () => {
           <div className={styles.navbar__menu}>
             <button
               className={`${styles.navbar__menuItem} ${
-                activeTab === 'home' ? styles['navbar__menuItem--active'] : ''
+                isActive('/') ? styles['navbar__menuItem--active'] : ''
               }`}
               onClick={() => {
-                setActiveTab('home');
                 setShowMenu(false);
+                navigate('/');
               }}
             >
               Home
             </button>
             <button
               className={`${styles.navbar__menuItem} ${
-                activeTab === 'features'
-                  ? styles['navbar__menuItem--active']
-                  : ''
+                isActive('/events') ? styles['navbar__menuItem--active'] : ''
               }`}
               onClick={() => {
-                setActiveTab('features');
                 setShowMenu(false);
+                navigate('/events');
               }}
             >
               Events
             </button>
             <button
               className={`${styles.navbar__menuItem} ${
-                activeTab === 'My Events'
-                  ? styles['navbar__menuItem--active']
-                  : ''
+                isActive('/myevents') ? styles['navbar__menuItem--active'] : ''
               }`}
               onClick={() => {
-                setActiveTab('My Events');
                 setShowMenu(false);
+                navigate('/myevents');
               }}
             >
               My Events
             </button>
             <button
               className={`${styles.navbar__menuItem} ${
-                activeTab === 'Discussions'
+                isActive('/discussions')
                   ? styles['navbar__menuItem--active']
                   : ''
               }`}
               onClick={() => {
-                setActiveTab('Discussions');
                 setShowMenu(false);
+                navigate('/discussions');
               }}
             >
               Discussions
