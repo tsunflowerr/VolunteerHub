@@ -19,6 +19,10 @@ function UsersTable() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [totalUsers, setTotalUsers] = useState(0)
+  
+  // Search states
+  const [isSearching, setIsSearching] = useState(false)
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
@@ -35,52 +39,81 @@ function UsersTable() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Fetch users data
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Mock data - 25 users for pagination testing
-        const mockUsers = [
-          { _id: '1', fullName: 'Nguyễn Văn A', email: 'nguyenvana@example.com', role: 'user', isLocked: false, createdAt: '2025-01-15' },
-          { _id: '2', fullName: 'Trần Thị B', email: 'tranthib@example.com', role: 'manager', isLocked: false, createdAt: '2025-02-20' },
-          { _id: '3', fullName: 'Lê Văn C', email: 'levanc@example.com', role: 'user', isLocked: true, createdAt: '2025-03-10' },
-          { _id: '4', fullName: 'Phạm Thị D', email: 'phamthid@example.com', role: 'user', isLocked: false, createdAt: '2025-04-05' },
-          { _id: '5', fullName: 'Hoàng Văn E', email: 'hoangvane@example.com', role: 'admin', isLocked: false, createdAt: '2025-01-20' },
-          { _id: '6', fullName: 'Vũ Thị F', email: 'vuthif@example.com', role: 'user', isLocked: false, createdAt: '2025-02-25' },
-          { _id: '7', fullName: 'Đặng Văn G', email: 'dangvang@example.com', role: 'user', isLocked: true, createdAt: '2025-03-15' },
-          { _id: '8', fullName: 'Bùi Thị H', email: 'buithih@example.com', role: 'manager', isLocked: false, createdAt: '2025-04-10' },
-          { _id: '9', fullName: 'Đỗ Văn I', email: 'dovani@example.com', role: 'user', isLocked: false, createdAt: '2025-01-25' },
-          { _id: '10', fullName: 'Hồ Thị K', email: 'hothik@example.com', role: 'user', isLocked: true, createdAt: '2025-02-28' },
-          { _id: '11', fullName: 'Ngô Văn L', email: 'ngovanl@example.com', role: 'user', isLocked: false, createdAt: '2025-03-20' },
-          { _id: '12', fullName: 'Dương Thị M', email: 'duongthim@example.com', role: 'manager', isLocked: false, createdAt: '2025-04-15' },
-          { _id: '13', fullName: 'Lý Văn N', email: 'lyvann@example.com', role: 'user', isLocked: false, createdAt: '2025-01-30' },
-          { _id: '14', fullName: 'Trịnh Thị O', email: 'trinhthio@example.com', role: 'user', isLocked: true, createdAt: '2025-02-05' },
-          { _id: '15', fullName: 'Đinh Văn P', email: 'dinhvanp@example.com', role: 'user', isLocked: false, createdAt: '2025-03-25' },
-          { _id: '16', fullName: 'Mai Thị Q', email: 'maithiq@example.com', role: 'admin', isLocked: false, createdAt: '2025-04-20' },
-          { _id: '17', fullName: 'Phan Văn R', email: 'phanvanr@example.com', role: 'user', isLocked: false, createdAt: '2025-05-01' },
-          { _id: '18', fullName: 'Võ Thị S', email: 'vothis@example.com', role: 'user', isLocked: true, createdAt: '2025-05-10' },
-          { _id: '19', fullName: 'Tạ Văn T', email: 'tavant@example.com', role: 'manager', isLocked: false, createdAt: '2025-05-15' },
-          { _id: '20', fullName: 'Cao Thị U', email: 'caothiu@example.com', role: 'user', isLocked: false, createdAt: '2025-05-20' },
-          { _id: '21', fullName: 'Lưu Văn V', email: 'luuvanv@example.com', role: 'user', isLocked: false, createdAt: '2025-05-25' },
-          { _id: '22', fullName: 'Trương Thị X', email: 'truongthix@example.com', role: 'user', isLocked: true, createdAt: '2025-06-01' },
-          { _id: '23', fullName: 'Kiều Văn Y', email: 'kieuvany@example.com', role: 'manager', isLocked: false, createdAt: '2025-06-05' },
-          { _id: '24', fullName: 'Tô Thị Z', email: 'tothiz@example.com', role: 'user', isLocked: false, createdAt: '2025-06-10' },
-          { _id: '25', fullName: 'Mạc Văn AA', email: 'macvanaa@example.com', role: 'admin', isLocked: false, createdAt: '2025-06-15' }
-        ]
-        
-        setUsers(mockUsers)
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
+  // Fetch users data from API with search & filter
+  const fetchUsers = async (search = '', role = 'all', page = 1) => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Build query params
+      const params = new URLSearchParams()
+      if (search) params.append('q', search)
+      if (role && role !== 'all') params.append('role', role)
+      params.append('page', page)
+      params.append('limit', itemsPerPage)
+      
+      // Gọi API lấy danh sách users với tìm kiếm
+      const response = await fetch(`http://localhost:4000/api/users?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Lỗi: ${response.status}`)
       }
+
+      const data = await response.json()
+      
+      // Map dữ liệu từ API sang format frontend
+      const mappedUsers = (data.users || data.data || []).map(user => ({
+        _id: user._id,
+        fullName: user.username || user.fullName,
+        email: user.email,
+        role: user.role || 'user',
+        isLocked: user.status === 'locked',
+        createdAt: user.createdAt
+      }))
+      
+      setUsers(mappedUsers)
+      setTotalUsers(data.pagination?.total || mappedUsers.length)
+      console.log('✅ Đã lấy dữ liệu users từ API:', mappedUsers.length, 'người dùng')
+      
+    } catch (err) {
+      console.error('Lỗi khi lấy dữ liệu users:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+      setIsSearching(false)
     }
-    
+  }
+
+  // Initial fetch
+  useEffect(() => {
     fetchUsers()
   }, [])
+
+  // Debounced search - gọi API sau 500ms ngừng gõ
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== '' || filterRole !== 'all') {
+        setIsSearching(true)
+        fetchUsers(searchTerm, filterRole, 1)
+        setCurrentPage(1)
+      } else {
+        fetchUsers('', 'all', 1)
+        setCurrentPage(1)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, filterRole])
+
+  // Fetch when page changes
+  useEffect(() => {
+    fetchUsers(searchTerm, filterRole, currentPage)
+  }, [currentPage, itemsPerPage])
 
   // Handle form input change
   const handleInputChange = (e) => {
@@ -224,27 +257,10 @@ function UsersTable() {
     }
   }
 
-  // Filter users
-  const filteredUsers = users.filter(user => {
-    const matchSearch = 
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchRole = filterRole === 'all' || user.role === filterRole
-    
-    return matchSearch && matchRole
-  })
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  // Pagination logic - sử dụng totalUsers từ API
+  const totalPages = Math.ceil(totalUsers / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex)
-
-  // Reset to page 1 when filter/search changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm, filterRole])
+  const endIndex = Math.min(startIndex + itemsPerPage, totalUsers)
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
@@ -269,7 +285,8 @@ function UsersTable() {
     return (
       <div className="pagination">
         <div className="pagination-info">
-          Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} / {filteredUsers.length} kết quả
+          Hiển thị {startIndex + 1}-{endIndex} / {totalUsers} kết quả
+          {isSearching && <Loader2 size={14} className="animate-spin" style={{ marginLeft: 8 }} />}
         </div>
         <div className="pagination-controls">
           <button 
@@ -515,13 +532,15 @@ function UsersTable() {
       {/* Search and Filter */}
       <div className="table-controls">
         <div className="search-box">
+          <Search size={18} className="search-icon" />
           <input
             type="text"
             placeholder="Tìm kiếm theo tên hoặc email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          {searchTerm && (
+          {isSearching && <Loader2 size={16} className="animate-spin" />}
+          {searchTerm && !isSearching && (
             <button onClick={() => setSearchTerm('')}>✕</button>
           )}
         </div>
@@ -551,14 +570,14 @@ function UsersTable() {
           </tr>
         </thead>
         <tbody>
-          {paginatedUsers.length === 0 ? (
+          {users.length === 0 ? (
             <tr>
               <td colSpan="7" style={{ textAlign: 'center' }}>
-                {users.length === 0 ? 'Chưa có người dùng' : 'Không tìm thấy người dùng phù hợp'}
+                {searchTerm || filterRole !== 'all' ? 'Không tìm thấy người dùng phù hợp' : 'Chưa có người dùng'}
               </td>
             </tr>
           ) : (
-            paginatedUsers.map((user, index) => (
+            users.map((user, index) => (
               <tr key={user._id}>
                 <td>{startIndex + index + 1}</td>
                 <td>{user.fullName}</td>

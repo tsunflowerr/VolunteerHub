@@ -24,40 +24,38 @@ function CategoriesTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
 
-  // Fetch categories
+  // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true)
-        await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Mock data - 20 categories for pagination testing
-        const mockCategories = [
-          { _id: '1', name: 'Môi trường', description: 'Các hoạt động bảo vệ môi trường, dọn rác, trồng cây' },
-          { _id: '2', name: 'Giáo dục', description: 'Hỗ trợ giáo dục cho trẻ em vùng cao, dạy học miễn phí' },
-          { _id: '3', name: 'Y tế', description: 'Hoạt động y tế cộng đồng, khám bệnh miễn phí' },
-          { _id: '4', name: 'Từ thiện', description: 'Các hoạt động từ thiện, trao quà cho người nghèo' },
-          { _id: '5', name: 'Hiến máu', description: 'Chương trình hiến máu nhân đạo tại các bệnh viện' },
-          { _id: '6', name: 'Động vật', description: 'Bảo vệ động vật hoang dã và cứu hộ thú cưng' },
-          { _id: '7', name: 'Cộng đồng', description: 'Hoạt động phát triển cộng đồng địa phương' },
-          { _id: '8', name: 'Thiên tai', description: 'Cứu trợ và hỗ trợ nạn nhân thiên tai, bão lũ' },
-          { _id: '9', name: 'Người cao tuổi', description: 'Chăm sóc và hỗ trợ người cao tuổi neo đơn' },
-          { _id: '10', name: 'Trẻ em', description: 'Bảo vệ quyền lợi và hỗ trợ trẻ em mồ côi' },
-          { _id: '11', name: 'Khuyết tật', description: 'Hỗ trợ người khuyết tật hòa nhập cộng đồng' },
-          { _id: '12', name: 'Văn hóa', description: 'Bảo tồn và phát huy văn hóa truyền thống' },
-          { _id: '13', name: 'Thể thao', description: 'Tổ chức các hoạt động thể thao cộng đồng' },
-          { _id: '14', name: 'Nghệ thuật', description: 'Hoạt động nghệ thuật từ thiện và biểu diễn' },
-          { _id: '15', name: 'Công nghệ', description: 'Hỗ trợ công nghệ cho vùng sâu vùng xa' },
-          { _id: '16', name: 'Nông nghiệp', description: 'Hỗ trợ nông dân phát triển sản xuất' },
-          { _id: '17', name: 'Nhà ở', description: 'Xây dựng và sửa chữa nhà cho người nghèo' },
-          { _id: '18', name: 'Nước sạch', description: 'Cung cấp nước sạch cho vùng khó khăn' },
-          { _id: '19', name: 'Dinh dưỡng', description: 'Hỗ trợ bữa ăn miễn phí cho người vô gia cư' },
-          { _id: '20', name: 'Pháp lý', description: 'Tư vấn pháp lý miễn phí cho người nghèo' }
-        ]
+        // Gọi API lấy danh sách categories
+        const response = await fetch('http://localhost:4000/api/categories', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`Lỗi: ${response.status}`)
+        }
+
+        const data = await response.json()
         
-        setCategories(mockCategories)
+        // Map dữ liệu từ API
+        const mappedCategories = (data.categories || data.data || []).map(cat => ({
+          _id: cat._id,
+          name: cat.name,
+          description: cat.description || ''
+        }))
+        
+        setCategories(mappedCategories)
+        console.log('✅ Đã lấy dữ liệu categories từ API:', mappedCategories.length, 'danh mục')
+        
       } catch (err) {
-        console.error(err)
+        console.error('Lỗi khi lấy dữ liệu categories:', err)
       } finally {
         setLoading(false)
       }

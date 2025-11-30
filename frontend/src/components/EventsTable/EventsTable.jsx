@@ -41,51 +41,11 @@ function EventsTable() {
         setLoading(true)
         setError(null)
         
-        // TẠM THỜI: Dùng dữ liệu mock vì API cần authentication
-        // TODO BƯỚC 6: Sẽ học về authentication và login
-        console.log('⚠️  Đang dùng dữ liệu mock - Chưa kết nối API thật')
-        
-        // Giả lập API call delay
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Dữ liệu mock - Nhiều dữ liệu để test phân trang
-        const mockData = [
-          { _id: '1', title: 'Dọn dẹp bãi biển Vũng Tàu', createdBy: { fullName: 'Nguyễn Văn A' }, eventDate: '2025-12-01', maxParticipants: 50, status: 'pending' },
-          { _id: '2', title: 'Trồng cây xanh công viên Lê Văn Tám', createdBy: { fullName: 'Trần Thị B' }, eventDate: '2025-12-05', maxParticipants: 30, status: 'approved' },
-          { _id: '3', title: 'Trao quà từ thiện cho trẻ em vùng cao', createdBy: { fullName: 'Lê Văn C' }, eventDate: '2025-12-10', maxParticipants: 20, status: 'pending' },
-          { _id: '4', title: 'Hiến máu nhân đạo', createdBy: { fullName: 'Phạm Thị D' }, eventDate: '2025-12-15', maxParticipants: 100, status: 'approved' },
-          { _id: '5', title: 'Dạy học cho trẻ em nghèo', createdBy: { fullName: 'Hoàng Văn E' }, eventDate: '2025-12-20', maxParticipants: 15, status: 'pending' },
-          { _id: '6', title: 'Xây nhà tình thương', createdBy: { fullName: 'Ngô Thị F' }, eventDate: '2025-12-25', maxParticipants: 40, status: 'approved' },
-          { _id: '7', title: 'Khám bệnh miễn phí cho người già', createdBy: { fullName: 'Đỗ Văn G' }, eventDate: '2025-12-28', maxParticipants: 200, status: 'rejected' },
-          { _id: '8', title: 'Phát cơm từ thiện', createdBy: { fullName: 'Vũ Thị H' }, eventDate: '2026-01-02', maxParticipants: 25, status: 'pending' },
-          { _id: '9', title: 'Dọn vệ sinh khu phố', createdBy: { fullName: 'Bùi Văn I' }, eventDate: '2026-01-05', maxParticipants: 35, status: 'approved' },
-          { _id: '10', title: 'Tặng sách cho thư viện vùng sâu', createdBy: { fullName: 'Lý Thị K' }, eventDate: '2026-01-10', maxParticipants: 10, status: 'pending' },
-          { _id: '11', title: 'Hỗ trợ nạn nhân bão lũ', createdBy: { fullName: 'Trương Văn L' }, eventDate: '2026-01-15', maxParticipants: 80, status: 'approved' },
-          { _id: '12', title: 'Tổ chức Tết cho trẻ mồ côi', createdBy: { fullName: 'Mai Thị M' }, eventDate: '2026-01-20', maxParticipants: 60, status: 'pending' },
-          { _id: '13', title: 'Trồng rừng phòng hộ', createdBy: { fullName: 'Đinh Văn N' }, eventDate: '2026-01-25', maxParticipants: 45, status: 'rejected' },
-          { _id: '14', title: 'Dạy nghề cho người khuyết tật', createdBy: { fullName: 'Hồ Thị O' }, eventDate: '2026-02-01', maxParticipants: 20, status: 'approved' },
-          { _id: '15', title: 'Quyên góp quần áo ấm', createdBy: { fullName: 'Dương Văn P' }, eventDate: '2026-02-05', maxParticipants: 30, status: 'pending' },
-          { _id: '16', title: 'Tổ chức hội thao từ thiện', createdBy: { fullName: 'Phan Thị Q' }, eventDate: '2026-02-10', maxParticipants: 150, status: 'approved' },
-          { _id: '17', title: 'Xây cầu vượt lũ', createdBy: { fullName: 'Võ Văn R' }, eventDate: '2026-02-15', maxParticipants: 55, status: 'pending' },
-          { _id: '18', title: 'Tặng xe đạp cho học sinh nghèo', createdBy: { fullName: 'Đặng Thị S' }, eventDate: '2026-02-20', maxParticipants: 25, status: 'approved' },
-          { _id: '19', title: 'Khám mắt miễn phí', createdBy: { fullName: 'Nguyễn Văn T' }, eventDate: '2026-02-25', maxParticipants: 100, status: 'rejected' },
-          { _id: '20', title: 'Dọn rác sông Sài Gòn', createdBy: { fullName: 'Trần Thị U' }, eventDate: '2026-03-01', maxParticipants: 70, status: 'pending' },
-          { _id: '21', title: 'Trao học bổng cho sinh viên', createdBy: { fullName: 'Lê Văn V' }, eventDate: '2026-03-05', maxParticipants: 40, status: 'approved' },
-          { _id: '22', title: 'Phát quà trung thu cho trẻ em', createdBy: { fullName: 'Phạm Thị X' }, eventDate: '2026-03-10', maxParticipants: 90, status: 'pending' },
-          { _id: '23', title: 'Xây dựng sân chơi trẻ em', createdBy: { fullName: 'Hoàng Văn Y' }, eventDate: '2026-03-15', maxParticipants: 35, status: 'approved' },
-          { _id: '24', title: 'Hỗ trợ người vô gia cư', createdBy: { fullName: 'Ngô Thị Z' }, eventDate: '2026-03-20', maxParticipants: 20, status: 'pending' },
-          { _id: '25', title: 'Tổ chức lớp học tình thương', createdBy: { fullName: 'Đỗ Văn AA' }, eventDate: '2026-03-25', maxParticipants: 15, status: 'rejected' },
-        ]
-        
-        setEvents(mockData)
-        
-        /* KHI HỌC XONG AUTHENTICATION, SỬ DỤNG CODE NÀY:
-        
-        const response = await fetch('http://localhost:4000/api/admin/events', {
+        // Gọi API lấy danh sách sự kiện
+        const response = await fetch('http://localhost:4000/api/events', {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Token từ login
+            'Content-Type': 'application/json'
           }
         })
 
@@ -94,8 +54,20 @@ function EventsTable() {
         }
 
         const data = await response.json()
-        setEvents(data.data || [])
-        */
+        
+        // Map dữ liệu từ API sang format phù hợp với frontend
+        const mappedEvents = (data.events || []).map(event => ({
+          _id: event._id,
+          title: event.name,
+          createdBy: event.managerId ? { fullName: event.managerId.username } : null,
+          eventDate: event.startDate,
+          maxParticipants: event.capacity,
+          status: event.status,
+          category: event.category?.[0]?.name || 'Chưa phân loại'
+        }))
+        
+        setEvents(mappedEvents)
+        console.log('✅ Đã lấy dữ liệu từ API:', mappedEvents.length, 'sự kiện')
         
       } catch (err) {
         console.error('Lỗi khi lấy dữ liệu:', err)
