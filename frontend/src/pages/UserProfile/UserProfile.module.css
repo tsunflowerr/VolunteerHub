@@ -134,6 +134,10 @@
 }
 
 /* Interests Section */
+.profile__interests {
+  padding: 1.5rem 0;
+}
+
 .profile__interest-item {
   display: flex;
   flex-wrap: wrap;
@@ -174,13 +178,13 @@
 
 /* Action Buttons */
 .profile__actions {
-  padding-top: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
 .profile__btn-edit,
+.profile__btn-password,
 .profile__btn-delete {
   display: flex;
   align-items: center;
@@ -195,12 +199,14 @@
   transition: all 0.2s ease;
 }
 
-.profile__btn-edit {
+.profile__btn-edit,
+.profile__btn-password {
   border: 1px solid var(--primary-color);
   background-color: transparent;
 }
 
-.profile__btn-edit:hover {
+.profile__btn-edit:hover,
+.profile__btn-password:hover {
   background-color: var(--primary-color);
   color: var(--text-white-color);
   transform: translateY(-1px);

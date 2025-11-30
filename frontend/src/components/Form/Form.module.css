@@ -197,9 +197,6 @@
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid var(--color-gray-500);
 }
 
 .form__button--cancel,

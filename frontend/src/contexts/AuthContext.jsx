@@ -141,9 +141,43 @@ export const AuthProvider = ({ children }) => {
     return { success: true };
   };
 
+  const changePassword = (currentPassword, newPassword) => {
+    if (!user) {
+      return { success: false, message: 'No user logged in' };
+    }
+
+    // Get stored users
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    // Find the user
+    const userIndex = users.findIndex((u) => u.id === user.id);
+    if (userIndex === -1) {
+      return { success: false, message: 'User not found' };
+    }
+
+    // Verify current password
+    if (users[userIndex].password !== currentPassword) {
+      return { success: false, message: 'Incorrect current password' };
+    }
+
+    // Update password
+    users[userIndex].password = newPassword;
+    localStorage.setItem('users', JSON.stringify(users));
+
+    return { success: true, message: 'Password changed successfully' };
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, updateUserInfo, loading }}
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        updateUserInfo,
+        changePassword,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>
