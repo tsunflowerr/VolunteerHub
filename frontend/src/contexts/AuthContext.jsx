@@ -1,16 +1,28 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext } from 'react';
 
 export const AuthContext = createContext(null);
+
+// Custom hook để sử dụng auth context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Check if user is logged in on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
+    const token = localStorage.getItem('token');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setIsAuthenticated(!!token || true);
     }
     setLoading(false);
   }, []);
@@ -89,7 +101,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setIsAuthenticated(false);
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
   const updateUserInfo = (updatedData) => {
@@ -177,6 +192,7 @@ export const AuthProvider = ({ children }) => {
         updateUserInfo,
         changePassword,
         loading,
+        isAuthenticated,
       }}
     >
       {children}

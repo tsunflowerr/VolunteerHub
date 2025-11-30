@@ -21,6 +21,11 @@ import ManagerEventForm from './pages/Manager/ManagerEventForm';
 import ManagerEventDetail from './pages/Manager/ManagerEventDetail';
 import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
 
+// Admin imports
+import AdminLogin from './pages/Admin/AdminLogin';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminProtectedRoute from './components/Admin/ProtectedRoute';
+
 const App = () => {
   AOS.init({
     duration: 1000,
@@ -58,6 +63,17 @@ const App = () => {
         <Route path="events/:id" element={<ManagerEventDetail />}></Route>
         <Route path="registrations" element={<ManagerRegistrations />}></Route>
       </Route>
+
+      {/* Admin Routes */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route
+        path="/admin"
+        element={
+          <AdminProtectedRoute>
+            <AdminDashboard />
+          </AdminProtectedRoute>
+        }
+      />
     </Routes>
   );
 };
