@@ -4,10 +4,11 @@ import { X } from 'lucide-react';
 import ChangePassword from './ChangePassword';
 import styles from './UserInfoDialog.module.css';
 
-const ChangePasswordDialog = ({ children, open, onOpenChange }) => {
-  const handleSubmit = () => {
-    // Close dialog on success (handled in ChangePassword via onSubmit prop if needed, 
-    // but ChangePassword handles logic. We can pass a callback to close)
+const ChangePasswordDialog = ({ children, open, onOpenChange, onSubmit }) => {
+  const handleSubmit = async (data) => {
+    if (onSubmit) {
+      await onSubmit(data);
+    }
     onOpenChange(false);
   };
 

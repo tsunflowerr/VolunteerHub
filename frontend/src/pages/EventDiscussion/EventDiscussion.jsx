@@ -16,7 +16,7 @@ import {
   Grid3X3,
   Lock,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import useAuth from '../../hooks/useAuth';
 import PostCard from '../../components/Discussion/PostCard';
 import CreatePostModal from '../../components/Discussion/CreatePostModal';
 import PostDetailModal from '../../components/Discussion/PostDetailModal';
@@ -197,15 +197,17 @@ const EventDiscussion = () => {
   const handleCreatePost = useCallback(
     (newPost) => {
       // Temporarily disabled login check for UI testing
-      const postAuthor = user ? {
-        _id: user.id,
-        username: user.fullName,
-        avatar: user.avatar,
-      } : {
-        _id: 'guest',
-        username: 'Guest User',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
-      };
+      const postAuthor = user
+        ? {
+            _id: user.id,
+            username: user.fullName,
+            avatar: user.avatar,
+          }
+        : {
+            _id: 'guest',
+            username: 'Guest User',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
+          };
 
       const post = {
         _id: `post${Date.now()}`,
@@ -222,25 +224,22 @@ const EventDiscussion = () => {
     [user, navigate]
   );
 
-  const handleLikePost = useCallback(
-    (postId) => {
-      // Temporarily disabled login check for UI testing
-      setPosts((prev) =>
-        prev.map((post) =>
-          post._id === postId
-            ? {
-                ...post,
-                isLiked: !post.isLiked,
-                likesCount: post.isLiked
-                  ? post.likesCount - 1
-                  : post.likesCount + 1,
-              }
-            : post
-        )
-      );
-    },
-    []
-  );
+  const handleLikePost = useCallback((postId) => {
+    // Temporarily disabled login check for UI testing
+    setPosts((prev) =>
+      prev.map((post) =>
+        post._id === postId
+          ? {
+              ...post,
+              isLiked: !post.isLiked,
+              likesCount: post.isLiked
+                ? post.likesCount - 1
+                : post.likesCount + 1,
+            }
+          : post
+      )
+    );
+  }, []);
 
   const handleDeletePost = useCallback((postId) => {
     setPosts((prev) => prev.filter((post) => post._id !== postId));
@@ -361,69 +360,69 @@ const EventDiscussion = () => {
                 <span>
                   {event.registrationsCount} / {event.capacity} participants
                 </span>
-            </div>
+              </div>
 
-            <div className={styles.participantAvatars}>
-              {participants.slice(0, 5).map((participant, index) => (
-                <motion.img
-                  key={participant._id}
-                  src={participant.avatar}
-                  alt={participant.username}
-                  className={styles.participantAvatar}
-                  style={{ zIndex: 5 - index }}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  title={participant.username}
-                />
-              ))}
-              {participants.length > 5 && (
-                <div className={styles.moreParticipants}>
-                  +{participants.length - 5}
-                </div>
-              )}
-            </div>
+              <div className={styles.participantAvatars}>
+                {participants.slice(0, 5).map((participant, index) => (
+                  <motion.img
+                    key={participant._id}
+                    src={participant.avatar}
+                    alt={participant.username}
+                    className={styles.participantAvatar}
+                    style={{ zIndex: 5 - index }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    title={participant.username}
+                  />
+                ))}
+                {participants.length > 5 && (
+                  <div className={styles.moreParticipants}>
+                    +{participants.length - 5}
+                  </div>
+                )}
+              </div>
 
-            <motion.button
-              className={`${styles.joinBtn} ${isJoined ? styles.joined : ''}`}
-              onClick={handleJoinLeave}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {isJoined ? (
-                <>
-                  <UserMinus size={18} />
-                  Leave
-                </>
-              ) : (
-                <>
-                  <UserPlus size={18} />
-                  Join
-                </>
-              )}
-            </motion.button>
-          </div>
-
-          {/* Search Bar */}
-          <div className={styles.searchWrapper}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Search posts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.searchInput}
-            />
-            {searchQuery && (
-              <button
-                className={styles.clearSearch}
-                onClick={() => setSearchQuery('')}
+              <motion.button
+                className={`${styles.joinBtn} ${isJoined ? styles.joined : ''}`}
+                onClick={handleJoinLeave}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-        </motion.div>
+                {isJoined ? (
+                  <>
+                    <UserMinus size={18} />
+                    Leave
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={18} />
+                    Join
+                  </>
+                )}
+              </motion.button>
+            </div>
+
+            {/* Search Bar */}
+            <div className={styles.searchWrapper}>
+              <Search size={18} className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search posts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={styles.searchInput}
+              />
+              {searchQuery && (
+                <button
+                  className={styles.clearSearch}
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -447,7 +446,9 @@ const EventDiscussion = () => {
               className={styles.createPostInput}
               onClick={handleCreatePostClick}
             >
-              {user ? "What's on your mind?" : 'Login to share your thoughts...'}
+              {user
+                ? "What's on your mind?"
+                : 'Login to share your thoughts...'}
             </button>
             <div className={styles.createPostActions}>
               <button

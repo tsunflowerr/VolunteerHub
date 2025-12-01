@@ -1,11 +1,27 @@
 services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:latest
+    container_name: volunteerhub-mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_DATABASE=volunteerhub
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - volunteerhub-network
+
   # Redis Service - Chỉ dùng cho cache
   redis:
     image: redis:latest
     container_name: volunteerhub-redis
     restart: always
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     networks:
@@ -19,13 +35,15 @@ services:
     container_name: volunteerhub-backend
     restart: always
     ports:
-      - "4000:4000"
+      - '4000:4000'
     env_file:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/volunteerhub?authSource=admin
     depends_on:
       - redis
+      - mongodb
     volumes:
       - .:/app
       - /app/node_modules
@@ -34,6 +52,7 @@ services:
 
 # Volumes
 volumes:
+  mongodb_data:
   redis_data:
 
 # Networks

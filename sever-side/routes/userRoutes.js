@@ -1,10 +1,24 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { validate } from '../middleware/validate.js';
-import { updateUserProfile as updateUserProfileSchema, changePasswordSchema } from '../validators/userValidator.js';
+import {
+  updateUserProfile as updateUserProfileSchema,
+  changePasswordSchema,
+} from '../validators/userValidator.js';
 import { objectIdSchema } from '../validators/eventValidator.js';
-import { getUserProfile, updateUserProfile, deleteUser, changePassword, getUserById, getUserBookMarks, } from '../controller/user/userProfileController.js';
-import { passwordResetLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
+import {
+  getUserProfile,
+  updateUserProfile,
+  deleteUser,
+  changePassword,
+  getUserById,
+  getUserBookMarks,
+} from '../controller/user/userProfileController.js';
+import {
+  passwordResetLimiter,
+  updateLimiter,
+  deleteLimiter,
+} from '../middleware/rateLimiter.js';
 const router = express.Router();
 
 // Apply authMiddleware to all user routes (protected)
@@ -57,20 +71,40 @@ router.get('/profile', getUserProfile);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - phone_number
  *             properties:
  *               username:
  *                 type: string
- *                 example: John Doe
+ *                 example: JohnDoe
  *               email:
  *                 type: string
  *                 format: email
  *                 example: john@example.com
  *               phone_number:
  *                 type: string
- *                 example: "+84123456789"
+ *                 example: "0912345678"
  *               avatar:
  *                 type: string
  *                 example: "https://example.com/avatar.jpg"
+ *               location:
+ *                 type: string
+ *                 example: "San Francisco, CA"
+ *               bio:
+ *                 type: string
+ *                 maxLength: 100
+ *                 example: "Passionate Volunteer"
+ *               about:
+ *                 type: string
+ *                 maxLength: 500
+ *                 example: "Dedicated to making a positive impact in the community."
+ *               interests:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["health", "education", "community-development"]
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -85,7 +119,12 @@ router.get('/profile', getUserProfile);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/profile', updateLimiter, validate(updateUserProfileSchema), updateUserProfile);
+router.put(
+  '/profile',
+  updateLimiter,
+  validate(updateUserProfileSchema),
+  updateUserProfile
+);
 
 /**
  * @swagger
@@ -154,7 +193,12 @@ router.delete('/profile', deleteLimiter, deleteUser);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/profile/password', passwordResetLimiter, validate(changePasswordSchema), changePassword);
+router.put(
+  '/profile/password',
+  passwordResetLimiter,
+  validate(changePasswordSchema),
+  changePassword
+);
 
 // ====== User Bookmarks Routes ======
 

@@ -1,8 +1,11 @@
 import express from 'express';
-import { registerUser, loginUser, logoutUser, getCurrentUser } from '../controller/user/userAuthController.js';
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+} from '../controller/user/userAuthController.js';
 import { registerSchema, loginSchema } from '../validators/userValidator.js';
 import { validate } from '../middleware/validate.js';
-import {authMiddleware} from '../middleware/authMiddleware.js';
 import { authLimiter, registrationLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
@@ -25,7 +28,7 @@ const router = express.Router();
  *               - username
  *               - email
  *               - password
- *               - phone_number
+ *               - phoneNumber
  *             properties:
  *               username:
  *                 type: string
@@ -39,7 +42,7 @@ const router = express.Router();
  *                 format: password
  *                 minLength: 6
  *                 example: password123
- *               phone_number:
+ *               phoneNumber:
  *                 type: string
  *                 pattern: '^[0-9]{10}$'
  *                 example: "0123456789"
@@ -58,7 +61,12 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 // Áp dụng rate limiting nghiêm ngặt cho registration
-router.post('/register', registrationLimiter, validate(registerSchema), registerUser);
+router.post(
+  '/register',
+  registrationLimiter,
+  validate(registerSchema),
+  registerUser
+);
 
 /**
  * @swagger
@@ -133,37 +141,6 @@ router.post('/login', authLimiter, validate(loginSchema), loginUser);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.post('/logout', logoutUser); 
-
-/**
- * @swagger
- * /api/auth/me:
- *   get:
- *     summary: Get current authenticated user
- *     tags: [Auth]
- *     security:
- *       - cookieAuth: []
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Current user data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/User'
- *       401:
- *         description: Unauthorized - No token provided
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.get('/me', authMiddleware, getCurrentUser); 
+router.post('/logout', logoutUser);
 
 export default router;

@@ -35,22 +35,9 @@ const userInfoSchema = Yup.object().shape({
 const UserInfo = ({ user, onSubmit }) => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(user);
-  const { updateUserInfo } = useAuth();
   const [formData, setFormData] = useState(user);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-
-  // useEffect(() => {
-  //   const storedData = localStorage.getItem('currentUser');
-  //   if (storedData) {
-  //     const parsed = JSON.parse(storedData);
-  //     console.log(parsed);
-  //     setUserData(parsed);
-  //     setFormData(parsed);
-  //   } else {
-  //     navigate('/register');
-  //   }
-  // }, [navigate]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -81,18 +68,6 @@ const UserInfo = ({ user, onSubmit }) => {
   };
 
   const revertChanges = () => {
-    const hasChanged =
-      formData.username !== userData.username ||
-      (formData.phoneNumber || '') !== (userData.phoneNumber || '') ||
-      (formData.location || '') !== (userData.location || '') ||
-      (formData.bio || '') !== (userData.bio || '') ||
-      (formData.about || '') !== (userData.about || '') ||
-      (formData.avatar || '') !== (userData.avatar || '');
-
-    if (!hasChanged) {
-      return;
-    }
-
     setFormData(userData);
   };
 
@@ -126,15 +101,12 @@ const UserInfo = ({ user, onSubmit }) => {
         return;
       }
 
-      setUserData(formData);
-      const result = updateUserInfo(formData);
-      if (result.success) {
-        toast.success('Profile updated successfully! 🎉', {
-          duration: 3000,
-        });
+      // Call the parent submit handler (mutation)
+      if (onSubmit) {
+        await onSubmit(formData);
+        setUserData(formData); // Update local baseline
       }
 
-      // Show success toast and message
     } catch (validationErrors) {
       // Handle Yup validation errors
       if (validationErrors.inner) {
@@ -145,9 +117,7 @@ const UserInfo = ({ user, onSubmit }) => {
         setErrors(formattedErrors);
       } else {
         console.error('Failed to save changes:', validationErrors);
-        toast.error('Failed to save changes. Please try again.', {
-          duration: 3000,
-        });
+        toast.error('Failed to save changes. Please try again.');
       }
     } finally {
       setIsSaving(false);
@@ -163,7 +133,7 @@ const UserInfo = ({ user, onSubmit }) => {
   }
 
   return (
-    <form onSubmit={onSubmit} className={styles['user-info-form__form']}>
+    <form onSubmit={handleSubmit} className={styles['user-info-form__form']}>
       {/* Avatar Section */}
       <div className={styles['user-info-form__card']}>
         <div className={styles['user-info-form__card-header']}>

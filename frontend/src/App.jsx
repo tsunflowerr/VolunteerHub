@@ -8,7 +8,6 @@ import AdminLayout from './layout/AdminLayout';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import Home from './pages/Home/Home';
-import UserInfo from './components/UserInfo/UserInfo';
 import Events from './pages/Events/Events';
 import MyEvents from './pages/MyEvents/MyEvents';
 import UserProfile from './pages/UserProfile/UserProfile';
@@ -25,7 +24,12 @@ import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
 // Admin imports
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
-import { EventsTable, UsersTable, CategoriesTable, ExportData } from './components/Admin';
+import {
+  EventsTable,
+  UsersTable,
+  CategoriesTable,
+  ExportData,
+} from './components/Admin';
 
 const App = () => {
   AOS.init({
@@ -43,8 +47,8 @@ const App = () => {
       {/* Main Layout Routes */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
-        <Route path="userinfo" element={<UserInfo />} />
         <Route path="profile" element={<UserProfile />} />
+        <Route path="profile/:id" element={<UserProfile />} />
         <Route path="myevents" element={<MyEvents />} />
         <Route path="result" element={<SearchResult />} />
 

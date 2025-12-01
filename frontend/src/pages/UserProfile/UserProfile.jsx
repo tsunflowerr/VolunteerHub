@@ -1,11 +1,18 @@
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import useAuth from '../../hooks/useAuth';
+import {
+  useUser,
+  useUpdateProfile,
+  useChangePassword,
+  useDeleteAccount,
+} from '../../hooks/useUser';
 import {
   MapPin,
   Mail,
   Phone,
   Calendar,
-  Award,
-  Heart,
   Edit2,
   Trash2,
   Lock,
@@ -19,29 +26,31 @@ import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
 
 const UserProfile = () => {
+  const { id } = useParams();
+  const { user: currentUser, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const eventsPerPage = 9;
-  const [user, setUser] = useState({
-    id: 1,
-    username: 'John Doe',
-    email: 'john.doe@example.com',
-    location: 'San Francisco, CA',
-    phoneNumber: '09342343',
-    avatar:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
-    joinedDate: '2022',
-    bio: 'Passionate Volunteer',
-    about:
-      'Dedicated to making a positive impact in the community through volunteering. Passionate about environmental conservation and social justice.',
-    stats: {
-      events: 24,
-      hours: 156,
-      hosts: 12,
-    },
-    interests: ['health', 'education', 'community-development'],
-  });
+
+  const {
+    data: user,
+    isLoading: loading,
+    isError,
+  } = useUser(id);
+
+  const updateProfile = useUpdateProfile();
+  const changePassword = useChangePassword();
+  const deleteAccount = useDeleteAccount();
+
+  const isOwnProfile =
+    !id ||
+    (currentUser &&
+      user &&
+      (currentUser.id === user.id || currentUser._id === user._id));
+  const stats = user?.stats || { events: 0, hours: 0, hosts: 0 };
 
   // Filter events that user has contributed to (mock filter)
   // In production, this would be filtered by user ID from the backend
@@ -58,25 +67,76 @@ const UserProfile = () => {
 
   const handleChangePage = (e, value) => setCurrentPage(value);
 
-  const handleEditProfile = (e) => {
-    e.preventDefault();
-    let data = Object.fromEntries(new FormData(e.currentTarget));
-    console.log(data);
-    // TODO: handle update userProfile
-
-    setOpen(false);
+  const handleEditProfile = async (data) => {
+    try {
+      await updateProfile.mutateAsync(data);
+      setOpen(false);
+    } catch (error) {
+      // Error handling is done in the hook
+      console.error(error);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    // TODO: Implement delete account functionality
+  const handleChangePasswordSubmit = async (data) => {
+    try {
+      await changePassword.mutateAsync(data);
+    } catch (error) {
+      console.error(error);
+      throw error; // Re-throw so the form can handle it if needed
+    }
+  };
+
+  const handleDeleteAccount = async () => {
     if (
       window.confirm(
         'Are you sure you want to delete your account? This action cannot be undone.'
       )
     ) {
-      console.log('Delete account clicked');
+      try {
+        await deleteAccount.mutateAsync();
+        await logout(); // Ensure local state is cleared
+        navigate('/');
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
+
+  if (loading) {
+    return (
+      <div className={styles['profile']}>
+        <div
+          className={styles['profile__container']}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh',
+          }}
+        >
+          <h2>Loading...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !user) {
+    return (
+      <div className={styles['profile']}>
+        <div
+          className={styles['profile__container']}
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh',
+          }}
+        >
+          <h2>User not found</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles['profile']}>
@@ -86,33 +146,35 @@ const UserProfile = () => {
           {/* Avatar Section */}
           <div className={styles['profile__avatar-section']}>
             <img
-              src={user.avatar}
-              alt={user.name}
+              src={user.avatar || 'https://via.placeholder.com/150'}
+              alt={user.username}
               className={styles['profile__avatar']}
             />
             <h1 className={styles['profile__name']}>{user.username}</h1>
-            <p className={styles['profile__role']}>{user.bio}</p>
+            <p className={styles['profile__role']}>
+              {user.bio || 'No bio available'}
+            </p>
           </div>
 
           {/* Stats Section */}
           <div className={styles['profile__stats']}>
             <div className={styles['profile__stat']}>
               <div className={styles['profile__stat-value']}>
-                {user.stats.events}
+                {stats.events}
               </div>
               <div className={styles['profile__stat-label']}>Events</div>
             </div>
 
             <div className={styles['profile__stat']}>
               <div className={styles['profile__stat-value']}>
-                {user.stats.hours}
+                {stats.hours}
               </div>
               <div className={styles['profile__stat-label']}>Hours</div>
             </div>
 
             <div className={styles['profile__stat']}>
               <div className={styles['profile__stat-value']}>
-                {user.stats.hosts}
+                {stats.hosts}
               </div>
               <div className={styles['profile__stat-label']}>Hosts</div>
             </div>
@@ -121,7 +183,10 @@ const UserProfile = () => {
           {/* About Section */}
           <div className={styles['profile__about']}>
             <h2 className={styles['profile__section-title']}>ABOUT</h2>
-            <p className={styles['profile__about-text']}>{user.about}</p>
+            <p className={styles['profile__about-text']}>
+              {user.about ||
+                "This user hasn't written anything about themselves yet."}
+            </p>
           </div>
 
           {/* Contact Info */}
@@ -133,24 +198,29 @@ const UserProfile = () => {
 
             <div className={styles['profile__contact-item']}>
               <Phone size={18} />
-              <span>{user.phoneNumber}</span>
+              <span>{user.phoneNumber || 'No phone number'}</span>
             </div>
 
             <div className={styles['profile__contact-item']}>
               <MapPin size={18} />
-              <span>{user.location}</span>
+              <span>{user.location || 'Location not set'}</span>
             </div>
 
             <div className={styles['profile__contact-item']}>
               <Calendar size={18} />
-              <span>Member since {user.joinedDate}</span>
+              <span>
+                Member since{' '}
+                {user.createdAt
+                  ? format(new Date(user.createdAt), 'MMMM yyyy')
+                  : 'Unknown'}
+              </span>
             </div>
           </div>
 
           {/* Interests Section */}
           <div className={styles['profile__interests']}>
             <h2 className={styles['profile__section-title']}>INTERESTS</h2>
-            {user.interests && (
+            {user.interests && user.interests.length > 0 ? (
               <div className={styles['profile__interest-item']}>
                 {user.interests.map((categoryId) => {
                   const category = categoriesById[categoryId];
@@ -171,41 +241,48 @@ const UserProfile = () => {
                   );
                 })}
               </div>
+            ) : (
+              <p className={styles['profile__about-text']}>
+                No interests listed.
+              </p>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className={styles['profile__actions']}>
-            <UserInfoDialog
-              user={user}
-              onSubmit={handleEditProfile}
-              open={open}
-              onOpenChange={setOpen}
-            >
-              <button className={styles['profile__btn-edit']}>
-                <Edit2 size={18} />
-                Edit Profile
-              </button>
-            </UserInfoDialog>
+          {isOwnProfile && (
+            <div className={styles['profile__actions']}>
+              <UserInfoDialog
+                user={user}
+                onSubmit={handleEditProfile}
+                open={open}
+                onOpenChange={setOpen}
+              >
+                <button className={styles['profile__btn-edit']}>
+                  <Edit2 size={18} />
+                  Edit Profile
+                </button>
+              </UserInfoDialog>
 
-            <ChangePasswordDialog
-              open={passwordOpen}
-              onOpenChange={setPasswordOpen}
-            >
-              <button className={styles['profile__btn-password']}>
-                <Lock size={18} />
-                Change Password
-              </button>
-            </ChangePasswordDialog>
+              <ChangePasswordDialog
+                open={passwordOpen}
+                onOpenChange={setPasswordOpen}
+                onSubmit={handleChangePasswordSubmit}
+              >
+                <button className={styles['profile__btn-password']}>
+                  <Lock size={18} />
+                  Change Password
+                </button>
+              </ChangePasswordDialog>
 
-            <button
-              className={styles['profile__btn-delete']}
-              onClick={handleDeleteAccount}
-            >
-              <Trash2 size={18} />
-              Remove Account
-            </button>
-          </div>
+              <button
+                className={styles['profile__btn-delete']}
+                onClick={handleDeleteAccount}
+              >
+                <Trash2 size={18} />
+                Remove Account
+              </button>
+            </div>
+          )}
         </aside>
 
         {/* Main Content */}

@@ -22,7 +22,6 @@ const passwordSchema = Yup.object().shape({
 });
 
 const ChangePassword = ({ onSubmit }) => {
-  const { changePassword } = useAuth();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -60,33 +59,29 @@ const ChangePassword = ({ onSubmit }) => {
     try {
       await passwordSchema.validate(formData, { abortEarly: false });
 
-      const result = changePassword(formData.currentPassword, formData.newPassword);
-      
-      if (result.success) {
-        toast.success(result.message || 'Password changed successfully! 🎉', {
-          duration: 3000,
+      if (onSubmit) {
+        await onSubmit({
+            current_password: formData.currentPassword,
+            new_password: formData.newPassword,
+            confirm_new_password: formData.confirmPassword
         });
         handleCancel();
-        if (onSubmit) onSubmit(e);
-      } else {
-        toast.error(result.message || 'Failed to change password', {
-          duration: 3000,
-        });
-        setErrors({ currentPassword: result.message });
       }
 
     } catch (validationErrors) {
-      if (validationErrors.inner) {
+      if (validationErrors && validationErrors.inner) {
         const formattedErrors = {};
         validationErrors.inner.forEach((err) => {
           formattedErrors[err.path] = err.message;
         });
         setErrors(formattedErrors);
+      } else if (validationErrors && validationErrors.message) {
+          // Handle API errors thrown by onSubmit (if it throws)
+           toast.error(validationErrors.message);
+           // Attempt to map API error to field if possible, else general toast
       } else {
         console.error('Failed to save changes:', validationErrors);
-        toast.error('An error occurred. Please try again.', {
-          duration: 3000,
-        });
+        toast.error('An error occurred. Please try again.');
       }
     } finally {
       setIsSaving(false);

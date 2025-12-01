@@ -2,6 +2,32 @@ import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import redisClient from '../config/redis.js';
 
+// ============================================
+// TEMPORARILY DISABLED FOR TESTING
+// Uncomment the rate limiter logic below for production
+// ============================================
+
+// Bypass middleware - allows all requests through
+const bypassLimiter = (req, res, next) => next();
+
+export const authLimiter = bypassLimiter;
+export const apiLimiter = bypassLimiter;
+export const registrationLimiter = bypassLimiter;
+export const createLimiter = bypassLimiter;
+export const uploadLimiter = bypassLimiter;
+export const searchLimiter = bypassLimiter;
+export const passwordResetLimiter = bypassLimiter;
+export const likeLimiter = bypassLimiter;
+export const bookmarkLimiter = bypassLimiter;
+export const updateLimiter = bypassLimiter;
+export const registrationActionLimiter = bypassLimiter;
+export const deleteLimiter = bypassLimiter;
+
+/*
+// ============================================
+// ORIGINAL RATE LIMITER CODE - UNCOMMENT FOR PRODUCTION
+// ============================================
+
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
@@ -184,3 +210,4 @@ export const deleteLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
+*/

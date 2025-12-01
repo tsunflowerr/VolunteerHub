@@ -7,19 +7,24 @@ import Sign, { styles } from '../../components/Sign';
 import EyeIcon from '../../assets/icons/eye.svg?react';
 import EyeOffIcon from '../../assets/icons/eye-off.svg?react';
 
-// Validation schema
+// Validation schema - matches backend validation
 const registerSchema = Yup.object().shape({
-  fullName: Yup.string()
-    .min(2, 'Full name must be at least 2 characters')
-    .max(50, 'Full name must not exceed 50 characters')
-    .matches(/^[a-zA-Z\s]+$/, 'Full name can only contain letters and spaces')
-    .required('Full name is required'),
+  username: Yup.string()
+    .min(3, 'Username must be at least 3 characters long')
+    .max(30, 'Username must not exceed 30 characters')
+    .matches(
+      /^[a-zA-Z0-9]+$/,
+      'Username must only contain alphanumeric characters'
+    )
+    .required('Username is required'),
   email: Yup.string()
-    .email('Invalid email address')
+    .email('Email must be a valid email address')
     .required('Email is required'),
+  phone_number: Yup.string()
+    .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits long')
+    .required('Phone number is required'),
   password: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(20, 'Password must not exceed 20 characters')
+    .min(6, 'Password must be at least 6 characters long')
     .required('Password is required'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password')], 'Passwords must match')
@@ -29,8 +34,9 @@ const registerSchema = Yup.object().shape({
 const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -49,8 +55,9 @@ const RegisterPage = () => {
       // Validate form data with Yup
       await registerSchema.validate(
         {
-          fullName,
+          username,
           email,
+          phone_number: phoneNumber,
           password,
           confirmPassword,
         },
@@ -58,7 +65,7 @@ const RegisterPage = () => {
       );
 
       // If validation passes, proceed with registration
-      const result = register(fullName, email, password);
+      const result = await register(username, email, phoneNumber, password);
 
       if (result.success) {
         // Show success toast
@@ -98,22 +105,22 @@ const RegisterPage = () => {
     >
       <form className="signinForm" onSubmit={handleSubmit}>
         <div className={styles.authen__fieldGroup}>
-          <label htmlFor="name" className={styles.authen__label}>
-            Full Name
+          <label htmlFor="username" className={styles.authen__label}>
+            Username
           </label>
           <input
-            id="name"
-            placeholder="John Doe"
+            id="username"
+            placeholder="johndoe123"
             className={`${styles.authen__input} ${
-              errors.fullName ? styles.authen__inputError : ''
+              errors.username ? styles.authen__inputError : ''
             }`}
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             disabled={isSubmitting}
           />
-          {errors.fullName && (
+          {errors.username && (
             <span className={styles.authen__errorMessage}>
-              {errors.fullName}
+              {errors.username}
             </span>
           )}
         </div>
@@ -139,6 +146,27 @@ const RegisterPage = () => {
             error && (
               <span className={styles.authen__errorMessage}>{error}</span>
             )
+          )}
+        </div>
+
+        <div className={styles.authen__fieldGroup}>
+          <label htmlFor="phone_number" className={styles.authen__label}>
+            Phone Number
+          </label>
+          <input
+            id="phone_number"
+            placeholder="0912345678"
+            className={`${styles.authen__input} ${
+              errors.phone_number ? styles.authen__inputError : ''
+            }`}
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            disabled={isSubmitting}
+          />
+          {errors.phone_number && (
+            <span className={styles.authen__errorMessage}>
+              {errors.phone_number}
+            </span>
           )}
         </div>
 
