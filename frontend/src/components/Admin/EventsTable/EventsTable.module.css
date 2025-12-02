@@ -233,8 +233,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading,
@@ -267,66 +271,6 @@
 
 .error button:hover {
   background: #2a3f19;
-}
-
-.pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 28px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafbfc;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.paginationInfo {
-  color: #6b7280;
-  font-size: 0.9rem;
-}
-
-.paginationControls {
-  display: flex;
-  gap: 6px;
-}
-
-.paginationBtn {
-  padding: 10px 14px;
-  border: 2px solid #e5e7eb;
-  background: white;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.paginationBtn:hover:not(:disabled) {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.paginationBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.paginationBtn.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.paginationSize select {
-  padding: 10px 14px;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  background: #fff;
-  cursor: pointer;
 }
 
 .emptyState {

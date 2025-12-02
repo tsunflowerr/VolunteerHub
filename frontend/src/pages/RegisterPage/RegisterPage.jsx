@@ -78,7 +78,7 @@ const RegisterPage = () => {
 
         // Redirect to home page after a short delay
         setTimeout(() => {
-          navigate('/userinfo');
+          navigate('/');
         }, 1000);
       } else {
         setError(result.message);

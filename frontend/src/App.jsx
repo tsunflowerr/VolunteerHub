@@ -12,7 +12,6 @@ import Events from './pages/Events/Events';
 import MyEvents from './pages/MyEvents/MyEvents';
 import UserProfile from './pages/UserProfile/UserProfile';
 import EventDetail from './pages/EventDetail/EventDetail';
-import EventForm from './pages/EventForm/EventForm';
 import EventDiscussion from './pages/EventDiscussion/EventDiscussion';
 import SearchResult from './pages/SearchResult/SearchResult';
 import ManagerDashboard from './pages/Manager/ManagerDashboard';
@@ -24,12 +23,10 @@ import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
 // Admin imports
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
-import {
-  EventsTable,
-  UsersTable,
-  CategoriesTable,
-  ExportData,
-} from './components/Admin';
+import UsersManagement from './pages/Admin/UsersManagement';
+import CategoriesManagement from './pages/Admin/CategoriesManagement';
+import EventsManagement from './pages/Admin/EventsManagement';
+import { ExportData } from './components/Admin';
 
 const App = () => {
   AOS.init({
@@ -55,12 +52,12 @@ const App = () => {
         {/* Events Routes */}
         <Route path="events">
           <Route index element={<Events />} />
-          <Route path="create" element={<EventForm />} />
           <Route path=":id" element={<EventDetail />} />
           <Route path=":id/discussion" element={<EventDiscussion />} />
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ManagerDashboard />}></Route>
         <Route path="events" element={<ManagerEvents />}></Route>
         <Route path="events/create" element={<ManagerEventForm />}></Route>
@@ -74,9 +71,9 @@ const App = () => {
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="events" element={<EventsTable />} />
-        <Route path="users" element={<UsersTable />} />
-        <Route path="categories" element={<CategoriesTable />} />
+        <Route path="events" element={<EventsManagement />} />
+        <Route path="users" element={<UsersManagement />} />
+        <Route path="categories" element={<CategoriesManagement />} />
         <Route path="export" element={<ExportData />} />
       </Route>
     </Routes>
