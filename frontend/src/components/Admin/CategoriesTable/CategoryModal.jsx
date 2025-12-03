@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X, Save, Loader2, Tag } from 'lucide-react';
+import * as yup from 'yup';
 import styles from './CategoriesTable.module.css';
 
 const PREDEFINED_COLORS = [
@@ -21,6 +22,21 @@ const INITIAL_FORM_DATA = {
   color: '#667eea',
 };
 
+const validationSchema = yup.object().shape({
+  name: yup.string()
+    .required('Please enter category name')
+    .min(3, 'Name must be at least 3 characters')
+    .max(50, 'Name must be at most 50 characters'),
+  slug: yup.string()
+    .required('Slug is required')
+    .matches(/^[a-zA-Z0-9]+$/, 'Slug must only contain alphanumeric characters')
+    .min(3, 'Slug must be at least 3 characters (try a longer name)')
+    .max(50, 'Slug must be at most 50 characters'),
+  description: yup.string()
+    .max(500, 'Description must not exceed 500 characters'),
+  color: yup.string().required(),
+});
+
 function CategoryModal({ isOpen, onClose, onSubmit, category = null }) {
   const isEditMode = !!category;
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -35,7 +51,7 @@ function CategoryModal({ isOpen, onClose, onSubmit, category = null }) {
           name: category.name || '',
           slug:
             category.slug ||
-            category.name?.toLowerCase().replace(/\s+/g, '') ||
+            category.name?.toLowerCase().replace(/[^a-z0-9]/g, '') ||
             '',
           description: category.description || '',
           color: category.color || '#667eea',
@@ -53,7 +69,7 @@ function CategoryModal({ isOpen, onClose, onSubmit, category = null }) {
       ...prev,
       [name]: value,
       ...(name === 'name'
-        ? { slug: value.toLowerCase().replace(/\s+/g, '') }
+        ? { slug: value.toLowerCase().replace(/[^a-z0-9]/g, '') }
         : {}),
     }));
     if (formErrors[name]) {
@@ -65,36 +81,38 @@ function CategoryModal({ isOpen, onClose, onSubmit, category = null }) {
     setFormData((prev) => ({ ...prev, color }));
   };
 
-  const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) {
-      errors.name = 'Please enter category name';
-    } else if (formData.name.trim().length < 2) {
-      errors.name = 'Name must be at least 2 characters';
-    }
-    if (formData.description && formData.description.length > 200) {
-      errors.description = 'Description must not exceed 200 characters';
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsSubmitting(true);
+    
     try {
-      await onSubmit({
-        ...formData,
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-      });
-      onClose();
-    } catch (error) {
-      console.error('Failed to submit category:', error);
-    } finally {
-      setIsSubmitting(false);
+      await validationSchema.validate(formData, { abortEarly: false });
+      setFormErrors({});
+      
+      setIsSubmitting(true);
+      try {
+        await onSubmit({
+          ...formData,
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+        });
+        onClose();
+      } catch (error) {
+        console.error('Failed to submit category:', error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } catch (validationError) {
+      const errors = {};
+      if (validationError.inner) {
+        validationError.inner.forEach((error) => {
+          errors[error.path] = error.message;
+          // If slug error exists but slug is hidden, show it under name or generic
+          if (error.path === 'slug') {
+             errors.name = error.message; // Map slug error to name field for visibility
+          }
+        });
+      }
+      setFormErrors(errors);
     }
   };
 
@@ -143,7 +161,7 @@ function CategoryModal({ isOpen, onClose, onSubmit, category = null }) {
               className={formErrors.description ? styles.inputError : ''}
             />
             <span className={styles.charCount}>
-              {formData.description.length}/200 characters
+              {formData.description.length}/500 characters
             </span>
             {formErrors.description && (
               <span className={styles.errorText}>{formErrors.description}</span>

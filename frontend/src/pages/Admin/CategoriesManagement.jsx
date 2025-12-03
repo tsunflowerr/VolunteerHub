@@ -1,6 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import {
+  useAdminCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from '../../hooks/useAdmin';
+import {
   CategorySearchFilter,
   CategoryTable,
   CategoryModal,
@@ -8,56 +14,7 @@ import {
 import { Pagination } from '../../components/common';
 import styles from '../../components/Admin/CategoriesTable/CategoriesTable.module.css';
 
-// Mock data for development/fallback
-const mockCategories = [
-  {
-    _id: '1',
-    name: 'Environment',
-    description: 'Environmental protection activities',
-    color: '#4caf50',
-    eventCount: 12,
-    createdAt: '2025-01-10',
-  },
-  {
-    _id: '2',
-    name: 'Education',
-    description: 'Teaching and mentoring programs',
-    color: '#2196f3',
-    eventCount: 8,
-    createdAt: '2025-01-15',
-  },
-  {
-    _id: '3',
-    name: 'Health',
-    description: 'Healthcare and wellness initiatives',
-    color: '#f44336',
-    eventCount: 15,
-    createdAt: '2025-02-01',
-  },
-  {
-    _id: '4',
-    name: 'Community',
-    description: 'Community building events',
-    color: '#ff9800',
-    eventCount: 10,
-    createdAt: '2025-02-20',
-  },
-  {
-    _id: '5',
-    name: 'Animal Welfare',
-    description: 'Animal care and rescue',
-    color: '#9c27b0',
-    eventCount: 5,
-    createdAt: '2025-03-05',
-  },
-];
-
 function CategoriesManagement() {
-  // Data state
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
-
   // Filter & Pagination state
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,49 +23,15 @@ function CategoriesManagement() {
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  
+  // Loading state for specific actions (like delete)
+  const [actionLoading, setActionLoading] = useState(null);
 
-  // Fetch categories on mount
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-
-      const response = await fetch('/api/categories', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-      const data = await response.json();
-      const mappedCategories = (data.data || data.categories || []).map(
-        (cat) => ({
-          _id: cat._id,
-          name: cat.name,
-          slug: cat.slug || cat.name.toLowerCase().replace(/\s+/g, ''),
-          description: cat.description || '',
-          color: cat.color || '#667eea',
-          eventCount: cat.eventCount || 0,
-          createdAt: cat.createdAt,
-        })
-      );
-      setCategories(mappedCategories);
-    } catch (err) {
-      console.warn('Using mock data:', err.message);
-      setCategories(mockCategories);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initial fetch
-  useState(() => {
-    fetchCategories();
-  });
+  // TanStack Query hooks
+  const { data: categories = [], isLoading, isError, error } = useAdminCategories();
+  const createCategoryMutation = useCreateCategory();
+  const updateCategoryMutation = useUpdateCategory();
+  const deleteCategoryMutation = useDeleteCategory();
 
   // Filter categories locally with useMemo
   const filteredCategories = useMemo(() => {
@@ -153,88 +76,36 @@ function CategoriesManagement() {
 
   const handleSubmitCategory = useCallback(
     async (formData) => {
-      const token = localStorage.getItem('token');
-      const isEditMode = !!selectedCategory;
-
-      if (isEditMode) {
-        // Update existing category
-        try {
-          const response = await fetch(
-            `/api/admin/categories/${selectedCategory._id}`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              credentials: 'include',
-              body: JSON.stringify(formData),
-            }
-          );
-          if (!response.ok) throw new Error('API failed');
-        } catch {
-          // Fallback to mock update
-        }
-        setCategories((prev) =>
-          prev.map((cat) =>
-            cat._id === selectedCategory._id ? { ...cat, ...formData } : cat
-          )
-        );
-      } else {
-        // Create new category
-        try {
-          const response = await fetch('/api/admin/categories', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            credentials: 'include',
-            body: JSON.stringify(formData),
+      try {
+        if (selectedCategory) {
+          await updateCategoryMutation.mutateAsync({
+            id: selectedCategory._id,
+            data: formData,
           });
-          if (response.ok) {
-            const data = await response.json();
-            setCategories((prev) => [
-              data.data || {
-                ...formData,
-                _id: String(Date.now()),
-                eventCount: 0,
-                createdAt: new Date().toISOString(),
-              },
-              ...prev,
-            ]);
-            return;
-          }
-          throw new Error('API failed');
-        } catch {
-          // Mock create
-          setCategories((prev) => [
-            {
-              _id: String(Date.now()),
-              ...formData,
-              eventCount: 0,
-              createdAt: new Date().toISOString(),
-            },
-            ...prev,
-          ]);
+        } else {
+          await createCategoryMutation.mutateAsync(formData);
         }
+        handleCloseModal();
+      } catch (error) {
+        console.error('Failed to save category:', error);
       }
     },
-    [selectedCategory]
+    [createCategoryMutation, updateCategoryMutation, selectedCategory, handleCloseModal]
   );
 
   const handleDelete = useCallback(async (categoryId, categoryName) => {
     if (!confirm(`Are you sure you want to delete "${categoryName}"?`)) return;
-
+    
     try {
       setActionLoading(categoryId);
-      // Note: Backend doesn't have delete category endpoint yet
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setCategories((prev) => prev.filter((cat) => cat._id !== categoryId));
+      await deleteCategoryMutation.mutateAsync(categoryId);
+    } catch (error) {
+       // Error handled by mutation onError toast
+       console.error('Delete failed', error);
     } finally {
       setActionLoading(null);
     }
-  }, []);
+  }, [deleteCategoryMutation]);
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
@@ -246,11 +117,19 @@ function CategoriesManagement() {
   }, []);
 
   // Loading state
-  if (loading && categories.length === 0) {
+  if (isLoading) {
     return (
       <div className={styles.loading}>
         <Loader2 className={styles.spinner} size={32} />
         Loading data...
+      </div>
+    );
+  }
+  
+  if (isError) {
+     return (
+      <div className={styles.error}>
+        Error: {error?.message || 'Failed to load categories'}
       </div>
     );
   }
@@ -277,6 +156,7 @@ function CategoriesManagement() {
         onClose={handleCloseModal}
         onSubmit={handleSubmitCategory}
         category={selectedCategory}
+        isSubmitting={createCategoryMutation.isPending || updateCategoryMutation.isPending}
       />
 
       <CategorySearchFilter

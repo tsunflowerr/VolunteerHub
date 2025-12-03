@@ -14,6 +14,9 @@ export const categorySchema = Joi.object({
     }),
     description: Joi.string().max(500).optional().messages({
         "string.max": "Description must be at most 500 characters long",
+    }),
+    color: Joi.string().optional().messages({
+        "string.base": "Color must be a string"
     })
 });
 

@@ -422,13 +422,15 @@ GET /api/categories
       "name": "Environment",
       "slug": "environment",
       "description": "Environmental protection activities",
+      "color": "#4caf50",
       "createdAt": "2025-01-01T00:00:00Z"
     },
     {
       "_id": "cat124",
       "name": "Education",
       "slug": "education",
-      "description": "Educational volunteer work"
+      "description": "Educational volunteer work",
+      "color": "#2196f3"
     }
   ]
 }
@@ -453,7 +455,8 @@ GET /api/categories/slug/:slug
     "_id": "cat123",
     "name": "Environment",
     "slug": "environment",
-    "description": "Environmental protection activities"
+    "description": "Environmental protection activities",
+    "color": "#4caf50"
   }
 }
 ```
@@ -1551,7 +1554,8 @@ POST /api/admin/categories
 {
   "name": "Environment",
   "slug": "environment",
-  "description": "Environmental protection and conservation activities"
+  "description": "Environmental protection and conservation activities",
+  "color": "#4caf50"
 }
 ```
 
@@ -1566,6 +1570,7 @@ POST /api/admin/categories
     "name": "Environment",
     "slug": "environment",
     "description": "Environmental protection and conservation activities",
+    "color": "#4caf50",
     "createdAt": "2025-11-01T00:00:00Z"
   }
 }
@@ -1587,7 +1592,8 @@ PUT /api/admin/categories/:id
 {
   "name": "Environmental Protection",
   "slug": "environmentalprotection",
-  "description": "Updated description"
+  "description": "Updated description",
+  "color": "#2196f3"
 }
 ```
 
@@ -1714,7 +1720,61 @@ GET /api/admin/users
 
 ---
 
-### 13.7. Khóa/Mở Khóa User
+### 13.7. Tạo User Mới (Admin)
+
+```http
+POST /api/admin/users
+```
+
+**Headers:** Authorization required (Admin)
+
+**Body:**
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "phoneNumber": "0123456789",
+  "password": "password123",
+  "role": "manager"
+}
+```
+
+**Field Validation:**
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| username | string | Yes | Alphanumeric, 3-30 characters |
+| email | string | Yes | Valid email format |
+| phoneNumber | string | Yes | Exactly 10 digits |
+| password | string | Yes | Minimum 6 characters |
+| role | string | Yes | "user" or "manager" |
+
+**Response Success (201):**
+
+```json
+{
+  "success": true,
+  "message": "User created successfully",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "phoneNumber": "0123456789",
+    "avatar": "https://ui-avatars.com/api/?name=johndoe&background=random",
+    "role": "manager",
+    "status": "active"
+  }
+}
+```
+
+**Errors:**
+
+- `400`: Email or phone number already in use
+- `403`: Forbidden - Admin role required
+
+---
+
+### 13.8. Khóa/Mở Khóa User
 
 ```http
 PATCH /api/admin/users/:userId/lock
@@ -1735,7 +1795,7 @@ PATCH /api/admin/users/:userId/lock
 
 ---
 
-### 13.8. Export Users Data (CSV)
+### 13.9. Export Users Data (CSV)
 
 ```http
 GET /api/admin/export/users
@@ -1747,7 +1807,7 @@ GET /api/admin/export/users
 
 ---
 
-### 13.9. Export Events Data (CSV)
+### 13.10. Export Events Data (CSV))
 
 ```http
 GET /api/admin/export/events
@@ -1756,6 +1816,29 @@ GET /api/admin/export/events
 **Headers:** Authorization required (Admin)
 
 **Response:** File CSV chứa dữ liệu events
+
+---
+
+### 13.11. Xóa Category
+
+```http
+DELETE /api/admin/categories/:id
+```
+
+**Headers:** Authorization required (Admin)
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "message": "Category deleted successfully"
+}
+```
+
+**Errors:**
+
+- `404`: Category not found
 
 ---
 

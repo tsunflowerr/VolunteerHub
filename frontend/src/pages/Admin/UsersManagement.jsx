@@ -1,6 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { UserPlus, Loader2 } from 'lucide-react';
-import { useAdminUsers, useToggleLockUser } from '../../hooks/useAdmin';
+import {
+  useAdminUsers,
+  useToggleLockUser,
+  useCreateUser,
+} from '../../hooks/useAdmin';
 import {
   UserSearchFilter,
   UserTable,
@@ -20,6 +24,7 @@ function UsersManagement() {
   // TanStack Query hooks
   const { data, isLoading, isError, error } = useAdminUsers();
   const toggleLockMutation = useToggleLockUser();
+  const createUserMutation = useCreateUser();
 
   // Get users from query data
   const users = data?.users || [];
@@ -71,11 +76,18 @@ function UsersManagement() {
     [toggleLockMutation]
   );
 
-  const handleCreateUser = useCallback(async (formData) => {
-    // TODO: Implement create user mutation
-    console.log('Create user:', formData);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }, []);
+  const handleCreateUser = useCallback(
+    async (formData) => {
+      try {
+        await createUserMutation.mutateAsync(formData);
+        setShowModal(false);
+      } catch (error) {
+        // Error is handled by the mutation's onError
+        console.error('Create user failed:', error);
+      }
+    },
+    [createUserMutation]
+  );
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
@@ -130,6 +142,7 @@ function UsersManagement() {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleCreateUser}
+        isSubmitting={createUserMutation.isPending}
       />
 
       <UserSearchFilter

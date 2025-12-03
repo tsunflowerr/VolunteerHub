@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
+import * as yup from 'yup';
 import styles from './UsersTable.module.css';
 
 const initialFormData = {
@@ -9,9 +10,41 @@ const initialFormData = {
   email: '',
   password: '',
   confirmPassword: '',
-  phone: '',
+  phoneNumber: '',
   role: 'user',
 };
+
+const validationSchema = yup.object().shape({
+  username: yup
+    .string()
+    .required('Please enter username')
+    .matches(
+      /^[a-zA-Z0-9]+$/,
+      'Username must only contain alphanumeric characters'
+    )
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters'),
+  email: yup
+    .string()
+    .required('Please enter email')
+    .email('Invalid email format'),
+  password: yup
+    .string()
+    .required('Please enter password')
+    .min(6, 'Password must be at least 6 characters'),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm password')
+    .oneOf([yup.ref('password'), null], 'Passwords do not match'),
+  phoneNumber: yup
+    .string()
+    .required('Phone number is required')
+    .matches(/^[0-9]{10}$/, 'Invalid phone number (10 digits)'),
+  role: yup
+    .string()
+    .required('Role is required')
+    .oneOf(['user', 'manager'], 'Role must be either user or manager'),
+});
 
 function CreateUserModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState(initialFormData);
@@ -23,59 +56,41 @@ function CreateUserModal({ isOpen, onClose, onSubmit }) {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for the modified field
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
-  const validateForm = () => {
-    const errors = {};
-
-    if (!formData.username.trim()) {
-      errors.username = 'Please enter username';
-    } else if (formData.username.trim().length < 2) {
-      errors.username = 'Username must be at least 2 characters';
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = 'Please enter email';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format';
-    }
-
-    if (!formData.password) {
-      errors.password = 'Please enter password';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm password';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (formData.phone && !/^[0-9]{10,11}$/.test(formData.phone)) {
-      errors.phone = 'Invalid phone number (10-11 digits)';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
 
-    setIsSubmitting(true);
     try {
-      await onSubmit(formData);
-      setFormData(initialFormData);
-      onClose();
-    } catch (err) {
-      // Error handled by parent
-    } finally {
-      setIsSubmitting(false);
+      await validationSchema.validate(formData, { abortEarly: false });
+      setFormErrors({});
+
+      setIsSubmitting(true);
+      try {
+        // Create a copy of formData and remove confirmPassword
+        // eslint-disable-next-line no-unused-vars
+        const { confirmPassword, ...submitData } = formData;
+
+        await onSubmit(submitData);
+        setFormData(initialFormData);
+        onClose();
+      } catch (err) {
+        // Error handled by parent
+      } finally {
+        setIsSubmitting(false);
+      }
+    } catch (validationError) {
+      const errors = {};
+      if (validationError.inner) {
+        validationError.inner.forEach((error) => {
+          errors[error.path] = error.message;
+        });
+      }
+      setFormErrors(errors);
     }
   };
 
@@ -211,17 +226,21 @@ function CreateUserModal({ isOpen, onClose, onSubmit }) {
 
               <div className={styles.formRow}>
                 <div className={styles.formGroup}>
-                  <label>Phone</label>
+                  <label>
+                    Phone <span className={styles.required}>*</span>
+                  </label>
                   <input
                     type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
                     onChange={handleInputChange}
                     placeholder="Enter phone number"
-                    className={formErrors.phone ? styles.inputError : ''}
+                    className={formErrors.phoneNumber ? styles.inputError : ''}
                   />
-                  {formErrors.phone && (
-                    <span className={styles.errorText}>{formErrors.phone}</span>
+                  {formErrors.phoneNumber && (
+                    <span className={styles.errorText}>
+                      {formErrors.phoneNumber}
+                    </span>
                   )}
                 </div>
 
@@ -236,7 +255,6 @@ function CreateUserModal({ isOpen, onClose, onSubmit }) {
                   >
                     <option value="user">User</option>
                     <option value="manager">Manager</option>
-                    <option value="admin">Admin</option>
                   </select>
                 </div>
               </div>

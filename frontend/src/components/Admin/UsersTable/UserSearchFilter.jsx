@@ -28,7 +28,6 @@ function UserSearchFilter({
           onChange={(e) => onFilterChange(e.target.value)}
         >
           <option value="all">All</option>
-          <option value="admin">Admin</option>
           <option value="manager">Manager</option>
           <option value="user">User</option>
         </select>

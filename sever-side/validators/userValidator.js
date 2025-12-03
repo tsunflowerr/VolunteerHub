@@ -93,3 +93,31 @@ export const userIdSchema = Joi.object({
     'any.required': '"userId" is required',
   }),
 });
+
+// ====== Validation for admin creating a user ======
+export const adminCreateUserSchema = Joi.object({
+  username: Joi.string().alphanum().min(3).max(30).required().messages({
+    'string.empty': 'Username is required',
+    'string.alphanum': 'Username must only contain alphanumeric characters',
+    'string.min': 'Username must be at least 3 characters long',
+  }),
+  email: Joi.string().email().required().messages({
+    'string.empty': 'Email is required',
+    'string.email': 'Email must be a valid email address',
+  }),
+  phoneNumber: Joi.string()
+    .pattern(/^[0-9]{10}$/)
+    .required()
+    .messages({
+      'string.empty': 'Phone number is required',
+      'string.pattern.base': 'Phone number must be 10 digits long',
+    }),
+  password: Joi.string().min(6).required().messages({
+    'string.empty': 'Password is required',
+    'string.min': 'Password must be at least 6 characters long',
+  }),
+  role: Joi.string().valid('user', 'manager').required().messages({
+    'string.empty': 'Role is required',
+    'any.only': 'Role must be either user or manager',
+  }),
+});

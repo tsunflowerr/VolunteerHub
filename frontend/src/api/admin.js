@@ -12,6 +12,11 @@ export const adminApi = {
     return response.data;
   },
 
+  createUser: async (userData) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
+
   // Events
   getPendingEvents: async () => {
     const response = await api.get('/admin/events/pending');
@@ -31,6 +36,11 @@ export const adminApi = {
   },
 
   // Categories
+  getCategories: async (params = {}) => {
+    const response = await api.get('/categories', { params });
+    return response.data;
+  },
+
   createCategory: async (data) => {
     const response = await api.post('/admin/categories', data);
     return response.data;
@@ -38,6 +48,11 @@ export const adminApi = {
 
   updateCategory: async ({ id, data }) => {
     const response = await api.put(`/admin/categories/${id}`, data);
+    return response.data;
+  },
+
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/admin/categories/${id}`);
     return response.data;
   },
 

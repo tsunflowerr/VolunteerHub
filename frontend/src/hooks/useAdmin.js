@@ -21,6 +21,18 @@ export const adminKeys = {
 
   // Dashboard
   dashboard: () => [...adminKeys.all, 'dashboard'],
+
+  // Mutation keys
+  mutations: {
+    toggleLockUser: () => [...adminKeys.users(), 'toggle-lock'],
+    createUser: () => [...adminKeys.users(), 'create'],
+    updateEventStatus: () => [...adminKeys.events(), 'update-status'],
+    deleteEvent: () => [...adminKeys.events(), 'delete'],
+    createCategory: () => [...adminKeys.categories(), 'create'],
+    updateCategory: () => [...adminKeys.categories(), 'update'],
+    exportUsers: () => [...adminKeys.users(), 'export'],
+    exportEvents: () => [...adminKeys.events(), 'export'],
+  },
 };
 
 // ============================================
@@ -60,6 +72,7 @@ export const useToggleLockUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: adminKeys.mutations.toggleLockUser(),
     mutationFn: adminApi.toggleLockUser,
     onMutate: async (userId) => {
       // Cancel outgoing refetches
@@ -101,6 +114,25 @@ export const useToggleLockUser = () => {
   });
 };
 
+/**
+ * Create new user (admin)
+ */
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: adminKeys.mutations.createUser(),
+    mutationFn: adminApi.createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() });
+      toast.success('User created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to create user');
+    },
+  });
+};
+
 // ============================================
 // Events Hooks
 // ============================================
@@ -123,6 +155,7 @@ export const useUpdateEventStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: adminKeys.mutations.updateEventStatus(),
     mutationFn: adminApi.updateEventStatus,
     onSuccess: (data, { status }) => {
       queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
@@ -144,6 +177,7 @@ export const useAdminDeleteEvent = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: adminKeys.mutations.deleteEvent(),
     mutationFn: adminApi.deleteEvent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.events() });
@@ -161,12 +195,36 @@ export const useAdminDeleteEvent = () => {
 // ============================================
 
 /**
+ * Fetch all categories
+ */
+export const useAdminCategories = (params = {}) => {
+  return useQuery({
+    queryKey: ['categories', params], // Use simple key or add to adminKeys
+    queryFn: () => adminApi.getCategories(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    select: (data) => {
+       // Map if necessary, or return raw
+       return (data.data || data.categories || []).map(cat => ({
+         _id: cat._id,
+         name: cat.name,
+         slug: cat.slug,
+         description: cat.description,
+         color: cat.color || '#667eea',
+         eventCount: cat.eventCount || 0,
+         createdAt: cat.createdAt
+       }));
+    }
+  });
+};
+
+/**
  * Create new category
  */
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: adminKeys.mutations.createCategory(),
     mutationFn: adminApi.createCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -185,6 +243,7 @@ export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: adminKeys.mutations.updateCategory(),
     mutationFn: adminApi.updateCategory,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
@@ -192,6 +251,25 @@ export const useUpdateCategory = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to update category');
+    },
+  });
+};
+
+/**
+ * Delete category
+ */
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['categories', 'delete'],
+    mutationFn: adminApi.deleteCategory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete category');
     },
   });
 };
@@ -220,6 +298,7 @@ export const useAdminDashboard = () => {
  */
 export const useExportUsers = () => {
   return useMutation({
+    mutationKey: adminKeys.mutations.exportUsers(),
     mutationFn: adminApi.exportUsers,
     onSuccess: (blob) => {
       const url = window.URL.createObjectURL(blob);
@@ -243,6 +322,7 @@ export const useExportUsers = () => {
  */
 export const useExportEvents = () => {
   return useMutation({
+    mutationKey: adminKeys.mutations.exportEvents(),
     mutationFn: adminApi.exportEvents,
     onSuccess: (blob) => {
       const url = window.URL.createObjectURL(blob);
