@@ -9,7 +9,7 @@ import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 import mongoose from 'mongoose';
 
 export async function createEvent(req, res) {
-    const { name, description, category, location, thumbnail, images, capacity, startDate, endDate } = req.body;
+    const { name, description, categories, activities, prepare, location, thumbnail, images, capacity, startDate, endDate } = req.body;
     const organizerId = req.user._id;
     try {
         if (!name || !description || !location || !capacity || !startDate || !endDate) {
@@ -19,7 +19,9 @@ export async function createEvent(req, res) {
             name,
             description,
             managerId: organizerId,
-            category,
+            categories,
+            activities,
+            prepare,
             location,
             thumbnail,
             images,
@@ -29,7 +31,7 @@ export async function createEvent(req, res) {
         })
         let saved = await newEvent.save();
         saved = await saved.populate('managerId', 'username email avatar');
-        saved = await saved.populate('category', 'name slug');
+        saved = await saved.populate('categories', 'name slug');
         
         // Không cần xóa cache vì event mới có status='pending', chưa hiển thị
         
@@ -59,7 +61,7 @@ export async function updateEvent(req, res) {
         const data = {...req.body, updatedAt: Date.now()};
         const updatedEvent = await Event.findByIdAndUpdate(eventId, data, {new: true, runValidators: true})
             .populate('managerId', 'username email avatar')
-            .populate('category', 'name slug');
+            .populate('categories', 'name slug');
         
         // Xóa cache sau khi update event
         await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
@@ -189,7 +191,7 @@ export async function getEventsByManager(req, res) {
         const [events, total] = await Promise.all([
             await Event.find({managerId})
             .populate('managerId', 'username email avatar')
-            .populate('category', 'name slug')
+            .populate('categories', 'name slug')
             .sort({ createdAt: -1 })
             .lean(),
             Event.countDocuments({managerId})

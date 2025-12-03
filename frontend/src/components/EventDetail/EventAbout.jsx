@@ -1,40 +1,36 @@
 import styles from './EventDetail.module.css';
 
-const EventAbout = ({ about, activities, prepare, images = [] }) => {
+const EventAbout = ({ description, activities, prepare, images = [] }) => {
   return (
     <div className={styles['event-detail__section']}>
       <h3 className={styles['event-detail__section-title']}>ABOUT</h3>
 
-      {about && (
+      {description && (
         <div className={styles['event-detail__subsection']}>
           <h2 className={styles['event-detail__section-subtitle']}>
             About the event
           </h2>
-          <p className={styles['event-detail__section-subcontent']}>{about}</p>
+          <p className={styles['event-detail__section-subcontent']}>{description}</p>
         </div>
       )}
 
-      {activities && (
-        <div className={styles['event-detail__subsection']}>
-          <h2 className={styles['event-detail__section-subtitle']}>
-            What will volunteers do?
-          </h2>
-          <p className={styles['event-detail__section-subcontent']}>
-            {activities}
-          </p>
-        </div>
-      )}
+      <div className={styles['event-detail__subsection']}>
+        <h2 className={styles['event-detail__section-subtitle']}>
+          What will volunteers do?
+        </h2>
+        <p className={styles['event-detail__section-subcontent']}>
+          {activities || 'No specific activities described.'}
+        </p>
+      </div>
 
-      {prepare && (
-        <div className={styles['event-detail__subsection']}>
-          <h2 className={styles['event-detail__section-subtitle']}>
-            What will volunteers need to bring or wear?
-          </h2>
-          <p className={styles['event-detail__section-subcontent']}>
-            {prepare}
-          </p>
-        </div>
-      )}
+      <div className={styles['event-detail__subsection']}>
+        <h2 className={styles['event-detail__section-subtitle']}>
+          What will volunteers need to bring or wear?
+        </h2>
+        <p className={styles['event-detail__section-subcontent']}>
+          {prepare || 'No specific preparation required.'}
+        </p>
+      </div>
 
       {images && images.length > 0 && (
         <div className={styles['event-detail__subsection']}>

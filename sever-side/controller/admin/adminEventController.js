@@ -16,7 +16,7 @@ export async function getPendingEvents(req, res) {
         const [events, total] = await Promise.all([
             Event.find({status: 'pending'})
                 .populate('managerId', 'username email avatar')
-                .populate('category', 'name slug')
+                .populate('categories', 'name slug')
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)

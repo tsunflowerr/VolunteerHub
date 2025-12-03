@@ -29,24 +29,22 @@ const eventFormSchema = yup.object().shape({
     .string()
     .required('Event name is required')
     .min(5, 'Event name must be at least 5 characters')
-    .max(200, 'Event name must not exceed 200 characters')
+    .max(100, 'Event name must not exceed 100 characters')
     .trim(),
-  about: yup
+  description: yup
     .string()
-    .required('About section is required')
-    .min(20, 'About must be at least 20 characters')
-    .max(2000, 'About must not exceed 2000 characters')
+    .required('Description is required')
+    .min(20, 'Description must be at least 20 characters')
+    .max(1000, 'Description must not exceed 1000 characters')
     .trim(),
   activities: yup
     .string()
-    .required('Activities description is required')
-    .min(20, 'Activities must be at least 20 characters')
+    .notRequired()
     .max(2000, 'Activities must not exceed 2000 characters')
     .trim(),
   prepare: yup
     .string()
-    .required('Preparation information is required')
-    .min(10, 'Preparation info must be at least 10 characters')
+    .notRequired()
     .max(1000, 'Preparation info must not exceed 1000 characters')
     .trim(),
   location: yup
@@ -62,7 +60,7 @@ const eventFormSchema = yup.object().shape({
     .date()
     .required('End date is required')
     .min(yup.ref('startDate'), 'End date must be after start date'),
-  category: yup
+  categories: yup
     .array()
     .of(yup.string())
     .min(1, 'Please select at least one category')
@@ -100,13 +98,13 @@ const ManagerEventForm = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    about: '',
+    description: '',
     activities: '',
     prepare: '',
     location: '',
     startDate: '',
     endDate: '',
-    category: [],
+    categories: [],
     capacity: '',
     thumbnail: null,
   });
@@ -122,7 +120,7 @@ const ManagerEventForm = () => {
       // Mock data for now
       const mockEvent = {
         name: 'Beach Cleanup Initiative',
-        about:
+        description:
           'Join us for a community beach cleanup event to protect our marine life and keep our beaches beautiful.',
         activities:
           'Collect trash and recyclables, sort materials, participate in educational workshops about ocean conservation.',
@@ -131,7 +129,7 @@ const ManagerEventForm = () => {
         location: 'Santa Monica Beach, 1550 PCH, Santa Monica, CA 90401',
         startDate: '2025-11-20T08:00:00',
         endDate: '2025-11-20T12:00:00',
-        category: ['animals', 'climate'],
+        categories: ['animals', 'climate'],
         capacity: 50,
         thumbnail:
           'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800',
@@ -165,7 +163,7 @@ const ManagerEventForm = () => {
   // Handle category selection
   const handleCategoryChange = (categoryId) => {
     setFormData((prev) => {
-      const currentCategories = prev.category;
+      const currentCategories = prev.categories;
       const isSelected = currentCategories.includes(categoryId);
 
       const newCategories = isSelected
@@ -174,14 +172,14 @@ const ManagerEventForm = () => {
 
       return {
         ...prev,
-        category: newCategories,
+        categories: newCategories,
       };
     });
 
-    if (errors.category) {
+    if (errors.categories) {
       setErrors((prev) => ({
         ...prev,
-        category: '',
+        categories: '',
       }));
     }
   };
@@ -311,18 +309,18 @@ const ManagerEventForm = () => {
 
           {/* About */}
           <FormField
-            label="About This Event"
+            label="Description"
             icon={FileText}
             required
-            error={errors.about}
+            error={errors.description}
           >
             <TextArea
-              name="about"
-              value={formData.about}
+              name="description"
+              value={formData.description}
               onChange={handleChange}
               placeholder="Describe what this event is about..."
               rows={4}
-              error={errors.about}
+              error={errors.description}
             />
           </FormField>
 
@@ -431,11 +429,11 @@ const ManagerEventForm = () => {
           <FormField
             label="Categories"
             required
-            error={errors.category}
+            error={errors.categories}
             icon={Tag}
           >
             <CategoryCheckboxes
-              selectedCategories={formData.category}
+              selectedCategories={formData.categories}
               onCategoryChange={handleCategoryChange}
             />
           </FormField>
@@ -493,6 +491,7 @@ const ManagerEventForm = () => {
         <EventPreviewDialog
           event={{
             ...formData,
+            category: formData.categories,
             thumbnail: thumbnailPreview,
           }}
           onClose={() => setShowPreview(false)}

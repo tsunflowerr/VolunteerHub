@@ -4,7 +4,9 @@ const eventSchema = new mongoose.Schema({
     name: {type: String, required: true, trim: true},
     description: {type: String, required: true},
     managerId: {type: mongoose.Schema.Types.ObjectId, ref:"user", required: true},
-    category:[{type: mongoose.Schema.Types.ObjectId, ref:"category"}],
+    categories:[{type: mongoose.Schema.Types.ObjectId, ref:"category"}],
+    activities: { type: String },
+    prepare: { type: String },
     location:{type: String, required: true},
     thumbnail: {type: String},
     images: [{ type: String }],
@@ -23,7 +25,7 @@ const eventSchema = new mongoose.Schema({
 eventSchema.index({ status: 1, startDate: 1 });      // For upcoming events
 eventSchema.index({ status: 1, endDate: 1 });        // For trending events
 eventSchema.index({ managerId: 1, status: 1 });      // For manager queries
-eventSchema.index({ category: 1, status: 1 });       // For category queries
+eventSchema.index({ categories: 1, status: 1 });       // For category queries
 eventSchema.index({ createdAt: -1 });      
 eventSchema.index({ name: 'text', description: 'text', location: 'text' });  // For text search      
 

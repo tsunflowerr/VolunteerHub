@@ -29,7 +29,7 @@ export async function searchEvents(req, res) {
         if (category) {
             const categoryDoc = await Category.findOne({ slug: category }).lean();
             if (categoryDoc) {
-                filter.category = categoryDoc._id;
+                filter.categories = categoryDoc._id;
             } else {
                 return res.status(404).json({ 
                     success: false, 
@@ -96,7 +96,7 @@ export async function searchEvents(req, res) {
                 const [events, total] = await Promise.all([
                     query
                         .populate('managerId', 'username email avatar')
-                        .populate('category', 'name slug')
+                        .populate('categories', 'name slug')
                         .sort(sortOptions)
                         .skip(skip)
                         .limit(limit)
@@ -299,8 +299,8 @@ export async function advancedSearch(req, res) {
                         $text: { $search: keyword },
                         status: { $in: ['approved', 'completed'] }
                     })
-                    .select('name description location startDate endDate category viewCount likesCount registrationsCount')
-                    .populate('category', 'name slug')
+                    .select('name description location startDate endDate categories viewCount likesCount registrationsCount')
+                    .populate('categories', 'name slug')
                     .populate('managerId', 'username avatar')
                     .skip(skip)
                     .limit(parseInt(limit))
@@ -402,8 +402,8 @@ export async function advancedSearch(req, res) {
                 $text: { $search: keyword },
                 status: { $in: ['approved', 'completed'] }
             })
-            .select('name description location startDate endDate category viewCount likesCount')
-            .populate('category', 'name slug')
+            .select('name description location startDate endDate categories viewCount likesCount')
+            .populate('categories', 'name slug')
             .populate('managerId', 'username avatar')
             .limit(5)
             .lean(),

@@ -19,7 +19,7 @@ const EventContent = ({ event }) => {
       <EventCategories categories={event.category} />
 
       <EventAbout
-        about={event.about}
+        description={event.description}
         activities={event.activities}
         prepare={event.prepare}
         images={event.images}

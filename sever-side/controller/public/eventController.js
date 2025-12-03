@@ -22,7 +22,7 @@ export async function getAllEvents(req, res) {
                 const [events, total] = await Promise.all([
                     Event.find({status: { $in: ['approved', 'completed'] }})
                         .populate('managerId', 'username email avatar')
-                        .populate('category', 'name slug')
+                        .populate('categories', 'name slug')
                         .sort({ createdAt: -1 })
                         .skip(skip)
                         .limit(limit)
@@ -88,7 +88,7 @@ export async function getEventById(req, res) {
                 { new: true }
             )
             .populate('managerId', 'username email avatar')
-            .populate('category', 'name slug')
+            .populate('categories', 'name slug')
             .lean();
             
             // Invalidate cache sau khi tăng view
@@ -107,7 +107,7 @@ export async function getEventById(req, res) {
                 CACHE_TTL.EVENT_DETAIL,
                 () => Event.findById(eventId)
                     .populate('managerId', 'username email avatar')
-                    .populate('category', 'name slug')
+                    .populate('categories', 'name slug')
                     .lean()
             );
         }
@@ -206,7 +206,7 @@ export async function getTrendingEvents(req, res) {
                         {
                             $lookup: {
                                 from: 'categories',
-                                localField: 'category',
+                                localField: 'categories',
                                 foreignField: '_id',
                                 as: 'categoryData'
                             }
@@ -220,7 +220,7 @@ export async function getTrendingEvents(req, res) {
                                 registrationsCount: 1, postsCount: 1,
                                 trendingScore: 1, createdAt: 1,
                                 managerId: { $arrayElemAt: ['$managerData', 0] },
-                                category: '$categoryData'
+                                categories: '$categoryData'
                             }
                         }
                     ],
@@ -281,11 +281,11 @@ export async function getEventsByCategorySlug(req, res) {
                 if(!category) return null;
                 
                 const events = await Event.find({
-                    category: category._id, // ✅ Fixed: Không cần $in cho 1 giá trị
+                    categories: category._id, // ✅ Fixed: Query array using single value (Mongo does $in implicitly)
                     status: { $in: ['approved', 'completed'] }
                 })
                 .populate('managerId', 'username email avatar')
-                .populate('category', 'name slug')
+                .populate('categories', 'name slug')
                 .sort({ createdAt: -1 })
                 .lean();
                 
@@ -326,7 +326,7 @@ export async function getUpcomingEvents(req, res) {
                         status: 'approved'
                     })
                     .populate('managerId', 'username email avatar')
-                    .populate('category', 'name slug')
+                    .populate('categories', 'name slug')
                     .sort({ startDate: 1 })
                     .skip((page - 1) * limit)
                     .limit(limit)

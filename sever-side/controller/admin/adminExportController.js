@@ -54,11 +54,11 @@ export const exportEvents = async (req, res) => {
     const { format = 'json', status, category } = req.query;
     const filters = {};
     if (status) filters.status = status;
-    if (category) filters.category = category; 
+    if (category) filters.categories = category; 
 
     const events = await Event.find(filters)
       .populate('managerId', 'username email')
-      .populate('category', 'name')
+      .populate('categories', 'name')
       .lean();
 
     const formattedData = events.map(event => ({
@@ -73,7 +73,7 @@ export const exportEvents = async (req, res) => {
       LikesCount: event.likesCount,
       Manager: event.managerId ? event.managerId.username : 'N/A',
       ManagerEmail: event.managerId ? event.managerId.email : 'N/A',
-      Categories: event.category.map(cat => cat.name).join(', '),
+      Categories: event.categories ? event.categories.map(cat => cat.name).join(', ') : 'N/A',
       CreatedAt: event.createdAt,
     }));
 

@@ -332,10 +332,10 @@ export async function getUserBookMarks(req, res) {
       .populate({
         path: 'bookmarks',
         select:
-          'name description managerId category thumbnail images likesCount viewCount startDate endDate location capacity status createdAt',
+          'name description managerId categories thumbnail images likesCount viewCount startDate endDate location capacity status createdAt',
         populate: [
           { path: 'managerId', select: 'username avatar' },
-          { path: 'category', select: 'name slug' },
+          { path: 'categories', select: 'name slug' },
         ],
       });
 

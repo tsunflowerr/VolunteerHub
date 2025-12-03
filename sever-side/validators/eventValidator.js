@@ -15,10 +15,19 @@ export const createAndUpdateEventSchema = Joi.object(
             'string.min': `"description" should have a minimum length of {#limit}`,
             'string.max': `"description" should have a maximum length of {#limit}`,
         }),
-        category: Joi.string().hex().length(24).required().messages({
-            'string.base': `"category" should be a type of 'text'`,
-            'string.empty': `"category" cannot be an empty field`,
-            'string.hex': `"category" must be a valid ObjectId`,
+        categories: Joi.array().items(Joi.string().hex().length(24)).min(1).required().messages({
+            'array.base': `"categories" should be an array`,
+            'array.min': `"categories" must contain at least 1 category`,
+            'string.hex': `"categories" items must be valid ObjectIds`,
+            'any.required': `"categories" is required`,
+        }),
+        activities: Joi.string().max(2000).optional().allow('').messages({
+            'string.base': `"activities" should be a type of 'text'`,
+            'string.max': `"activities" should have a maximum length of {#limit}`,
+        }),
+        prepare: Joi.string().max(1000).optional().allow('').messages({
+            'string.base': `"prepare" should be a type of 'text'`,
+            'string.max': `"prepare" should have a maximum length of {#limit}`,
         }),
         location: Joi.string().min(5).max(200).required().messages({
             'string.base': `"location" should be a type of 'text'`,
