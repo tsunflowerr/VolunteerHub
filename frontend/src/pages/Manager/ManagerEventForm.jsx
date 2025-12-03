@@ -11,18 +11,17 @@ import {
   ArrowLeft,
   Save,
   Eye,
+  Tag,
 } from 'lucide-react';
 import {
-  FormHeader,
   FormField,
   TextInput,
   TextArea,
-  CategoryCheckboxes,
   ImagePicker,
-  FormActions,
+  CategoryCheckboxes,
 } from '../../components/Form';
 import styles from './ManagerEventForm.module.css';
-import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialogSimple';
+import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 
 // Yup validation schema
 const eventFormSchema = yup.object().shape({
@@ -429,11 +428,15 @@ const ManagerEventForm = () => {
           </FormField>
 
           {/* Categories */}
-          <FormField label="Categories" required error={errors.category}>
+          <FormField
+            label="Categories"
+            required
+            error={errors.category}
+            icon={Tag}
+          >
             <CategoryCheckboxes
               selectedCategories={formData.category}
               onCategoryChange={handleCategoryChange}
-              error={errors.category}
             />
           </FormField>
 
@@ -446,8 +449,8 @@ const ManagerEventForm = () => {
           >
             <ImagePicker
               preview={thumbnailPreview}
-              onChange={handleImageChange}
-              onRemove={handleRemoveImage}
+              onImageChange={handleImageChange}
+              onRemoveImage={handleRemoveImage}
               error={errors.thumbnail}
             />
           </FormField>
@@ -469,7 +472,11 @@ const ManagerEventForm = () => {
               <Eye size={20} />
               Preview
             </button>
-            <button type="submit" className={styles.submitBtn} disabled={loading}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={loading}
+            >
               <Save size={20} />
               {loading
                 ? 'Saving...'

@@ -1,4 +1,4 @@
-import { categoriesById } from '../../utilities/CategoriesIcons';
+import { CategoryChip } from '../common';
 import styles from './EventDetail.module.css';
 
 const EventCategories = ({ categories }) => {
@@ -8,17 +8,14 @@ const EventCategories = ({ categories }) => {
     <div className={styles['event-detail__section']}>
       <h3 className={styles['event-detail__section-title']}>CATEGORIES</h3>
       <div className={styles['event-detail__categories']}>
-        {categories.map((cat) => {
-          const categoryData = categoriesById[cat.slug];
-          if (!categoryData) return null;
-          return (
-            <div key={cat._id} className={styles['event-detail__category']}>
-              <span className={styles['event-detail__category-name']}>
-                {cat.name}
-              </span>
-            </div>
-          );
-        })}
+        {categories.map((cat) => (
+          <CategoryChip
+            key={cat._id}
+            category={cat}
+            filled={true}
+            showDescription={false}
+          />
+        ))}
       </div>
     </div>
   );

@@ -68,9 +68,9 @@
 
 .eventContent {
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 24px;
-  padding: 24px;
+  grid-template-columns: 1fr 220px;
+  gap: 16px;
+  padding: 20px;
 }
 
 @media (max-width: 768px) {
