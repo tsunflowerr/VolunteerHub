@@ -1,29 +1,47 @@
 import { useQuery } from '@tanstack/react-query';
-import { getAllCategories, getCategoryById, getCategoryBySlug } from '../api/categories';
+import { categoriesApi } from '../api/categories';
+
+export const categoryKeys = {
+  all: ['categories'],
+  detail: (id) => ['categories', 'detail', id],
+  slug: (slug) => ['categories', 'slug', slug],
+};
 
 export const useCategories = () => {
-  return useQuery({
-    queryKey: ['categories'],
-    queryFn: getAllCategories,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    select: (data) => data.data,
+  const query = useQuery({
+    queryKey: categoryKeys.all,
+    queryFn: categoriesApi.getAll,
+    staleTime: 1000 * 60 * 10, // 10 minutes - categories rarely change
   });
+
+  return {
+    ...query,
+    categories: query.data?.categories ?? [],
+  };
 };
 
 export const useCategory = (id) => {
-  return useQuery({
-    queryKey: ['category', id],
-    queryFn: () => getCategoryById(id),
+  const query = useQuery({
+    queryKey: categoryKeys.detail(id),
+    queryFn: () => categoriesApi.getById(id),
     enabled: !!id,
-    select: (data) => data.data,
   });
+
+  return {
+    ...query,
+    category: query.data?.category ?? null,
+  };
 };
 
 export const useCategoryBySlug = (slug) => {
-  return useQuery({
-    queryKey: ['category', 'slug', slug],
-    queryFn: () => getCategoryBySlug(slug),
+  const query = useQuery({
+    queryKey: categoryKeys.slug(slug),
+    queryFn: () => categoriesApi.getBySlug(slug),
     enabled: !!slug,
-    select: (data) => data.data,
   });
+
+  return {
+    ...query,
+    category: query.data?.category ?? null,
+  };
 };

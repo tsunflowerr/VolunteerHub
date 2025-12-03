@@ -1,27 +1,82 @@
+import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
+import { Tag } from 'lucide-react';
 import { CategoryIcons } from '../../../utilities/CategoriesIcons';
 import styles from './CategoryChip.module.css';
 
-const CategoryChip = ({ category, onClick, isActive }) => {
+const CategoryChip = ({
+  category,
+  onClick,
+  filled,
+  onHover,
+  showDescription = true,
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const chipRef = useRef(null);
+
   if (!category) return null;
 
-  const { name, slug, color } = category;
-  // Fallback to 'all' or a default icon if slug doesn't match
-  const Icon = CategoryIcons[slug] || CategoryIcons['all'];
+  const { name, slug, color, description } = category;
+
+  // Use specific icon for 'all', otherwise use generic Tag icon
+  const Icon = slug === 'all' ? CategoryIcons['all'] : <Tag size={14} />;
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (chipRef.current) {
+      const rect = chipRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2,
+      });
+    }
+    if (onHover) {
+      onHover(category);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (onHover) {
+      onHover(null);
+    }
+  };
 
   return (
     <div
-      className={`${styles.chip} ${isActive ? styles.active : ''}`}
-      style={{ 
+      ref={chipRef}
+      className={`${styles.chip} ${filled ? styles.filled : ''} ${
+        isHovered ? styles.hovered : ''
+      }`}
+      style={{
         '--category-color': color || '#666',
-        backgroundColor: isActive ? (color || '#666') : 'transparent',
+        backgroundColor: filled ? color || '#666' : 'transparent',
         borderColor: color || '#666',
-        color: isActive ? '#fff' : (color || '#666')
+        color: filled ? '#fff' : color || '#666',
       }}
       onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <span className={styles.icon}>{Icon}</span>
       <span className={styles.label}>{name}</span>
+      {showDescription &&
+        description &&
+        isHovered &&
+        createPortal(
+          <div
+            className={styles.tooltip}
+            style={{
+              top: tooltipPosition.top,
+              left: tooltipPosition.left,
+            }}
+          >
+            {description}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
@@ -31,9 +86,12 @@ CategoryChip.propTypes = {
     name: PropTypes.string.isRequired,
     slug: PropTypes.string,
     color: PropTypes.string,
+    description: PropTypes.string,
   }).isRequired,
   onClick: PropTypes.func,
-  isActive: PropTypes.bool,
+  filled: PropTypes.bool,
+  onHover: PropTypes.func,
+  showDescription: PropTypes.bool,
 };
 
 export default CategoryChip;

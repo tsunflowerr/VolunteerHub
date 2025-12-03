@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Search } from 'lucide-react';
 import styles from './SearchBox.module.css';
-import { categories } from '../../utilities/CategoriesIcons.jsx';
+import { useCategories } from '../../hooks/useCategories';
+import { CategoryChip } from '../common';
 
 const SearchBox = ({
   onSearch,
@@ -17,8 +18,14 @@ const SearchBox = ({
     searchQuery: '',
   });
 
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
+
+  const { categories, isLoading } = useCategories();
+
+  // Check if all categories are selected
+  const allSelected =
+    categories.length > 0 && selectedCategories.length === categories.length;
 
   const sortOptions = [
     { value: 'relevance', label: 'Relevance' },
@@ -40,7 +47,11 @@ const SearchBox = ({
     if (onSearch) {
       onSearch({
         ...searchData,
-        category: selectedCategory,
+        // If all selected or none selected, pass empty array (meaning all)
+        categories:
+          allSelected || selectedCategories.length === 0
+            ? []
+            : selectedCategories,
         sortBy: sortBy,
       });
     }
@@ -51,7 +62,29 @@ const SearchBox = ({
   };
 
   const handleCategoryClick = (categoryId) => {
-    setSelectedCategory(categoryId);
+    if (categoryId === 'all') {
+      // Toggle all: if all selected, deselect all; otherwise select all
+      if (allSelected) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(categories.map((cat) => cat._id));
+      }
+    } else {
+      // Toggle individual category
+      setSelectedCategories((prev) =>
+        prev.includes(categoryId)
+          ? prev.filter((id) => id !== categoryId)
+          : [...prev, categoryId]
+      );
+    }
+  };
+
+  // Check if a category is selected
+  const isCategorySelected = (categoryId) => {
+    if (categoryId === 'all') {
+      return allSelected;
+    }
+    return selectedCategories.includes(categoryId);
   };
 
   return (
@@ -130,21 +163,20 @@ const SearchBox = ({
       {/* Categories */}
       {showCategories && (
         <div className={styles['search-box__categories']}>
+          {/* All button */}
+          <CategoryChip
+            category={{ _id: 'all', name: 'All', slug: 'all', color: '#666' }}
+            onClick={() => handleCategoryClick('all')}
+            filled={isCategorySelected('all')}
+          />
+          {/* Individual categories */}
           {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => handleCategoryClick(category.id)}
-              className={`${styles['search-box__category-btn']} ${
-                selectedCategory === category.id
-                  ? styles['search-box__category-btn--active']
-                  : ''
-              }`}
-            >
-              <span className={styles['search-box__category-icon']}>
-                {category.icon}
-              </span>
-              {category.name}
-            </button>
+            <CategoryChip
+              key={category._id}
+              category={category}
+              onClick={() => handleCategoryClick(category._id)}
+              filled={isCategorySelected(category._id)}
+            />
           ))}
         </div>
       )}
