@@ -68,17 +68,8 @@ const RegisterPage = () => {
       const result = await register(username, email, phoneNumber, password);
 
       if (result.success) {
-        // Show success toast
-        toast.success(
-          'Account created successfully! Welcome to VolunteerHub! 🎉',
-          {
-            duration: 3000,
-          }
-        );
-
-        // Redirect to home page after a short delay
         setTimeout(() => {
-          navigate('/');
+          navigate('/login');
         }, 1000);
       } else {
         setError(result.message);

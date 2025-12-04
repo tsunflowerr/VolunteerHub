@@ -1,4 +1,4 @@
-import { api } from './api';
+import api from './api';
 
 export const eventApi = {
   getAll: async (params) => {
@@ -13,9 +13,6 @@ export const eventApi = {
   },
 
   create: async (eventData) => {
-    // Note: If sending files, headers need 'multipart/form-data'
-    // But if handling JSON data with image URLs, this is fine.
-    // Adjust based on actual backend expectation for file upload.
     const response = await api.post('/manager/events', eventData);
     return response.data;
   },
@@ -27,6 +24,12 @@ export const eventApi = {
 
   delete: async (id) => {
     const response = await api.delete(`/manager/events/${id}`);
+    return response.data;
+  },
+
+  // Manager-specific endpoints
+  getMyEvents: async (params) => {
+    const response = await api.get('/manager/events', { params });
     return response.data;
   },
 };

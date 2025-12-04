@@ -40,7 +40,7 @@ router.use(authMiddleware, managerMiddleware);
  *               - location
  *               - startDate
  *               - endDate
- *               - category
+ *               - categories
  *               - capacity
  *             properties:
  *               name:
@@ -60,9 +60,17 @@ router.use(authMiddleware, managerMiddleware);
  *                 type: string
  *                 format: date-time
  *                 example: "2025-11-15T18:00:00Z"
- *               category:
+ *               categories:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["6123456789abcdef01234567"]
+ *               activities:
  *                 type: string
- *                 example: "6123456789abcdef01234567"
+ *                 example: "Collecting trash, sorting recyclables"
+ *               prepare:
+ *                 type: string
+ *                 example: "Wear comfortable clothes, bring water"
  *               capacity:
  *                 type: number
  *                 example: 50
@@ -158,7 +166,13 @@ router.get('/events', getEventsByManager);
  *               capacity:
  *                 type: number
  *                 example: 60
- *               category:
+ *               categories:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               activities:
+ *                 type: string
+ *               prepare:
  *                 type: string
  *               thumbnail:
  *                 type: string

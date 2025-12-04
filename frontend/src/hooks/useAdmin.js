@@ -203,17 +203,17 @@ export const useAdminCategories = (params = {}) => {
     queryFn: () => adminApi.getCategories(params),
     staleTime: 1000 * 60 * 5, // 5 minutes
     select: (data) => {
-       // Map if necessary, or return raw
-       return (data.data || data.categories || []).map(cat => ({
-         _id: cat._id,
-         name: cat.name,
-         slug: cat.slug,
-         description: cat.description,
-         color: cat.color || '#667eea',
-         eventCount: cat.eventCount || 0,
-         createdAt: cat.createdAt
-       }));
-    }
+      // Map if necessary, or return raw
+      return (data.data || data.categories || []).map((cat) => ({
+        _id: cat._id,
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        color: cat.color || '#667eea',
+        eventCount: cat.eventCount || 0,
+        createdAt: cat.createdAt,
+      }));
+    },
   });
 };
 

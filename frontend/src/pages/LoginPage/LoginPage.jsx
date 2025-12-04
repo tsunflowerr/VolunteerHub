@@ -24,12 +24,6 @@ const LoginPage = () => {
       const result = await login(email, password);
 
       if (result.success) {
-        // Show success toast
-        toast.success('Login successful! Welcome back! 👋', {
-          duration: 2500,
-        });
-
-        // Redirect to home page after a short delay
         setTimeout(() => {
           navigate('/');
         }, 800);

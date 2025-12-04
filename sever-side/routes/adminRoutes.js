@@ -73,6 +73,9 @@ router.use(authMiddleware, adminMiddleware);
  *               description:
  *                 type: string
  *                 example: "Environmental protection and conservation activities"
+ *               color:
+ *                 type: string
+ *                 example: "#667eea"
  *     responses:
  *       201:
  *         description: Category created successfully
@@ -135,6 +138,9 @@ router.post(
  *               description:
  *                 type: string
  *                 example: "Updated description"
+ *               color:
+ *                 type: string
+ *                 example: "#4fd1c5"
  *     responses:
  *       200:
  *         description: Category updated successfully

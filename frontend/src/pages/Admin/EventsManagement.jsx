@@ -1,119 +1,51 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   EventSearchFilter,
   EventTable,
 } from '../../components/Admin/EventsTable';
 import { Pagination } from '../../components/common';
+import {
+  useAdminPendingEvents,
+  useUpdateEventStatus,
+  useAdminDeleteEvent,
+} from '../../hooks/useAdmin';
 import styles from '../../components/Admin/EventsTable/EventsTable.module.css';
 
-// Mock data for development/fallback
-const mockEvents = [
-  {
-    _id: '1',
-    title: 'Beach Cleanup Day',
-    createdBy: { fullName: 'John Doe' },
-    eventDate: '2025-12-15',
-    maxParticipants: 50,
-    status: 'pending',
-    location: 'Santa Monica Beach',
-  },
-  {
-    _id: '2',
-    title: 'Food Bank Volunteer',
-    createdBy: { fullName: 'Jane Smith' },
-    eventDate: '2025-12-20',
-    maxParticipants: 30,
-    status: 'approved',
-    location: 'Community Center',
-  },
-  {
-    _id: '3',
-    title: 'Youth Mentoring Program',
-    createdBy: { fullName: 'Mike Johnson' },
-    eventDate: '2025-12-22',
-    maxParticipants: 20,
-    status: 'pending',
-    location: 'Central Library',
-  },
-  {
-    _id: '4',
-    title: 'Park Tree Planting',
-    createdBy: { fullName: 'Sarah Williams' },
-    eventDate: '2025-12-25',
-    maxParticipants: 40,
-    status: 'rejected',
-    location: 'Riverside Park',
-  },
-  {
-    _id: '5',
-    title: 'Senior Home Visit',
-    createdBy: { fullName: 'David Brown' },
-    eventDate: '2025-12-28',
-    maxParticipants: 15,
-    status: 'approved',
-    location: 'Sunrise Senior Center',
-  },
-];
-
 function EventsManagement() {
-  // Data state
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
+  // Data state queries
+  const {
+    data: pendingEventsData,
+    isLoading,
+    isError,
+    error,
+  } = useAdminPendingEvents();
+  const updateStatusMutation = useUpdateEventStatus();
+  const deleteEventMutation = useAdminDeleteEvent();
 
   // Filter & Pagination state
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [actionLoading, setActionLoading] = useState(null);
 
-  // Fetch events
-  const fetchEvents = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Map events data
+  const events = useMemo(() => {
+    if (!pendingEventsData?.events) return [];
 
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/admin/events/pending', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const mappedEvents = (data.data || data.events || []).map((event) => ({
-        _id: event._id,
-        title: event.name || event.title,
-        createdBy: event.managerId
-          ? { fullName: event.managerId.username }
-          : { fullName: 'Unknown' },
-        eventDate: event.startDate,
-        maxParticipants: event.capacity || event.maxParticipants,
-        status: event.status,
-        location: event.location || 'N/A',
-        category: event.category?.[0]?.name || 'Uncategorized',
-      }));
-      setEvents(mappedEvents);
-    } catch (err) {
-      console.warn('Using mock data:', err.message);
-      setEvents(mockEvents);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+    return pendingEventsData.events.map((event) => ({
+      _id: event._id,
+      title: event.name,
+      createdBy: event.managerId
+        ? { fullName: event.managerId.username }
+        : { fullName: 'Unknown' },
+      eventDate: event.startDate,
+      maxParticipants: event.capacity,
+      status: event.status,
+      location: event.location || 'N/A',
+      category: event.categories?.[0]?.name || 'Uncategorized',
+    }));
+  }, [pendingEventsData]);
 
   // Filter events locally with useMemo
   const filteredEvents = useMemo(() => {
@@ -123,11 +55,9 @@ function EventsManagement() {
         event.createdBy?.fullName
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase());
-      const matchStatus =
-        filterStatus === 'all' || event.status === filterStatus;
-      return matchSearch && matchStatus;
+      return matchSearch;
     });
-  }, [events, searchTerm, filterStatus]);
+  }, [events, searchTerm]);
 
   // Pagination calculations with useMemo
   const { paginatedEvents, totalPages, startIndex, endIndex, totalItems } =
@@ -153,97 +83,55 @@ function EventsManagement() {
     setCurrentPage(1);
   }, []);
 
-  const handleFilterChange = useCallback((value) => {
-    setFilterStatus(value);
-    setCurrentPage(1);
-  }, []);
+  const handleApprove = useCallback(
+    async (eventId) => {
+      try {
+        setActionLoading(eventId);
+        await updateStatusMutation.mutateAsync({
+          eventId,
+          status: 'approved',
+        });
+      } catch (err) {
+        console.error('Failed to approve event:', err);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [updateStatusMutation]
+  );
 
-  const handleApprove = useCallback(async (eventId) => {
-    try {
-      setActionLoading(eventId);
-      const token = localStorage.getItem('token');
+  const handleReject = useCallback(
+    async (eventId) => {
+      try {
+        setActionLoading(eventId);
+        await updateStatusMutation.mutateAsync({
+          eventId,
+          status: 'rejected',
+        });
+      } catch (err) {
+        console.error('Failed to reject event:', err);
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [updateStatusMutation]
+  );
+
+  const handleDelete = useCallback(
+    async (eventId) => {
+      if (!confirm('Are you sure you want to delete this event?')) return;
 
       try {
-        const response = await fetch(`/api/admin/events/${eventId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-          body: JSON.stringify({ status: 'approved' }),
-        });
-        if (!response.ok) throw new Error('API failed');
-      } catch {
-        // Fallback to mock update
+        setActionLoading(eventId);
+        await deleteEventMutation.mutateAsync(eventId);
+      } catch (err) {
+        console.error('Failed to delete event:', err);
+      } finally {
+        setActionLoading(null);
       }
-
-      setEvents((prev) =>
-        prev.map((event) =>
-          event._id === eventId ? { ...event, status: 'approved' } : event
-        )
-      );
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
-
-  const handleReject = useCallback(async (eventId) => {
-    try {
-      setActionLoading(eventId);
-      const token = localStorage.getItem('token');
-
-      try {
-        const response = await fetch(`/api/admin/events/${eventId}/status`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-          body: JSON.stringify({ status: 'rejected' }),
-        });
-        if (!response.ok) throw new Error('API failed');
-      } catch {
-        // Fallback to mock update
-      }
-
-      setEvents((prev) =>
-        prev.map((event) =>
-          event._id === eventId ? { ...event, status: 'rejected' } : event
-        )
-      );
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
-
-  const handleDelete = useCallback(async (eventId) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
-
-    try {
-      setActionLoading(eventId);
-      const token = localStorage.getItem('token');
-
-      try {
-        const response = await fetch(`/api/admin/events/${eventId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: 'include',
-        });
-        if (!response.ok) throw new Error('API failed');
-      } catch {
-        // Fallback to mock delete
-      }
-
-      setEvents((prev) => prev.filter((event) => event._id !== eventId));
-    } finally {
-      setActionLoading(null);
-    }
-  }, []);
+    },
+    [deleteEventMutation]
+  );
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
@@ -255,7 +143,7 @@ function EventsManagement() {
   }, []);
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
@@ -266,22 +154,21 @@ function EventsManagement() {
     );
   }
 
-  // Error state
-  if (error) {
+  // Error state - ignore 404 (treat as empty list)
+  if (isError && error?.response?.status !== 404) {
     return (
       <div className={styles.container}>
         <div className={styles.error}>
-          <p>Error: {error}</p>
+          <p>Error: {error?.message || 'Failed to load events'}</p>
           <button onClick={() => window.location.reload()}>Retry</button>
         </div>
       </div>
     );
   }
 
-  const emptyMessage =
-    searchTerm || filterStatus !== 'all'
-      ? 'No matching events found'
-      : 'No events yet';
+  const emptyMessage = searchTerm
+    ? 'No matching events found'
+    : 'No pending events found';
 
   return (
     <div className={styles.container}>
@@ -292,8 +179,6 @@ function EventsManagement() {
       <EventSearchFilter
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
-        filterStatus={filterStatus}
-        onFilterChange={handleFilterChange}
       />
 
       <EventTable

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as yup from 'yup';
+import toast from 'react-hot-toast';
 import {
   Calendar,
   MapPin,
@@ -20,6 +21,12 @@ import {
   ImagePicker,
   CategoryCheckboxes,
 } from '../../components/Form';
+import {
+  useCreateEvent,
+  useUpdateEvent,
+  useEvent,
+} from '../../hooks/useEvents';
+
 import styles from './ManagerEventForm.module.css';
 import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 
@@ -28,29 +35,28 @@ const eventFormSchema = yup.object().shape({
   name: yup
     .string()
     .required('Event name is required')
-    .min(5, 'Event name must be at least 5 characters')
+    .min(3, 'Event name must be at least 3 characters')
     .max(100, 'Event name must not exceed 100 characters')
     .trim(),
-  description: yup
+  about: yup
     .string()
-    .required('Description is required')
-    .min(20, 'Description must be at least 20 characters')
-    .max(1000, 'Description must not exceed 1000 characters')
+    .required('About section is required')
+    .min(10, 'About must be at least 10 characters')
+    .max(1000, 'About must not exceed 1000 characters')
     .trim(),
   activities: yup
     .string()
-    .notRequired()
     .max(2000, 'Activities must not exceed 2000 characters')
     .trim(),
   prepare: yup
     .string()
-    .notRequired()
     .max(1000, 'Preparation info must not exceed 1000 characters')
     .trim(),
   location: yup
     .string()
     .required('Location is required')
     .min(5, 'Location must be at least 5 characters')
+    .max(200, 'Location must not exceed 200 characters')
     .trim(),
   startDate: yup
     .date()
@@ -60,7 +66,7 @@ const eventFormSchema = yup.object().shape({
     .date()
     .required('End date is required')
     .min(yup.ref('startDate'), 'End date must be after start date'),
-  categories: yup
+  category: yup
     .array()
     .of(yup.string())
     .min(1, 'Please select at least one category')
@@ -72,21 +78,18 @@ const eventFormSchema = yup.object().shape({
     .integer('Capacity must be an integer')
     .min(1, 'Capacity must be at least 1')
     .max(10000, 'Capacity must not exceed 10,000'),
-  thumbnail: yup.mixed().when('$isEdit', {
+  thumbnail: yup.string().when('$isEdit', {
     is: false,
     then: () =>
       yup
-        .mixed()
+        .string()
         .required('Thumbnail image is required')
-        .test('fileType', 'Please select a valid image file', (value) => {
-          if (!value) return false;
-          return value instanceof File && value.type.startsWith('image/');
-        })
-        .test('fileSize', 'Image size must be less than 5MB', (value) => {
-          if (!value) return false;
-          return value instanceof File && value.size <= 5 * 1024 * 1024;
-        }),
-    otherwise: () => yup.mixed().nullable(),
+        .test(
+          'isValidImage',
+          'Please select a valid image',
+          (value) => !!value && value.length > 0
+        ),
+    otherwise: () => yup.string().nullable(),
   }),
 });
 
@@ -95,54 +98,50 @@ const ManagerEventForm = () => {
   const { id } = useParams();
   const isEditMode = !!id;
 
-  const [loading, setLoading] = useState(false);
+  // React Query hooks
+  const createEvent = useCreateEvent();
+  const updateEvent = useUpdateEvent();
+  const { data: existingEventData, isLoading: isLoadingEvent } = useEvent(id);
+
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
+    about: '',
     activities: '',
     prepare: '',
     location: '',
     startDate: '',
     endDate: '',
-    categories: [],
+    category: [],
     capacity: '',
-    thumbnail: null,
+    thumbnail: '',
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [errors, setErrors] = useState({});
   const [showPreview, setShowPreview] = useState(false);
 
+  // Loading state from mutations
+  const loading = createEvent.isPending || updateEvent.isPending;
+
   // Load event data if editing
   useEffect(() => {
-    if (isEditMode) {
-      // TODO: Fetch event data from API
-      // Mock data for now
-      const mockEvent = {
-        name: 'Beach Cleanup Initiative',
-        description:
-          'Join us for a community beach cleanup event to protect our marine life and keep our beaches beautiful.',
-        activities:
-          'Collect trash and recyclables, sort materials, participate in educational workshops about ocean conservation.',
-        prepare:
-          'Bring sunscreen, comfortable shoes, reusable water bottle, and gloves if you have them.',
-        location: 'Santa Monica Beach, 1550 PCH, Santa Monica, CA 90401',
-        startDate: '2025-11-20T08:00:00',
-        endDate: '2025-11-20T12:00:00',
-        categories: ['animals', 'climate'],
-        capacity: 50,
-        thumbnail:
-          'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800',
-      };
-
+    if (isEditMode && existingEventData?.event) {
+      const event = existingEventData.event;
       setFormData({
-        ...mockEvent,
-        startDate: mockEvent.startDate.slice(0, 16),
-        endDate: mockEvent.endDate.slice(0, 16),
+        name: event.name || '',
+        about: event.description || '',
+        activities: event.activities || '',
+        prepare: event.prepare || '',
+        location: event.location || '',
+        startDate: event.startDate ? event.startDate.slice(0, 16) : '',
+        endDate: event.endDate ? event.endDate.slice(0, 16) : '',
+        category: event.categories?.map((c) => c._id || c) || [],
+        capacity: event.capacity || '',
+        thumbnail: event.thumbnail || '',
       });
-      setThumbnailPreview(mockEvent.thumbnail);
+      setThumbnailPreview(event.thumbnail || '');
     }
-  }, [isEditMode, id]);
+  }, [isEditMode, existingEventData]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -163,7 +162,7 @@ const ManagerEventForm = () => {
   // Handle category selection
   const handleCategoryChange = (categoryId) => {
     setFormData((prev) => {
-      const currentCategories = prev.categories;
+      const currentCategories = prev.category;
       const isSelected = currentCategories.includes(categoryId);
 
       const newCategories = isSelected
@@ -172,14 +171,14 @@ const ManagerEventForm = () => {
 
       return {
         ...prev,
-        categories: newCategories,
+        category: newCategories,
       };
     });
 
-    if (errors.categories) {
+    if (errors.category) {
       setErrors((prev) => ({
         ...prev,
-        categories: '',
+        category: '',
       }));
     }
   };
@@ -204,14 +203,14 @@ const ManagerEventForm = () => {
         return;
       }
 
-      setFormData((prev) => ({
-        ...prev,
-        thumbnail: file,
-      }));
-
       const reader = new FileReader();
       reader.onloadend = () => {
-        setThumbnailPreview(reader.result);
+        const base64String = reader.result;
+        setFormData((prev) => ({
+          ...prev,
+          thumbnail: base64String,
+        }));
+        setThumbnailPreview(base64String);
       };
       reader.readAsDataURL(file);
 
@@ -228,7 +227,7 @@ const ManagerEventForm = () => {
   const handleRemoveImage = () => {
     setFormData((prev) => ({
       ...prev,
-      thumbnail: null,
+      thumbnail: '',
     }));
     setThumbnailPreview('');
   };
@@ -238,27 +237,33 @@ const ManagerEventForm = () => {
     e.preventDefault();
 
     try {
-      // Validate form
+      // Validate form data
       await eventFormSchema.validate(formData, {
         abortEarly: false,
         context: { isEdit: isEditMode },
       });
 
-      setLoading(true);
+      const payload = {
+        name: formData.name,
+        description: formData.about,
+        activities: formData.activities,
+        prepare: formData.prepare,
+        location: formData.location,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        categories: formData.category,
+        capacity: Number(formData.capacity),
+        thumbnail: formData.thumbnail,
+        images: [],
+      };
 
-      // TODO: Submit to API
-      console.log('Form data:', formData);
+      if (isEditMode) {
+        await updateEvent.mutateAsync({ id, data: payload });
+      } else {
+        await createEvent.mutateAsync(payload);
+      }
 
-      // Simulate API call
-      setTimeout(() => {
-        setLoading(false);
-        alert(
-          isEditMode
-            ? 'Event updated successfully!'
-            : 'Event created successfully!'
-        );
-        navigate('/manager/events');
-      }, 1500);
+      navigate('/manager/events');
     } catch (err) {
       if (err.name === 'ValidationError') {
         const validationErrors = {};
@@ -266,10 +271,23 @@ const ManagerEventForm = () => {
           validationErrors[error.path] = error.message;
         });
         setErrors(validationErrors);
+        toast.error('Please check the form for errors');
+      } else {
+        console.error('Failed to save event:', err);
       }
-      setLoading(false);
     }
   };
+
+  // Show loading when fetching existing event
+  if (isEditMode && isLoadingEvent) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <p>Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -309,18 +327,18 @@ const ManagerEventForm = () => {
 
           {/* About */}
           <FormField
-            label="Description"
+            label="About This Event"
             icon={FileText}
             required
-            error={errors.description}
+            error={errors.about}
           >
             <TextArea
-              name="description"
-              value={formData.description}
+              name="about"
+              value={formData.about}
               onChange={handleChange}
               placeholder="Describe what this event is about..."
               rows={4}
-              error={errors.description}
+              error={errors.about}
             />
           </FormField>
 
@@ -328,7 +346,6 @@ const ManagerEventForm = () => {
           <FormField
             label="Activities"
             icon={FileText}
-            required
             error={errors.activities}
           >
             <TextArea
@@ -345,7 +362,6 @@ const ManagerEventForm = () => {
           <FormField
             label="What to Prepare"
             icon={FileText}
-            required
             error={errors.prepare}
           >
             <TextArea
@@ -429,11 +445,11 @@ const ManagerEventForm = () => {
           <FormField
             label="Categories"
             required
-            error={errors.categories}
+            error={errors.category}
             icon={Tag}
           >
             <CategoryCheckboxes
-              selectedCategories={formData.categories}
+              selectedCategories={formData.category}
               onCategoryChange={handleCategoryChange}
             />
           </FormField>
@@ -491,7 +507,6 @@ const ManagerEventForm = () => {
         <EventPreviewDialog
           event={{
             ...formData,
-            category: formData.categories,
             thumbnail: thumbnailPreview,
           }}
           onClose={() => setShowPreview(false)}

@@ -589,7 +589,7 @@ const EventDiscussion = () => {
             onClose={() => setShowCreatePost(false)}
             onSubmit={handleCreatePost}
             userAvatar={currentUser.avatar}
-            userName={currentUser.fullName}
+            userName={currentUser.username}
           />
         )}
       </AnimatePresence>
