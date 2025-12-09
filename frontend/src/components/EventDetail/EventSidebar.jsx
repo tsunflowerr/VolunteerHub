@@ -8,9 +8,9 @@ import {
   MessageSquare,
   Settings,
 } from 'lucide-react';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './EventDetail.module.css';
+import { useBookmark } from '../../hooks/useUser';
 
 const EventSidebar = ({
   event,
@@ -21,12 +21,13 @@ const EventSidebar = ({
   previewMode = false,
 }) => {
   const navigate = useNavigate();
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { isBookmarked, toggleBookmark, isLoading: isBookmarkLoading } = useBookmark(
+    event._id
+  );
 
   const handleBookmark = () => {
     if (previewMode) return;
-    setIsBookmarked(!isBookmarked);
-    // TODO: API call
+    toggleBookmark();
   };
 
   const handleRegister = () => {
@@ -89,6 +90,7 @@ const EventSidebar = ({
           <button
             className={styles['event-detail__sidebar-card-bookmark-btn']}
             onClick={handleBookmark}
+            disabled={isBookmarkLoading}
             aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
           >
             {isBookmarked ? (

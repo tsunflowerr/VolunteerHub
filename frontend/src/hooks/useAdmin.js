@@ -159,7 +159,7 @@ export const useUpdateEventStatus = () => {
     mutationFn: adminApi.updateEventStatus,
     onSuccess: (data, { status }) => {
       queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
-      queryClient.invalidateQueries({ queryKey: ['events'] }); // Also invalidate events list
+      // queryClient.invalidateQueries({ queryKey: ['events'] }); // Also invalidate events list
       toast.success(`Event ${status} successfully`);
     },
     onError: (error) => {

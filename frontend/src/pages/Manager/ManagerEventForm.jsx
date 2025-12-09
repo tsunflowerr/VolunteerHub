@@ -24,8 +24,8 @@ import {
 import {
   useCreateEvent,
   useUpdateEvent,
-  useEvent,
-} from '../../hooks/useEvents';
+} from '../../hooks/useManager';
+import { useEvent } from '../../hooks/useEvents';
 import useAuth from '../../hooks/useAuth';
 
 import styles from './ManagerEventForm.module.css';

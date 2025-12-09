@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import {
   EventSearchFilter,
@@ -9,10 +10,13 @@ import {
   useAdminPendingEvents,
   useUpdateEventStatus,
   useAdminDeleteEvent,
+  adminKeys,
 } from '../../hooks/useAdmin';
 import styles from '../../components/Admin/EventsTable/EventsTable.module.css';
 
 function EventsManagement() {
+  const queryClient = useQueryClient();
+
   // Data state queries
   const {
     data: pendingEventsData,
@@ -20,6 +24,7 @@ function EventsManagement() {
     isError,
     error,
   } = useAdminPendingEvents();
+
   const updateStatusMutation = useUpdateEventStatus();
   const deleteEventMutation = useAdminDeleteEvent();
 
@@ -83,6 +88,19 @@ function EventsManagement() {
     setCurrentPage(1);
   }, []);
 
+  const removeEventFromCache = useCallback(
+    (eventId) => {
+      queryClient.setQueryData(adminKeys.pendingEvents(), (oldData) => {
+        if (!oldData?.events) return oldData;
+        return {
+          ...oldData,
+          events: oldData.events.filter((e) => e._id !== eventId),
+        };
+      });
+    },
+    [queryClient]
+  );
+
   const handleApprove = useCallback(
     async (eventId) => {
       try {
@@ -91,13 +109,14 @@ function EventsManagement() {
           eventId,
           status: 'approved',
         });
+        removeEventFromCache(eventId);
       } catch (err) {
         console.error('Failed to approve event:', err);
       } finally {
         setActionLoading(null);
       }
     },
-    [updateStatusMutation]
+    [updateStatusMutation, removeEventFromCache]
   );
 
   const handleReject = useCallback(
@@ -108,13 +127,14 @@ function EventsManagement() {
           eventId,
           status: 'rejected',
         });
+        removeEventFromCache(eventId);
       } catch (err) {
         console.error('Failed to reject event:', err);
       } finally {
         setActionLoading(null);
       }
     },
-    [updateStatusMutation]
+    [updateStatusMutation, removeEventFromCache]
   );
 
   const handleDelete = useCallback(
@@ -124,13 +144,14 @@ function EventsManagement() {
       try {
         setActionLoading(eventId);
         await deleteEventMutation.mutateAsync(eventId);
+        removeEventFromCache(eventId);
       } catch (err) {
         console.error('Failed to delete event:', err);
       } finally {
         setActionLoading(null);
       }
     },
-    [deleteEventMutation]
+    [deleteEventMutation, removeEventFromCache]
   );
 
   const handlePageChange = useCallback((page) => {

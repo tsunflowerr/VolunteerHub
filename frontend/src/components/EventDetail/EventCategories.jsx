@@ -13,7 +13,7 @@ const EventCategories = ({ categories }) => {
             key={cat._id}
             category={cat}
             filled={true}
-            showDescription={false}
+            showDescription={true}
           />
         ))}
       </div>

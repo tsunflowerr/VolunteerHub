@@ -5,15 +5,20 @@ import {
   EventSidebar,
 } from '../../components/EventDetail/';
 import { useEvent } from '../../hooks/useEvents';
+import useAuth from '../../hooks/useAuth'; // Import useAuth
 import styles from '../../components/EventDetail/EventDetail.module.css';
 
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, isLoading, error } = useEvent(id);
+  const { user } = useAuth(); // Get current user from useAuth
 
-  const event = data?.data;
-  const userState = 'none'; // Placeholder for user state (guest, registered, manager, etc.)
+  const event = data?.event;
+  // Determine user state for the sidebar
+  // This could be 'none', 'registered', 'manager', 'bookmarked', etc.
+  // For now, only pass user to enable bookmarking
+  const userState = 'none'; 
 
   if (isLoading) {
     return (
@@ -46,6 +51,8 @@ const EventDetail = () => {
           <EventContent event={event} />
           <EventSidebar
             event={event}
+            user={user} // Pass the user object
+            eventId={event._id} // Pass event ID explicitly for bookmark hook
             userState={userState}
             onGoToDiscussion={handleGoToDiscussion}
           />

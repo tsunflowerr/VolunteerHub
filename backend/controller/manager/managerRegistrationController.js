@@ -137,7 +137,7 @@ export async function getVolunteersForEvent(req, res) {
             await Registration.find({
                 eventId: eventId,
                 status: { $in: ["confirmed", "completed"] }
-            }).populate('userId', 'name email avatar').lean(),
+            }).populate('userId', 'username email avatar').lean(),
             Registration.countDocuments({
                 eventId: eventId,
                 status: { $in: ["confirmed", "completed"] }
@@ -145,8 +145,9 @@ export async function getVolunteersForEvent(req, res) {
         ]);
 
         const volunteers = registrations.map(reg => ({
-            userId: reg.userId._id,
-            name: reg.userId.name,
+            _id: reg._id, // Registration ID
+            userId: reg.userId._id, // User ID
+            username: reg.userId.username,
             email: reg.userId.email,
             avatar: reg.userId.avatar,
             registrationStatus: reg.status,

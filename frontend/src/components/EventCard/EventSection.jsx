@@ -7,7 +7,7 @@ const EventSection = () => {
   const navigate = useNavigate();
   const { data, isLoading, error } = useEvents({ limit: 6 });
 
-  const events = data?.data || [];
+  const events = data?.events || [];
 
   if (isLoading) {
     return (

@@ -10,7 +10,7 @@ import {
   Search,
   Plus,
 } from 'lucide-react';
-import { useManagerEvents, useDeleteEvent } from '../../hooks/useEvents';
+import { useManagerEvents, useDeleteEvent } from '../../hooks/useManager';
 import { Event } from '../../components/EventCard/Event';
 import styles from './ManagerEvents.module.css';
 

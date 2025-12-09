@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -14,104 +14,47 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import VolunteerListDialog from '../../components/Manager/VolunteerListDialog';
+import CategoryChip from '../../components/common/Category/CategoryChip';
+import { useEvent } from '../../hooks/useEvents';
+import { useDeleteEvent } from '../../hooks/useManager';
+import {
+  useEventVolunteers,
+  useUpdateRegistrationStatus,
+} from '../../hooks/useRegistrations';
 import styles from './ManagerEventDetail.module.css';
 
 const ManagerEventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [event, setEvent] = useState(null);
-  const [volunteers, setVolunteers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showVolunteersDialog, setShowVolunteersDialog] = useState(false);
 
-  // Load event data
-  useEffect(() => {
-    // TODO: Fetch from API
-    // Mock data
-    setTimeout(() => {
-      setEvent({
-        _id: id,
-        name: 'Beach Cleanup Initiative',
-        description:
-          'Join us for a community beach cleanup event to protect our marine life.',
-        about:
-          'Join us for a community beach cleanup event to protect our marine life and keep our beaches beautiful. This is a great opportunity to make a positive impact on our environment while meeting like-minded individuals.',
-        activities:
-          'Collect trash and recyclables, sort materials, participate in educational workshops about ocean conservation, and help restore beach habitats.',
-        prepare:
-          'Bring sunscreen, comfortable shoes, reusable water bottle, and gloves if you have them. We will provide trash bags and other equipment.',
-        location: 'Santa Monica Beach, 1550 PCH, Santa Monica, CA 90401',
-        startDate: '2025-11-20T08:00:00Z',
-        endDate: '2025-11-20T12:00:00Z',
-        category: ['animals', 'climate'],
-        capacity: 50,
-        registrationsCount: 32,
-        status: 'completed', // completed, approved, pending
-        thumbnail:
-          'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800',
-        createdAt: '2025-11-01T10:00:00Z',
+  // Data Fetching
+  const {
+    data: eventData,
+    isLoading: isEventLoading,
+    isError: isEventError,
+  } = useEvent(id);
+  const { data: volunteersData, isLoading: isVolunteersLoading } =
+    useEventVolunteers(id);
+  const deleteMutation = useDeleteEvent();
+  const updateStatusMutation = useUpdateRegistrationStatus();
+
+  const event = eventData?.event;
+  // Map volunteers to include completionStatus for compatibility
+  const volunteers =
+    volunteersData?.volunteers?.map((v) => ({
+      ...v,
+      completionStatus: v.registrationStatus,
+    })) || [];
+
+  const handleMarkComplete = (registrationIds) => {
+    // registrationIds from Dialog are actually registration IDs (v._id)
+    registrationIds.forEach((regId) => {
+      updateStatusMutation.mutate({
+        registrationId: regId,
+        status: 'completed',
       });
-
-      // Mock volunteers
-      setVolunteers([
-        {
-          _id: 'vol1',
-          userId: 'user1',
-          username: 'John Doe',
-          email: 'john@example.com',
-          phone: '+1 (555) 123-4567',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-          registeredAt: '2025-11-05T14:30:00Z',
-          completionStatus: 'completed',
-        },
-        {
-          _id: 'vol2',
-          userId: 'user2',
-          username: 'Jane Smith',
-          email: 'jane@example.com',
-          phone: '+1 (555) 234-5678',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
-          registeredAt: '2025-11-06T09:15:00Z',
-          completionStatus: 'pending',
-        },
-        {
-          _id: 'vol3',
-          userId: 'user3',
-          username: 'Bob Johnson',
-          email: 'bob@example.com',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-          registeredAt: '2025-11-07T16:45:00Z',
-          completionStatus: 'pending',
-        },
-        {
-          _id: 'vol4',
-          userId: 'user4',
-          username: 'Alice Williams',
-          email: 'alice@example.com',
-          phone: '+1 (555) 456-7890',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-          registeredAt: '2025-11-08T11:20:00Z',
-          completionStatus: 'completed',
-        },
-      ]);
-
-      setLoading(false);
-    }, 1000);
-  }, [id]);
-
-  const handleMarkComplete = (volunteerIds) => {
-    // TODO: API call to mark volunteers as completed
-    console.log('Marking volunteers as completed:', volunteerIds);
-
-    setVolunteers((prev) =>
-      prev.map((v) =>
-        volunteerIds.includes(v._id || v.userId)
-          ? { ...v, completionStatus: 'completed' }
-          : v
-      )
-    );
-
-    alert(`${volunteerIds.length} volunteer(s) marked as completed!`);
+    });
   };
 
   const handleEdit = () => {
@@ -124,14 +67,15 @@ const ManagerEventDetail = () => {
 
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this event?')) {
-      // TODO: API call to delete event
-      console.log('Deleting event:', id);
-      alert('Event deleted successfully!');
-      navigate('/manager/events');
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          navigate('/manager/events');
+        },
+      });
     }
   };
 
-  if (loading) {
+  if (isEventLoading || isVolunteersLoading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
@@ -140,7 +84,7 @@ const ManagerEventDetail = () => {
     );
   }
 
-  if (!event) {
+  if (isEventError || !event) {
     return (
       <div className={styles.error}>
         <AlertCircle size={48} />
@@ -218,20 +162,16 @@ const ManagerEventDetail = () => {
             <div className={styles.infoCard}>
               <Calendar size={20} />
               <div>
-                <span className={styles.infoLabel}>Date & Time</span>
+                <span className={styles.infoLabel}>Start Date</span>
                 <span className={styles.infoValue}>
                   {new Date(event.startDate).toLocaleDateString('en-US', {
-                    month: 'long',
+                    weekday: 'short',
+                    month: 'short',
                     day: 'numeric',
                     year: 'numeric',
-                  })}
-                  <br />
-                  {new Date(event.startDate).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
                   })}{' '}
-                  -{' '}
-                  {new Date(event.endDate).toLocaleTimeString('en-US', {
+                  at{' '}
+                  {new Date(event.startDate).toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
@@ -240,6 +180,26 @@ const ManagerEventDetail = () => {
             </div>
 
             <div className={styles.infoCard}>
+              <Clock size={20} />
+              <div>
+                <span className={styles.infoLabel}>End Date</span>
+                <span className={styles.infoValue}>
+                  {new Date(event.endDate).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}{' '}
+                  at{' '}
+                  {new Date(event.endDate).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            </div>
+
+            <div className={`${styles.infoCard} ${styles.locationCard}`}>
               <MapPin size={20} />
               <div>
                 <span className={styles.infoLabel}>Location</span>
@@ -248,21 +208,36 @@ const ManagerEventDetail = () => {
             </div>
           </div>
 
+          {/* Categories */}
+          {event.categories && event.categories.length > 0 && (
+            <div className={styles.categories}>
+              {event.categories.map((cat) => (
+                <CategoryChip key={cat._id} category={cat} filled={false} />
+              ))}
+            </div>
+          )}
+
           {/* Details Sections */}
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>About This Event</h2>
-            <p className={styles.sectionText}>{event.about}</p>
-          </div>
+          {event.about && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>About This Event</h2>
+              <p className={styles.sectionText}>{event.about}</p>
+            </div>
+          )}
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Activities</h2>
-            <p className={styles.sectionText}>{event.activities}</p>
-          </div>
+          {event.activities && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Activities</h2>
+              <p className={styles.sectionText}>{event.activities}</p>
+            </div>
+          )}
 
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>What to Prepare</h2>
-            <p className={styles.sectionText}>{event.prepare}</p>
-          </div>
+          {event.prepare && (
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>What to Prepare</h2>
+              <p className={styles.sectionText}>{event.prepare}</p>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -279,7 +254,7 @@ const ManagerEventDetail = () => {
             >
               <div className={styles.volunteerCount}>
                 <span className={styles.countNumber}>
-                  {event.registrationsCount}
+                  {event.registrationsCount || 0}
                 </span>
                 <span className={styles.countLabel}>
                   / {event.capacity} volunteers
@@ -321,16 +296,18 @@ const ManagerEventDetail = () => {
                 {event.status === 'completed' && <CheckCircle size={20} />}
                 {event.status === 'approved' && <CheckCircle size={20} />}
                 {event.status === 'pending' && <Clock size={20} />}
-                <span>{event.status}</span>
+                {event.status === 'rejected' && <AlertCircle size={20} />}
+                <span className={styles.statusDescription}>
+                  {event.status === 'completed' &&
+                    'Event has been completed. You can now mark volunteers as completed'}
+                  {event.status === 'approved' &&
+                    'Event is approved and accepting volunteers'}
+                  {event.status === 'pending' &&
+                    'Event is pending approval from administrators'}
+                  {event.status === 'rejected' &&
+                    'Event has been rejected by administrators'}
+                </span>
               </div>
-              <p className={styles.statusDescription}>
-                {event.status === 'completed' &&
-                  'Event has been completed. You can now mark volunteers as completed.'}
-                {event.status === 'approved' &&
-                  'Event is approved and accepting volunteers.'}
-                {event.status === 'pending' &&
-                  'Event is pending approval from administrators.'}
-              </p>
             </div>
           </div>
 

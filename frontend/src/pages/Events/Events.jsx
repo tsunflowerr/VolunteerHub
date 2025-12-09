@@ -15,7 +15,7 @@ const Events = () => {
     status: 'approved',
   });
 
-  const events = data?.data || [];
+  const events = data?.events || [];
   const totalPages = data?.pagination?.totalPages || 0;
 
   // Change page
