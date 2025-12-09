@@ -26,7 +26,7 @@ const EventPreviewDialog = ({ event, onClose }) => {
 
     return {
       ...event,
-      category: categoryObjects,
+      categories: categoryObjects, // Use 'categories' (plural) for EventContent
     };
   }, [event, categories]);
   return (

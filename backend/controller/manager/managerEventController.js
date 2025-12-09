@@ -31,7 +31,7 @@ export async function createEvent(req, res) {
         })
         let saved = await newEvent.save();
         saved = await saved.populate('managerId', 'username email avatar');
-        saved = await saved.populate('categories', 'name slug');
+        saved = await saved.populate('categories');
         
         // Không cần xóa cache vì event mới có status='pending', chưa hiển thị
         
@@ -61,7 +61,7 @@ export async function updateEvent(req, res) {
         const data = {...req.body, updatedAt: Date.now()};
         const updatedEvent = await Event.findByIdAndUpdate(eventId, data, {new: true, runValidators: true})
             .populate('managerId', 'username email avatar')
-            .populate('categories', 'name slug');
+            .populate('categories');
         
         // Xóa cache sau khi update event
         await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
@@ -191,7 +191,7 @@ export async function getEventsByManager(req, res) {
         const [events, total] = await Promise.all([
             await Event.find({managerId})
             .populate('managerId', 'username email avatar')
-            .populate('categories', 'name slug')
+            .populate('categories')
             .sort({ createdAt: -1 })
             .lean(),
             Event.countDocuments({managerId})

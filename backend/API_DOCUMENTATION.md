@@ -512,7 +512,7 @@ GET /api/events?page=1&limit=10
         "username": "Manager Name",
         "avatar": "https://..."
       },
-      "category": [
+      "categories": [
         {
           "_id": "cat123",
           "name": "Environment",
@@ -566,7 +566,7 @@ GET /api/events/:id
       "username": "Manager Name",
       "avatar": "https://..."
     },
-    "category": [
+    "categories": [
       {
         "_id": "cat123",
         "name": "Environment",
@@ -1358,7 +1358,7 @@ GET /api/search/events?keyword=volunteer&category=environment&location=hanoi&sor
       "name": "Beach Cleanup Drive",
       "description": "...",
       "location": "Nha Trang Beach",
-      "category": [...],
+      "categories": [...],
       "startDate": "2025-11-15T08:00:00Z"
     }
   ],
@@ -1863,7 +1863,7 @@ POST /api/manager/events
   "location": "Nha Trang Beach, Vietnam",
   "startDate": "2025-11-15T08:00:00Z",
   "endDate": "2025-11-15T18:00:00Z",
-  "category": "6123456789abcdef01234567",
+  "categories": ["6123456789abcdef01234567"],
   "capacity": 50,
   "thumbnail": "https://example.com/thumbnail.jpg",
   "images": ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]
@@ -1883,7 +1883,7 @@ POST /api/manager/events
     "location": "Nha Trang Beach, Vietnam",
     "startDate": "2025-11-15T08:00:00Z",
     "endDate": "2025-11-15T18:00:00Z",
-    "category": ["6123456789abcdef01234567"],
+    "categories": ["6123456789abcdef01234567"],
     "capacity": 50,
     "status": "pending",
     "managerId": "manager123",
@@ -1942,7 +1942,7 @@ PUT /api/manager/events/:id
   "startDate": "2025-11-15T08:00:00Z",
   "endDate": "2025-11-15T18:00:00Z",
   "capacity": 60,
-  "category": "6123456789abcdef01234567",
+  "categories": ["6123456789abcdef01234567"],
   "thumbnail": "https://example.com/new-thumbnail.jpg",
   "images": ["https://example.com/img1.jpg"]
 }

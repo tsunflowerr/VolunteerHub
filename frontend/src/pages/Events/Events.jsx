@@ -1,24 +1,28 @@
 import { useState } from 'react';
+import { Pagination } from '@mui/material';
 import SearchBox from '../../components/SearchBox/SearchBox';
 import EventList from '../../components/EventCard/EventList.jsx';
-import { volunteerEvents } from '../../dummy/volunteerEvents';
-import { Pagination } from '@mui/material';
 import styles from './Events.module.css';
+import { useEvents } from '../../hooks/useEvents';
 
 const Events = () => {
-  const [events, setEvents] = useState(volunteerEvents);
-  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage] = useState(12);
 
-  // Get current events
-  const totalEvents = events.length;
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = events.slice(indexOfFirstEvent, indexOfLastEvent);
+  const { data, isLoading } = useEvents({
+    page: currentPage,
+    limit: eventsPerPage,
+    status: 'approved',
+  });
+
+  const events = data?.data || [];
+  const totalPages = data?.pagination?.totalPages || 0;
 
   // Change page
-  const handleChangePage = (e, value) => setCurrentPage(value);
+  const handleChangePage = (e, value) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSearch = (searchData) => {
     console.log('Search data:', searchData);
@@ -51,14 +55,22 @@ const Events = () => {
 
       {/* Events List */}
       <div className={styles['events__list-container']}>
-        <EventList events={currentEvents} />
-        <Pagination
-          className={styles['events__pagination']}
-          count={Math.ceil(totalEvents / eventsPerPage)}
-          shape="rounded"
-          page={currentPage}
-          onChange={handleChangePage}
-        />
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+        ) : (
+          <>
+            <EventList events={events} />
+            {totalPages > 1 && (
+              <Pagination
+                className={styles['events__pagination']}
+                count={totalPages}
+                shape="rounded"
+                page={currentPage}
+                onChange={handleChangePage}
+              />
+            )}
+          </>
+        )}
       </div>
     </>
   );

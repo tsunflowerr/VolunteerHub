@@ -26,6 +26,7 @@ import {
   useUpdateEvent,
   useEvent,
 } from '../../hooks/useEvents';
+import useAuth from '../../hooks/useAuth';
 
 import styles from './ManagerEventForm.module.css';
 import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
@@ -97,6 +98,9 @@ const ManagerEventForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
+
+  // Get current user (manager) info
+  const { user } = useAuth();
 
   // React Query hooks
   const createEvent = useCreateEvent();
@@ -507,7 +511,9 @@ const ManagerEventForm = () => {
         <EventPreviewDialog
           event={{
             ...formData,
+            description: formData.about,
             thumbnail: thumbnailPreview,
+            managerId: user,
           }}
           onClose={() => setShowPreview(false)}
         />

@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { format, parseISO, isValid } from 'date-fns';
-import { MapPin, Heart, Users } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 import styles from './Event.module.css';
-import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
+import CategoryChip from '../common/Category/CategoryChip';
 
 export function Event({
   name,
@@ -37,9 +36,6 @@ export function Event({
   // Extract manager info
   const hostName = managerId?.username || 'Unknown';
   const hostAvatar = managerId?.avatar || null;
-
-  // Extract category slugs
-  const categoryIds = category?.map((cat) => cat.slug) || [];
 
   return (
     <div
@@ -81,23 +77,11 @@ export function Event({
           <p className={styles['event__description']}>{description}</p>
         )}
 
-        {categoryIds && categoryIds.length > 0 && (
+        {category && category.length > 0 && (
           <div className={styles['event__categories']}>
-            {categoryIds.map((categoryId) => {
-              const categoryData = categoriesById[categoryId];
-              if (!categoryData) return null;
-
-              return (
-                <div key={categoryId} className={styles['event__category']}>
-                  {categoryData.icon && (
-                    <span className={styles['event__category-icon']}>
-                      {categoryData.icon}
-                    </span>
-                  )}
-                  {categoryData.name}
-                </div>
-              );
-            })}
+            {category.map((cat) => (
+              <CategoryChip key={cat._id} category={cat} filled={false} />
+            ))}
           </div>
         )}
 

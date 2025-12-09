@@ -22,7 +22,7 @@ export async function getAllEvents(req, res) {
                 const [events, total] = await Promise.all([
                     Event.find({status: { $in: ['approved', 'completed'] }})
                         .populate('managerId', 'username email avatar')
-                        .populate('categories', 'name slug')
+                        .populate('categories')
                         .sort({ createdAt: -1 })
                         .skip(skip)
                         .limit(limit)
@@ -88,7 +88,7 @@ export async function getEventById(req, res) {
                 { new: true }
             )
             .populate('managerId', 'username email avatar')
-            .populate('categories', 'name slug')
+            .populate('categories')
             .lean();
             
             // Invalidate cache sau khi tăng view
@@ -107,7 +107,7 @@ export async function getEventById(req, res) {
                 CACHE_TTL.EVENT_DETAIL,
                 () => Event.findById(eventId)
                     .populate('managerId', 'username email avatar')
-                    .populate('categories', 'name slug')
+                    .populate('categories')
                     .lean()
             );
         }
@@ -285,7 +285,7 @@ export async function getEventsByCategorySlug(req, res) {
                     status: { $in: ['approved', 'completed'] }
                 })
                 .populate('managerId', 'username email avatar')
-                .populate('categories', 'name slug')
+                .populate('categories')
                 .sort({ createdAt: -1 })
                 .lean();
                 
@@ -326,7 +326,7 @@ export async function getUpcomingEvents(req, res) {
                         status: 'approved'
                     })
                     .populate('managerId', 'username email avatar')
-                    .populate('categories', 'name slug')
+                    .populate('categories')
                     .sort({ startDate: 1 })
                     .skip((page - 1) * limit)
                     .limit(limit)

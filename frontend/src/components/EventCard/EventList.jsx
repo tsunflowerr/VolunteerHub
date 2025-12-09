@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './EventList.module.css';
 import Event from './Event';
@@ -9,6 +8,10 @@ const EventList = ({ events }) => {
   const handleEventClick = (eventId) => {
     navigate(`/events/${eventId}`);
   };
+
+  if (!events || events.length === 0) {
+    return <div className={styles['no-events']}>No event yet</div>;
+  }
 
   return (
     <div className={styles['event-list__grid']}>
@@ -22,7 +25,7 @@ const EventList = ({ events }) => {
           thumbnail={event.thumbnail}
           managerId={event.managerId}
           registrationsCount={event.registrationsCount}
-          category={event.category}
+          category={event.categories}
           onLearnMore={() => handleEventClick(event._id)}
         />
       ))}

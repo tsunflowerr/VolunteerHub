@@ -120,7 +120,7 @@
 /* Search */
 .searchBox {
   position: relative;
-  max-width: 400px;
+  width: 100%;
 }
 
 .searchIcon {
@@ -229,8 +229,8 @@
 /* Status Badge */
 .statusBadge {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
+  bottom: calc(50% - 3rem);
+  right: 1rem;
   padding: 0.375rem 0.875rem;
   border-radius: 9999px;
   font-size: 0.75rem;

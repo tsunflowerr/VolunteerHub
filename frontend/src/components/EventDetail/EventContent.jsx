@@ -16,7 +16,7 @@ const EventContent = ({ event }) => {
 
       <EventLocation location={event.location} />
 
-      <EventCategories categories={event.category} />
+      <EventCategories categories={event.categories} />
 
       <EventAbout
         description={event.description}

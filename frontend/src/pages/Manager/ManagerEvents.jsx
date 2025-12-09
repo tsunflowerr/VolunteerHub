@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,17 +10,38 @@ import {
   Search,
   Plus,
 } from 'lucide-react';
-import { volunteerEvents } from '../../dummy/volunteerEvents';
+import { useManagerEvents, useDeleteEvent } from '../../hooks/useEvents';
 import { Event } from '../../components/EventCard/Event';
 import styles from './ManagerEvents.module.css';
 
 const ManagerEvents = () => {
   const navigate = useNavigate();
-  const [events, setEvents] = useState(volunteerEvents);
-  const [filteredEvents, setFilteredEvents] = useState(volunteerEvents);
+  const { data, isLoading } = useManagerEvents();
+  const deleteMutation = useDeleteEvent();
+
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  const events = useMemo(() => data?.events || [], [data]);
+
+  const filteredEvents = useMemo(() => {
+    let filtered = [...events];
+
+    // Apply status filter
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter((event) => event.status === activeFilter);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter((event) =>
+        event.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [events, activeFilter, searchQuery]);
 
   const filters = [
     { id: 'all', label: 'All Events', count: events.length },
@@ -53,31 +74,10 @@ const ManagerEvents = () => {
 
   const handleFilterChange = (filterId) => {
     setActiveFilter(filterId);
-    applyFilters(filterId, searchQuery);
   };
 
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    applyFilters(activeFilter, query);
-  };
-
-  const applyFilters = (filter, search) => {
-    let filtered = [...events];
-
-    // Apply status filter
-    if (filter !== 'all') {
-      filtered = filtered.filter((event) => event.status === filter);
-    }
-
-    // Apply search filter
-    if (search) {
-      filtered = filtered.filter((event) =>
-        event.name.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    setFilteredEvents(filtered);
+    setSearchQuery(e.target.value);
   };
 
   const handleEventAction = (action, eventId) => {
@@ -92,8 +92,7 @@ const ManagerEvents = () => {
         break;
       case 'delete':
         if (window.confirm('Are you sure you want to delete this event?')) {
-          setEvents((prev) => prev.filter((e) => e._id !== eventId));
-          setFilteredEvents((prev) => prev.filter((e) => e._id !== eventId));
+          deleteMutation.mutate(eventId);
         }
         break;
       default:
@@ -104,6 +103,10 @@ const ManagerEvents = () => {
   const toggleMenu = (eventId) => {
     setOpenMenuId(openMenuId === eventId ? null : eventId);
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-10">Loading events...</div>;
+  }
 
   return (
     <div className={styles.container}>
@@ -183,6 +186,7 @@ const ManagerEvents = () => {
               >
                 <Event
                   {...event}
+                  category={event.categories}
                   onLearnMore={() => navigate(`/manager/events/${event._id}`)}
                 />
                 {/* Action Menu Button */}
