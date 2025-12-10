@@ -7,24 +7,34 @@ import mongoose from 'mongoose';
 const NOTIFICATION_CACHE_TTL = 300;
 
 export async function registerEvent(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    const { eventId } = req.params; 
-    const volunteerId = req.user._id;
-
+    let session = null;
     try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+    } catch (error) {
+        // If transactions are not supported (e.g., standalone MongoDB), proceed without session
+        if (session) {
+            session.endSession();
+        }
+        session = null;
+        console.warn("Transactions not supported or failed to start, proceeding without transaction:", error.message);
+    }
+    
+    try {
+        const { eventId } = req.params; 
+        const volunteerId = req.user._id;
+
         const event = await Event.findById(eventId)
             .select('name managerId capacity status startDate registrationsCount')
             .session(session);
         
         if (!event) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(404).json({ success: false, message: "Event not found" });
         }
 
         if (event.status !== 'approved') {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: `Cannot register for event with status: ${event.status}` 
@@ -32,19 +42,20 @@ export async function registerEvent(req, res) {
         }
 
         if (new Date() >= event.startDate) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: "Cannot register for an event that has already started" 
             });
         }
+        
         const existingRegistration = await Registration.findOne({ 
             userId: volunteerId, 
             eventId 
         }).session(session);
         
         if (existingRegistration) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(409).json({ 
                 success: false, 
                 message: "You have already registered for this event" 
@@ -61,7 +72,7 @@ export async function registerEvent(req, res) {
         );
 
         if (!updatedEvent) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(409).json({ 
                 success: false, 
                 message: "Event capacity reached" 
@@ -124,7 +135,7 @@ export async function registerEvent(req, res) {
             console.error("Error checking Redis cache:", error);
         }
 
-        await session.commitTransaction();
+        if (session) await session.commitTransaction();
 
         if (shouldSendNotification) {
             createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
@@ -148,30 +159,39 @@ export async function registerEvent(req, res) {
             }
         });
     } catch (error) {
-        await session.abortTransaction();
+        if (session) await session.abortTransaction();
         console.error("Error registering event:", error);
         res.status(500).json({ success: false, message: "Server error" });
     } finally {
-        session.endSession();
+        if (session) session.endSession();
     }
 }
 export async function unregisterEvent(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    const { eventId } = req.params;
-    const userId = req.user._id;
-    const now = new Date();
+    let session = null;
+    try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+    } catch (error) {
+        if (session) {
+            session.endSession();
+        }
+        session = null;
+        console.warn("Transactions not supported or failed to start, proceeding without transaction:", error.message);
+    }
     
     try {
+        const { eventId } = req.params;
+        const userId = req.user._id;
+        const now = new Date();
+        
         const event = await Event.findById(eventId).select('name startDate').session(session);
         if (!event) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(404).json({ success: false, message: "Event not found" });
         }
         
         if (now >= event.startDate) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: "Cannot unregister from an event that has already started" 
@@ -180,12 +200,12 @@ export async function unregisterEvent(req, res) {
         
         const registration = await Registration.findOne({ userId, eventId }).session(session);
         if (!registration) {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(404).json({ success: false, message: "Registration not found" });
         }
 
         if (registration.status === 'completed') {
-            await session.abortTransaction();
+            if (session) await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: "Cannot unregister from a completed event" 
@@ -200,18 +220,18 @@ export async function unregisterEvent(req, res) {
             { session }
         );
         
-        await session.commitTransaction();
+        if (session) await session.commitTransaction();
         res.status(200).json({ 
             success: true, 
             message: "Unregistered from event successfully",
             data: { eventName: event.name }
         });
     } catch (error) {
-        await session.abortTransaction();
+        if (session) await session.abortTransaction();
         console.error("Error unregistering from event:", error);
         res.status(500).json({ success: false, message: "Server error" });
     } finally {
-        session.endSession();
+        if (session) session.endSession();
     }
 }
 

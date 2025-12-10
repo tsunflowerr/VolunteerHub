@@ -14,7 +14,7 @@ import styles from './UserInfo.module.css';
 const passwordSchema = Yup.object().shape({
   currentPassword: Yup.string().required('Current password is required'),
   newPassword: Yup.string()
-    .min(6, 'Password must be at least 6 characters')
+    .min(6, 'New password must be at least 6 characters long')
     .required('New password is required'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('newPassword'), null], 'Passwords must match')

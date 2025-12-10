@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth.jsx';
+import useAuth from '../../hooks/useAuth.js';
 import styles from './NavBar.module.css';
 import NotificationDialog from '../Notification/NotificationDialog.jsx';
 

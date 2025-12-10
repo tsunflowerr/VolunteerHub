@@ -10,7 +10,7 @@ export const userKeys = {
   profile: () => [...userKeys.all, 'profile'],
 };
 
-export const useUser = (id) => {
+export const useUserProfile = (id) => {
   return useQuery({
     queryKey: id ? userKeys.detail(id) : userKeys.profile(),
     queryFn: () => (id ? usersApi.getUserById(id) : usersApi.getProfile()),
@@ -65,6 +65,29 @@ export const useDeleteAccount = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to delete account');
+    },
+  });
+};
+
+export const useBookmarkedEvents = () => {
+  return useQuery({
+    queryKey: ['bookmarks'],
+    queryFn: usersApi.getBookmarkedEvents,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useToggleBookmark = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersApi.toggleBookmark,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
+      toast.success('Bookmark updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update bookmark');
     },
   });
 };

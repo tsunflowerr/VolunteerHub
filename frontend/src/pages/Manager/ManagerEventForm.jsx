@@ -21,12 +21,9 @@ import {
   ImagePicker,
   CategoryCheckboxes,
 } from '../../components/Form';
-import {
-  useCreateEvent,
-  useUpdateEvent,
-} from '../../hooks/useManager';
+import { useCreateEvent, useUpdateEvent } from '../../hooks/useManager';
 import { useEvent } from '../../hooks/useEvents';
-import useAuth from '../../hooks/useAuth';
+import useAuth from '../../hooks/useAuth.js';
 
 import styles from './ManagerEventForm.module.css';
 import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';

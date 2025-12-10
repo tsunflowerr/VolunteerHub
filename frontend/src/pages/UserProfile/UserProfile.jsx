@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import useAuth from '../../hooks/useAuth';
 import {
-  useUser,
+  useUserProfile,
   useUpdateProfile,
   useChangePassword,
   useDeleteAccount,
@@ -35,11 +35,7 @@ const UserProfile = () => {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const eventsPerPage = 9;
 
-  const {
-    data: user,
-    isLoading: loading,
-    isError,
-  } = useUser(id);
+  const { data: user, isLoading: loading, isError } = useUserProfile(id);
 
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
@@ -166,16 +162,12 @@ const UserProfile = () => {
             </div>
 
             <div className={styles['profile__stat']}>
-              <div className={styles['profile__stat-value']}>
-                {stats.hours}
-              </div>
+              <div className={styles['profile__stat-value']}>{stats.hours}</div>
               <div className={styles['profile__stat-label']}>Hours</div>
             </div>
 
             <div className={styles['profile__stat']}>
-              <div className={styles['profile__stat-value']}>
-                {stats.hosts}
-              </div>
+              <div className={styles['profile__stat-value']}>{stats.hosts}</div>
               <div className={styles['profile__stat-label']}>Hosts</div>
             </div>
           </div>

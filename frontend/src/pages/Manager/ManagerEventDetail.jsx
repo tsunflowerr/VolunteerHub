@@ -16,11 +16,11 @@ import {
 import VolunteerListDialog from '../../components/Manager/VolunteerListDialog';
 import CategoryChip from '../../components/common/Category/CategoryChip';
 import { useEvent } from '../../hooks/useEvents';
-import { useDeleteEvent } from '../../hooks/useManager';
 import {
+  useDeleteEvent,
   useEventVolunteers,
   useUpdateRegistrationStatus,
-} from '../../hooks/useRegistrations';
+} from '../../hooks/useManager';
 import styles from './ManagerEventDetail.module.css';
 
 const ManagerEventDetail = () => {
@@ -44,7 +44,7 @@ const ManagerEventDetail = () => {
   const volunteers =
     volunteersData?.volunteers?.map((v) => ({
       ...v,
-      completionStatus: v.registrationStatus,
+      registrationStatus: v.registrationStatus,
     })) || [];
 
   const handleMarkComplete = (registrationIds) => {
@@ -97,7 +97,7 @@ const ManagerEventDetail = () => {
   }
 
   const completedVolunteers = volunteers.filter(
-    (v) => v.completionStatus === 'completed'
+    (v) => v.registrationStatus === 'completed'
   ).length;
 
   return (

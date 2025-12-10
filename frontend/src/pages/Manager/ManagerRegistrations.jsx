@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle,
@@ -11,76 +11,45 @@ import {
   Download,
 } from 'lucide-react';
 import styles from './ManagerRegistrations.module.css';
+import {
+  useManagerRegistrations,
+  useUpdateRegistrationStatus,
+} from '../../hooks/useManager';
 
 const ManagerRegistrations = () => {
-  // Mock data - replace with actual API call
-  const [registrations, setRegistrations] = useState([
-    {
-      _id: 'reg1',
-      user: {
-        _id: 'user1',
-        username: 'John Doe',
-        email: 'john@example.com',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-      },
-      event: {
-        _id: 'event1',
-        name: 'Beach Cleanup',
-      },
-      status: 'pending',
-      registeredAt: '2025-11-10T10:00:00Z',
-    },
-    {
-      _id: 'reg2',
-      user: {
-        _id: 'user2',
-        username: 'Jane Smith',
-        email: 'jane@example.com',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
-      },
-      event: {
-        _id: 'event1',
-        name: 'Beach Cleanup',
-      },
-      status: 'approved',
-      registeredAt: '2025-11-09T14:30:00Z',
-    },
-    {
-      _id: 'reg3',
-      user: {
-        _id: 'user3',
-        username: 'Bob Johnson',
-        email: 'bob@example.com',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-      },
-      event: {
-        _id: 'event2',
-        name: 'Food Bank Sorting',
-      },
-      status: 'pending',
-      registeredAt: '2025-11-12T09:15:00Z',
-    },
-    {
-      _id: 'reg4',
-      user: {
-        _id: 'user4',
-        username: 'Alice Williams',
-        email: 'alice@example.com',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-      },
-      event: {
-        _id: 'event2',
-        name: 'Food Bank Sorting',
-      },
-      status: 'rejected',
-      registeredAt: '2025-11-11T16:45:00Z',
-    },
-  ]);
+  // Fetch registrations
+  const { data: responseData, isLoading } = useManagerRegistrations({
+    limit: 1000,
+  });
+  const { mutate: updateStatus } = useUpdateRegistrationStatus();
 
-  const [filteredRegistrations, setFilteredRegistrations] =
-    useState(registrations);
+  const registrations = useMemo(
+    () => responseData?.registrations || [],
+    [responseData]
+  );
+
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredRegistrations = useMemo(() => {
+    let filtered = [...registrations];
+
+    // Apply status filter
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter((reg) => reg.status === activeFilter);
+    }
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (reg) =>
+          (reg.userId?.username || '').toLowerCase().includes(lowerQuery) ||
+          (reg.eventId?.name || '').toLowerCase().includes(lowerQuery) ||
+          (reg.userId?.email || '').toLowerCase().includes(lowerQuery)
+      );
+    }
+    return filtered;
+  }, [registrations, activeFilter, searchQuery]);
 
   const filters = [
     {
@@ -94,73 +63,43 @@ const ManagerRegistrations = () => {
       count: registrations.filter((r) => r.status === 'pending').length,
     },
     {
-      id: 'approved',
+      id: 'confirmed',
       label: 'Approved',
-      count: registrations.filter((r) => r.status === 'approved').length,
+      count: registrations.filter((r) => r.status === 'confirmed').length,
     },
     {
-      id: 'rejected',
+      id: 'cancelled',
       label: 'Rejected',
-      count: registrations.filter((r) => r.status === 'rejected').length,
+      count: registrations.filter((r) => r.status === 'cancelled').length,
     },
   ];
 
   const handleFilterChange = (filterId) => {
     setActiveFilter(filterId);
-    applyFilters(filterId, searchQuery);
   };
 
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    applyFilters(activeFilter, query);
-  };
-
-  const applyFilters = (filter, search) => {
-    let filtered = [...registrations];
-
-    // Apply status filter
-    if (filter !== 'all') {
-      filtered = filtered.filter((reg) => reg.status === filter);
-    }
-
-    // Apply search filter
-    if (search) {
-      filtered = filtered.filter(
-        (reg) =>
-          reg.user.username.toLowerCase().includes(search.toLowerCase()) ||
-          reg.event.name.toLowerCase().includes(search.toLowerCase()) ||
-          reg.user.email.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    setFilteredRegistrations(filtered);
+    setSearchQuery(e.target.value);
   };
 
   const handleApprove = (regId) => {
-    setRegistrations((prev) =>
-      prev.map((reg) =>
-        reg._id === regId ? { ...reg, status: 'approved' } : reg
-      )
-    );
-    applyFilters(activeFilter, searchQuery);
+    updateStatus({ registrationId: regId, status: 'confirmed' });
   };
 
   const handleReject = (regId) => {
-    if (window.confirm('Are you sure you want to reject this registration?')) {
-      setRegistrations((prev) =>
-        prev.map((reg) =>
-          reg._id === regId ? { ...reg, status: 'rejected' } : reg
-        )
-      );
-      applyFilters(activeFilter, searchQuery);
-    }
+    updateStatus({ registrationId: regId, status: 'cancelled' });
   };
 
   const handleExport = () => {
     console.log('Exporting registrations data...');
     // TODO: Implement export functionality
   };
+
+  if (isLoading) {
+    return (
+      <div className={styles.loadingContainer}>Loading registrations...</div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -251,17 +190,17 @@ const ManagerRegistrations = () => {
                   <div className={styles.cell}>
                     <div className={styles.userInfo}>
                       <img
-                        src={reg.user.avatar}
-                        alt={reg.user.username}
+                        src={reg.userId?.avatar || '/default-avatar.png'}
+                        alt={reg.userId?.username}
                         className={styles.avatar}
                       />
                       <div>
                         <div className={styles.userName}>
-                          {reg.user.username}
+                          {reg.userId?.username}
                         </div>
                         <div className={styles.userEmail}>
                           <Mail size={14} />
-                          {reg.user.email}
+                          {reg.userId?.email}
                         </div>
                       </div>
                     </div>
@@ -269,14 +208,14 @@ const ManagerRegistrations = () => {
 
                   {/* Event Name */}
                   <div className={styles.cell}>
-                    <div className={styles.eventName}>{reg.event.name}</div>
+                    <div className={styles.eventName}>{reg.eventId?.name}</div>
                   </div>
 
                   {/* Registered Date */}
                   <div className={styles.cell}>
                     <div className={styles.date}>
                       <Calendar size={14} />
-                      {new Date(reg.registeredAt).toLocaleDateString('en-US', {
+                      {new Date(reg.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
@@ -291,7 +230,11 @@ const ManagerRegistrations = () => {
                         styles[`status-${reg.status}`]
                       }`}
                     >
-                      {reg.status}
+                      {reg.status === 'confirmed'
+                        ? 'Approved'
+                        : reg.status === 'cancelled'
+                        ? 'Rejected'
+                        : reg.status}
                     </span>
                   </div>
 
@@ -305,6 +248,7 @@ const ManagerRegistrations = () => {
                             onClick={() => handleApprove(reg._id)}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
+                            title="Approve"
                           >
                             <CheckCircle size={18} />
                           </motion.button>
@@ -313,6 +257,7 @@ const ManagerRegistrations = () => {
                             onClick={() => handleReject(reg._id)}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
+                            title="Reject"
                           >
                             <XCircle size={18} />
                           </motion.button>
@@ -320,7 +265,11 @@ const ManagerRegistrations = () => {
                       )}
                       {reg.status !== 'pending' && (
                         <span className={styles.noActions}>
-                          {reg.status === 'approved' ? '✓ Approved' : '✗ Rejected'}
+                          {reg.status === 'confirmed'
+                            ? '✓ Approved'
+                            : reg.status === 'cancelled'
+                            ? '✗ Rejected'
+                            : reg.status}
                         </span>
                       )}
                     </div>

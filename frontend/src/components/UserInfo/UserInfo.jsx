@@ -4,7 +4,15 @@ import toast from 'react-hot-toast';
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import styles from './UserInfo.module.css';
-import { ArrowLeft, Camera, Mail, MapPin, Phone, User } from 'lucide-react';
+import {
+  ArrowLeft,
+  Camera,
+  Mail,
+  MapPin,
+  Phone,
+  Text,
+  User,
+} from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import {
   FormHeader,
@@ -18,18 +26,17 @@ import {
 // Validation schema
 const userInfoSchema = Yup.object().shape({
   username: Yup.string()
-    .matches(/^[a-zA-Z\s]+$/, 'Username can only contain letters and spaces')
+    .matches(/^[a-zA-Z0-9]+$/, 'Username must only contain alphanumeric characters')
+    .min(3, 'Username must be at least 3 characters long')
+    .max(30, 'Username must be at most 30 characters long')
     .required('Username is required'),
   phoneNumber: Yup.string()
-    .matches(
-      /^[0-9+\-\s()]*$/,
-      'Phone number can only contain numbers, +, -, spaces, and parentheses'
-    )
-    .nullable(),
-  location: Yup.string().nullable(),
-  bio: Yup.string().max(160, 'Bio must not exceed 160 characters').nullable(),
+    .matches(/^[0-9]{10}$/, 'Phone number must be 10 digits long')
+    .required('Phone number is required'),
+  location: Yup.string().max(100, 'Location must be at most 100 characters long').nullable(),
+  bio: Yup.string().max(100, 'Bio must be at most 100 characters long').nullable(),
   about: Yup.string()
-    .max(500, 'About must not exceed 500 characters')
+    .max(500, 'About must be at most 500 characters long')
     .nullable(),
 });
 const UserInfo = ({ user, onSubmit }) => {
@@ -106,7 +113,6 @@ const UserInfo = ({ user, onSubmit }) => {
         await onSubmit(formData);
         setUserData(formData); // Update local baseline
       }
-
     } catch (validationErrors) {
       // Handle Yup validation errors
       if (validationErrors.inner) {
@@ -251,7 +257,7 @@ const UserInfo = ({ user, onSubmit }) => {
           </p>
         </div>
         <div className={styles['user-info-form__card-content']}>
-          <FormField icon={Phone} label="Bio" error={errors.bio}>
+          <FormField icon={Text} label="Bio" error={errors.bio}>
             <TextArea
               name="bio"
               value={formData.bio}
@@ -260,7 +266,7 @@ const UserInfo = ({ user, onSubmit }) => {
               placeholder="A short bio about yourself..."
             />
           </FormField>
-          <FormField icon={Phone} label="about" error={errors.about}>
+          <FormField icon={Text} label="about" error={errors.about}>
             <TextArea
               name="about"
               value={formData.about}
