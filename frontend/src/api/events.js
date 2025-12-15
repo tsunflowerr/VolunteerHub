@@ -11,4 +11,14 @@ export const eventApi = {
     const response = await api.get(`/events/${id}`);
     return response.data;
   },
+
+  addBookmark: async (eventId) => {
+    const response = await api.post(`/events/${eventId}/bookmarks`);
+    return response.data;
+  },
+
+  removeBookmark: async (eventId) => {
+    const response = await api.delete(`/events/${eventId}/bookmarks`);
+    return response.data;
+  },
 };

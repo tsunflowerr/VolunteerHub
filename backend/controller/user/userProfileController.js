@@ -335,7 +335,7 @@ export async function getUserBookMarks(req, res) {
           'name description managerId categories thumbnail images likesCount viewCount startDate endDate location capacity status createdAt',
         populate: [
           { path: 'managerId', select: 'username avatar' },
-          { path: 'categories', select: 'name slug' },
+          { path: 'categories', select: 'name slug color description' },
         ],
       });
 

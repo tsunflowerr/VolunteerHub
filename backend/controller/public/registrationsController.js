@@ -251,7 +251,14 @@ export async function getMyRegistrations(req, res) {
         
         const [registrations, total] = await Promise.all([
             Registration.find(query)
-                .populate('eventId', 'name description location startDate endDate thumbnail capacity status')
+                .populate({
+                    path: 'eventId',
+                    select: 'name description location startDate endDate thumbnail capacity status managerId categories',
+                    populate: [
+                        { path: 'managerId', select: 'username email avatar' },
+                        { path: 'categories', select: 'name slug color description' }
+                    ]
+                })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit))
@@ -284,8 +291,14 @@ export async function getRegistrationDetail(req, res) {
             _id: registrationId, 
             userId 
         })
-        .populate('eventId', 'name description location startDate endDate thumbnail capacity status managerId')
-        .populate('eventId.managerId', 'username email avatar')
+        .populate({
+            path: 'eventId',
+            select: 'name description location startDate endDate thumbnail capacity status managerId categories',
+            populate: [
+                { path: 'managerId', select: 'username email avatar' },
+                { path: 'categories', select: 'name slug color description' }
+            ]
+        })
         .lean();
 
         if (!registration) {

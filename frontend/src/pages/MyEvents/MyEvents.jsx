@@ -1,31 +1,113 @@
-import { useState } from 'react';
-import { Grid3x3, Calendar } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Calendar, Lock } from 'lucide-react';
+import { Pagination } from '@mui/material';
 import EventList from '../../components/EventCard/EventList.jsx';
 import SearchBox from '../../components/SearchBox/SearchBox.jsx';
-import { volunteerEvents } from '../../dummy/volunteerEvents.js';
-import { Pagination } from '@mui/material';
 import styles from './MyEvents.module.css';
+import { useMyRegistrations } from '../../hooks/useRegistrations';
+import { useBookmarkedEvents } from '../../hooks/useUser';
+import useAuth from '../../hooks/useAuth';
 
 const MyEvents = () => {
-  const [events, setEvents] = useState(volunteerEvents);
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('enrolled');
-  const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage] = useState(12);
 
-  // Get current events
-  const totalEvents = events.length;
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = events.slice(indexOfFirstEvent, indexOfLastEvent);
+  // Restrict access for Admin and Manager
+  if (user && (user.role === 'admin' || user.role === 'manager')) {
+    return (
+      <div className={styles['my-events']}>
+        <div className={styles['my-events__container']}>
+          <div className={styles['my-events__empty']}>
+            <Lock size={80} className={styles['my-events__empty-icon']} />
+            <h2 style={{ marginBottom: '1rem', color: '#333' }}>
+              Volunteer Access Only
+            </h2>
+            <p className={styles['my-events__empty-text']}>
+              This page is designed for volunteers to manage their event
+              registrations. As a {user.role}, please use your dashboard to
+              manage events.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine status for useMyRegistrations hook based on active tab
+  const registrationStatus = useMemo(() => {
+    switch (activeTab) {
+      case 'enrolled':
+        return 'confirmed';
+      case 'requested':
+        return 'pending';
+      case 'past':
+        return 'completed';
+      default:
+        return undefined;
+    }
+  }, [activeTab]);
+
+  // Fetch Registrations (Enrolled, Requested, Past)
+  const { data: regData, isLoading: isRegLoading } = useMyRegistrations({
+    status: registrationStatus,
+    page: currentPage,
+    limit: eventsPerPage,
+    // Only fetch if NOT on bookmarked tab
+    enabled: activeTab !== 'bookmarked',
+  });
+
+  // Fetch Bookmarks
+  const { data: bookData, isLoading: isBookLoading } = useBookmarkedEvents();
+
+  // Process Data based on Active Tab
+  const { currentEvents, totalPages, isLoading } = useMemo(() => {
+    if (activeTab === 'bookmarked') {
+      const allBookmarks = bookData?.bookmarks || [];
+      const total = allBookmarks.length;
+      const start = (currentPage - 1) * eventsPerPage;
+      const end = start + eventsPerPage;
+      return {
+        currentEvents: allBookmarks.slice(start, end),
+        totalPages: Math.ceil(total / eventsPerPage),
+        isLoading: isBookLoading,
+      };
+    } else {
+      // For registrations, data is already paginated by backend
+      // Map registration objects to event objects
+      const events = regData?.data?.map((reg) => reg.eventId) || [];
+      return {
+        currentEvents: events,
+        totalPages: regData?.pagination?.totalPages || 0,
+        isLoading: isRegLoading,
+      };
+    }
+  }, [
+    activeTab,
+    bookData,
+    regData,
+    currentPage,
+    eventsPerPage,
+    isBookLoading,
+    isRegLoading,
+  ]);
 
   // Change page
-  const handleChangePage = (e, value) => setCurrentPage(value);
+  const handleChangePage = (e, value) => {
+    setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Handle search
+  // Reset page when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
   const handleSearch = (searchData) => {
     console.log('Search data:', searchData);
-    // TODO: Implement search logic
+    // TODO: Implement client-side filtering or pass params to hooks
   };
 
   return (
@@ -51,7 +133,7 @@ const MyEvents = () => {
             className={`${styles['my-events__tab']} ${
               activeTab === 'enrolled' ? styles['my-events__tab--active'] : ''
             }`}
-            onClick={() => setActiveTab('enrolled')}
+            onClick={() => handleTabChange('enrolled')}
           >
             Enrolled Events
           </button>
@@ -59,7 +141,7 @@ const MyEvents = () => {
             className={`${styles['my-events__tab']} ${
               activeTab === 'bookmarked' ? styles['my-events__tab--active'] : ''
             }`}
-            onClick={() => setActiveTab('bookmarked')}
+            onClick={() => handleTabChange('bookmarked')}
           >
             Bookmarked Events
           </button>
@@ -67,7 +149,7 @@ const MyEvents = () => {
             className={`${styles['my-events__tab']} ${
               activeTab === 'requested' ? styles['my-events__tab--active'] : ''
             }`}
-            onClick={() => setActiveTab('requested')}
+            onClick={() => handleTabChange('requested')}
           >
             Requested Events
           </button>
@@ -75,22 +157,27 @@ const MyEvents = () => {
             className={`${styles['my-events__tab']} ${
               activeTab === 'past' ? styles['my-events__tab--active'] : ''
             }`}
-            onClick={() => setActiveTab('past')}
+            onClick={() => handleTabChange('past')}
           >
             Past Events
           </button>
         </div>
+
         {/* Events Content */}
-        {currentEvents.length > 0 ? (
+        {isLoading ? (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+        ) : currentEvents.length > 0 ? (
           <div className={styles['my-events__list-container']}>
             <EventList events={currentEvents} />
-            <Pagination
-              className={styles['my-events__pagination']}
-              count={Math.ceil(totalEvents / eventsPerPage)}
-              shape="rounded"
-              page={currentPage}
-              onChange={handleChangePage}
-            />
+            {totalPages > 1 && (
+              <Pagination
+                className={styles['my-events__pagination']}
+                count={totalPages}
+                shape="rounded"
+                page={currentPage}
+                onChange={handleChangePage}
+              />
+            )}
           </div>
         ) : (
           <div className={styles['my-events__empty']}>

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { usersApi } from '../api/users';
+import { eventApi } from '../api/events';
 import useAuth from './useAuth';
 
 export const userKeys = {
@@ -77,17 +78,42 @@ export const useBookmarkedEvents = () => {
   });
 };
 
-export const useToggleBookmark = () => {
+export const useToggleBookmark = (eventId) => {
   const queryClient = useQueryClient();
+  const { user, updateUser } = useAuth();
 
-  return useMutation({
-    mutationFn: usersApi.toggleBookmark,
+  const isBookmarked = user?.bookmarks?.includes(eventId);
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (isBookmarked) {
+        return eventApi.removeBookmark(eventId);
+      } else {
+        return eventApi.addBookmark(eventId);
+      }
+    },
     onSuccess: () => {
+      // Manually update AuthContext state
+      if (user) {
+        const updatedBookmarks = isBookmarked
+          ? user.bookmarks.filter((id) => id !== eventId)
+          : [...(user.bookmarks || []), eventId];
+        updateUser({ bookmarks: updatedBookmarks });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
-      toast.success('Bookmark updated successfully');
+      toast.success(
+        isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks'
+      );
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to update bookmark');
     },
   });
+
+  return {
+    isBookmarked,
+    toggleBookmark: mutation.mutate,
+    isLoading: mutation.isPending,
+  };
 };

@@ -17,6 +17,7 @@ import {
   useUnregisterEvent,
   useMyRegistrations,
 } from '../../hooks/useRegistrations';
+import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 const EventSidebar = ({
   event,
@@ -88,12 +89,22 @@ const EventSidebar = ({
     navigate(`/events/${event._id}/manage`);
   };
 
-  // Determine if the user is the manager of this event
-  const isManager =
-    user &&
-    (user.role === 'admin' ||
-      (user.role === 'manager' &&
-        (event.managerId?._id === user.id || event.managerId === user.id)));
+  // Attribute-Based Access Control (ABAC) Logic
+  const permissions = {
+    canManage: checkPermission(user, RESOURCES.EVENTS, ACTIONS.MANAGE, event),
+    canRegister: checkPermission(
+      user,
+      RESOURCES.EVENTS,
+      ACTIONS.REGISTER,
+      event
+    ),
+    canBookmark: checkPermission(
+      user,
+      RESOURCES.EVENTS,
+      ACTIONS.BOOKMARK,
+      event
+    ),
+  };
 
   const isLoading =
     isBookmarkLoading ||
@@ -104,6 +115,111 @@ const EventSidebar = ({
   return (
     <aside className={styles['event-detail__sidebar']}>
       {/* Discussion Card - Available for everyone */}
+
+      {/* Registration Card */}
+      <div className={styles['event-detail__sidebar-card']}>
+        {/* Registration Count */}
+        <div className={styles['event-detail__sidebar-registered']}>
+          <Users size={24} />
+          <div className={styles['event-detail__sidebar-registered-info']}>
+            <span className={styles['event-detail__sidebar-registered-count']}>
+              {event.registrationsCount || 0} / {event.capacity || 'Unlimited'}
+            </span>
+            <span className={styles['event-detail__sidebar-registered-label']}>
+              Registered volunteers
+            </span>
+          </div>
+        </div>
+
+        {/* Registration Status or Manager Controls */}
+        {permissions.canManage ? (
+          <>
+            <h3 className={styles['event-detail__sidebar-card-title']}>
+              Manage Event
+            </h3>
+            <button
+              className={styles['event-detail__sidebar-card-btn']}
+              onClick={handleManageEvent}
+            >
+              <Settings size={20} />
+              Go to Management
+            </button>
+          </>
+        ) : (
+          <>
+            {currentUserState === 'none' && permissions.canRegister && (
+              <>
+                {isEventFull ? (
+                  <div className={styles['event-detail__sidebar-status']}>
+                    <span
+                      className={`${styles['event-detail__sidebar-status-icon']} ${styles['red']}`}
+                    >
+                      <X size={16} />
+                    </span>
+                    <p>This event is unavailable right now.</p>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className={styles['event-detail__sidebar-card-title']}>
+                      SIGN UP TO VOLUNTEER
+                    </h3>
+                    <button
+                      className={styles['event-detail__sidebar-card-btn']}
+                      onClick={handleRegister}
+                      disabled={previewMode || isLoading}
+                    >
+                      {previewMode ? 'Preview Mode' : 'Go'}
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {currentUserState === 'approved' && (
+              <>
+                <div className={styles['event-detail__sidebar-status']}>
+                  <span
+                    className={`${styles['event-detail__sidebar-status-icon']} ${styles['green']}`}
+                  >
+                    <Check size={16} />
+                  </span>
+                  <p>You're in! Your registration is approved, see you soon.</p>
+                </div>
+                <button
+                  className={styles['event-detail__sidebar-cancel-btn']}
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+
+            {currentUserState === 'pending' && (
+              <>
+                <div className={styles['event-detail__sidebar-status']}>
+                  <span
+                    className={`${styles['event-detail__sidebar-status-icon']} ${styles['orange']}`}
+                  >
+                    <Ellipsis size={16} />
+                  </span>
+                  <p>
+                    Your registration is pending, we'll notify you once approved.
+                  </p>
+                </div>
+                <button
+                  className={styles['event-detail__sidebar-cancel-btn']}
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
       {!previewMode && (
         <div className={styles['event-detail__sidebar-card']}>
           <div className={styles['event-detail__sidebar-discussion-header']}>
@@ -127,7 +243,7 @@ const EventSidebar = ({
       )}
 
       {/* Bookmark Card */}
-      {!previewMode && (
+      {!previewMode && permissions.canBookmark && (
         <div className={styles['event-detail__sidebar-card']}>
           <h3 className={styles['event-detail__sidebar-card-title']}>
             {isBookmarked ? 'Bookmarked' : 'Add to bookmark'}
@@ -152,108 +268,6 @@ const EventSidebar = ({
           </button>
         </div>
       )}
-
-      {/* Manager Controls */}
-      {!previewMode && isManager && (
-        <div className={styles['event-detail__sidebar-card']}>
-          <h3 className={styles['event-detail__sidebar-card-title']}>
-            Manage Event
-          </h3>
-          <button
-            className={styles['event-detail__sidebar-card-btn']}
-            onClick={handleManageEvent}
-          >
-            <Settings size={20} />
-            Go to Management
-          </button>
-        </div>
-      )}
-      {/* Registration Card */}
-      <div className={styles['event-detail__sidebar-card']}>
-        {/* Registration Count */}
-        <div className={styles['event-detail__sidebar-registered']}>
-          <Users size={24} />
-          <div className={styles['event-detail__sidebar-registered-info']}>
-            <span className={styles['event-detail__sidebar-registered-count']}>
-              {event.registrationsCount || 0} / {event.capacity || 'Unlimited'}
-            </span>
-            <span className={styles['event-detail__sidebar-registered-label']}>
-              Registered volunteers
-            </span>
-          </div>
-        </div>
-
-        {/* Registration Status */}
-        {currentUserState === 'none' && (
-          <>
-            {isEventFull ? (
-              <div className={styles['event-detail__sidebar-status']}>
-                <span
-                  className={`${styles['event-detail__sidebar-status-icon']} ${styles['red']}`}
-                >
-                  <X size={16} />
-                </span>
-                <p>This event is unavailable right now.</p>
-              </div>
-            ) : (
-              <>
-                <h3 className={styles['event-detail__sidebar-card-title']}>
-                  SIGN UP TO VOLUNTEER
-                </h3>
-                <button
-                  className={styles['event-detail__sidebar-card-btn']}
-                  onClick={handleRegister}
-                  disabled={previewMode || isLoading}
-                >
-                  {previewMode ? 'Preview Mode' : 'Go'}
-                </button>
-              </>
-            )}
-          </>
-        )}
-
-        {currentUserState === 'approved' && (
-          <>
-            <div className={styles['event-detail__sidebar-status']}>
-              <span
-                className={`${styles['event-detail__sidebar-status-icon']} ${styles['green']}`}
-              >
-                <Check size={16} />
-              </span>
-              <p>You're in! Your registration is approved, see you soon.</p>
-            </div>
-            <button
-              className={styles['event-detail__sidebar-cancel-btn']}
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-
-        {currentUserState === 'pending' && (
-          <>
-            <div className={styles['event-detail__sidebar-status']}>
-              <span
-                className={`${styles['event-detail__sidebar-status-icon']} ${styles['orange']}`}
-              >
-                <Ellipsis size={16} />
-              </span>
-              <p>
-                Your registration is pending, we'll notify you once approved.
-              </p>
-            </div>
-            <button
-              className={styles['event-detail__sidebar-cancel-btn']}
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-          </>
-        )}
-      </div>
     </aside>
   );
 };

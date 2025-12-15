@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth.js';
 import styles from './NavBar.module.css';
 import NotificationDialog from '../Notification/NotificationDialog.jsx';
+import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 import { User, LogOut, Bell, Menu, Search, UserStar } from 'lucide-react';
 
@@ -115,16 +116,6 @@ const NavBar = ({ showNavButtons = true }) => {
             >
               My Events
             </button>
-            <button
-              className={`${styles.navbar__navLink} ${
-                isActive('/discussions')
-                  ? styles['navbar__navLink--active']
-                  : ''
-              }`}
-              onClick={() => navigate('/discussions')}
-            >
-              Discussions
-            </button>
           </nav>
         )}
 
@@ -155,15 +146,28 @@ const NavBar = ({ showNavButtons = true }) => {
                 />
                 {showDropdown && (
                   <div className={styles.navbar__dropdownMenu}>
-                    <button
-                      className={styles.navbar__dropdownItem}
-                      onClick={() => {
-                        setShowDropdown(false);
-                      }}
-                    >
-                      <UserStar />
-                      Switch to Manager view
-                    </button>
+                    {checkPermission(
+                      user,
+                      RESOURCES.DASHBOARD,
+                      ACTIONS.VIEW
+                    ) && (
+                      <button
+                        className={styles.navbar__dropdownItem}
+                        onClick={() => {
+                          setShowDropdown(false);
+                          if (user.role === 'admin') {
+                            navigate('/admin');
+                          } else if (user.role === 'manager') {
+                            navigate('/manager');
+                          }
+                        }}
+                      >
+                        <UserStar />
+                        {user.role === 'admin'
+                          ? 'Switch to Admin view'
+                          : 'Switch to Manager view'}
+                      </button>
+                    )}
                     <button
                       className={styles.navbar__dropdownItem}
                       onClick={() => {

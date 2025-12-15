@@ -395,7 +395,21 @@ GET /api/users/bookmarks
       "thumbnail": "https://...",
       "startDate": "2025-11-15T08:00:00Z",
       "endDate": "2025-11-15T18:00:00Z",
-      "status": "approved"
+      "status": "approved",
+      "managerId": {
+        "_id": "manager123",
+        "username": "Manager Name",
+        "avatar": "https://..."
+      },
+      "categories": [
+        {
+          "_id": "cat123",
+          "name": "Environment",
+          "slug": "environment",
+          "color": "#4caf50",
+          "description": "Environmental protection activities"
+        }
+      ]
     }
   ]
 }
@@ -1044,7 +1058,21 @@ GET /api/events/registrations/my?status=pending&page=1&limit=10
         "name": "Beach Cleanup",
         "thumbnail": "https://...",
         "startDate": "2025-11-15T08:00:00Z",
-        "location": "Nha Trang Beach"
+        "location": "Nha Trang Beach",
+        "managerId": {
+          "_id": "manager123",
+          "username": "Manager Name",
+          "avatar": "https://..."
+        },
+        "categories": [
+          {
+            "_id": "cat123",
+            "name": "Environment",
+            "slug": "environment",
+            "color": "#4caf50",
+            "description": "Environmental protection activities"
+          }
+        ]
       },
       "status": "pending",
       "registerAt": "2025-11-01T10:00:00Z"
@@ -1358,7 +1386,15 @@ GET /api/search/events?keyword=volunteer&category=environment&location=hanoi&sor
       "name": "Beach Cleanup Drive",
       "description": "...",
       "location": "Nha Trang Beach",
-      "categories": [...],
+      "categories": [
+        {
+          "_id": "cat123",
+          "name": "Environment",
+          "slug": "environment",
+          "color": "#4caf50",
+          "description": "Environmental protection activities"
+        }
+      ],
       "startDate": "2025-11-15T08:00:00Z"
     }
   ],
