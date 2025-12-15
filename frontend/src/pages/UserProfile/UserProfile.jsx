@@ -21,7 +21,6 @@ import EventList from '../../components/EventCard/EventList';
 import { volunteerEvents } from '../../dummy/volunteerEvents';
 import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
-import { categoriesById } from '../../utilities/CategoriesIcons.jsx';
 import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
 

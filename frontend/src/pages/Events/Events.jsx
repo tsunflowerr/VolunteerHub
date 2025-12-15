@@ -8,11 +8,27 @@ import { useEvents } from '../../hooks/useEvents';
 const Events = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage] = useState(12);
+  const [filters, setFilters] = useState({
+    keyword: '',
+    category: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    sort: 'newest',
+  });
+
+  // Clean up filters to remove empty strings before sending to API
+  const activeFilters = Object.fromEntries(
+    Object.entries(filters).filter(
+      ([_, v]) => v !== '' && v !== null && v !== undefined
+    )
+  );
 
   const { data, isLoading } = useEvents({
     page: currentPage,
     limit: eventsPerPage,
     status: 'approved',
+    ...activeFilters,
   });
 
   const events = data?.events || [];
@@ -25,8 +41,18 @@ const Events = () => {
   };
 
   const handleSearch = (searchData) => {
-    console.log('Search data:', searchData);
-    // Implement search functionality
+    setFilters({
+      keyword: searchData.searchQuery || '',
+      category:
+        searchData.categories && searchData.categories.length > 0
+          ? searchData.categories[0]
+          : '',
+      location: searchData.location || '',
+      startDate: searchData.dateFrom || '',
+      endDate: searchData.dateTo || '',
+      sort: searchData.sortBy || 'newest',
+    });
+    setCurrentPage(1); // Reset to first page on new search
   };
 
   return (

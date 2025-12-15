@@ -61,33 +61,35 @@ const SearchBox = ({
     setSortBy(e.target.value);
   };
 
-  const handleCategoryClick = (categoryId) => {
-    if (categoryId === 'all') {
-      // Toggle all: if all selected, deselect all; otherwise select all
-      if (allSelected) {
-        setSelectedCategories([]);
-      } else {
-        setSelectedCategories(categories.map((cat) => cat._id));
-      }
-    } else {
+    const handleCategoryClick = (categorySlug) => {
+
       // Toggle individual category
+
       setSelectedCategories((prev) =>
-        prev.includes(categoryId)
-          ? prev.filter((id) => id !== categoryId)
-          : [...prev, categoryId]
+
+        prev.includes(categorySlug)
+
+          ? prev.filter((slug) => slug !== categorySlug)
+
+          : [...prev, categorySlug]
+
       );
-    }
-  };
 
-  // Check if a category is selected
-  const isCategorySelected = (categoryId) => {
-    if (categoryId === 'all') {
-      return allSelected;
-    }
-    return selectedCategories.includes(categoryId);
-  };
+    };
 
-  return (
+  
+
+    // Check if a category is selected
+
+    const isCategorySelected = (categorySlug) => {
+
+      return selectedCategories.includes(categorySlug);
+
+    };
+
+  
+
+    return (
     <div className={styles['search-box']}>
       {/* Search Inputs */}
       <div className={styles['search-box__inputs']}>
@@ -163,19 +165,13 @@ const SearchBox = ({
       {/* Categories */}
       {showCategories && (
         <div className={styles['search-box__categories']}>
-          {/* All button */}
-          <CategoryChip
-            category={{ _id: 'all', name: 'All', slug: 'all', color: '#666' }}
-            onClick={() => handleCategoryClick('all')}
-            filled={isCategorySelected('all')}
-          />
           {/* Individual categories */}
           {categories.map((category) => (
             <CategoryChip
               key={category._id}
               category={category}
-              onClick={() => handleCategoryClick(category._id)}
-              filled={isCategorySelected(category._id)}
+              onClick={() => handleCategoryClick(category.slug)}
+              filled={isCategorySelected(category.slug)}
             />
           ))}
         </div>

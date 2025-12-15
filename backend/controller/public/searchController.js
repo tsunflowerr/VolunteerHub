@@ -96,7 +96,7 @@ export async function searchEvents(req, res) {
                 const [events, total] = await Promise.all([
                     query
                         .populate('managerId', 'username email avatar')
-                        .populate('categories', 'name slug')
+                        .populate('categories', 'name slug color description')
                         .sort(sortOptions)
                         .skip(skip)
                         .limit(limit)
@@ -300,7 +300,7 @@ export async function advancedSearch(req, res) {
                         status: { $in: ['approved', 'completed'] }
                     })
                     .select('name description location startDate endDate categories viewCount likesCount registrationsCount')
-                    .populate('categories', 'name slug')
+                    .populate('categories', 'name slug color description')
                     .populate('managerId', 'username avatar')
                     .skip(skip)
                     .limit(parseInt(limit))
@@ -403,7 +403,7 @@ export async function advancedSearch(req, res) {
                 status: { $in: ['approved', 'completed'] }
             })
             .select('name description location startDate endDate categories viewCount likesCount')
-            .populate('categories', 'name slug')
+            .populate('categories', 'name slug color description')
             .populate('managerId', 'username avatar')
             .limit(5)
             .lean(),

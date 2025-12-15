@@ -65,6 +65,7 @@ export async function updateEvent(req, res) {
         
         // Xóa cache sau khi update event
         await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
+        await invalidateCacheByPattern('search:events:*'); // Xóa cache tìm kiếm events
         await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
             
         res.status(200).json({success: true, event: updatedEvent});
@@ -158,6 +159,7 @@ export async function deleteEvent(req, res) {
         
         // Xóa cache sau khi delete event (không cần session)
         await invalidateCacheByPattern('events:*');
+        await invalidateCacheByPattern('search:events:*');
         await invalidateCacheByPattern(`event:detail:*`);
         
         res.status(200).json({

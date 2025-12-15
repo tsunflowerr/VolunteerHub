@@ -1,9 +1,9 @@
 import api from './api';
 
 export const eventApi = {
-  getAll: async (params) => {
-    // params: { page, limit, category, etc. }
-    const response = await api.get('/events', { params });
+  getAll: async (params = {}) => {
+    // params: { page, limit, category, keyword, etc. }
+    const response = await api.get('/search/events', { params });
     return response.data;
   },
 

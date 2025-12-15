@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
-import { Tag } from 'lucide-react';
-import { CategoryIcons } from '../../../utilities/CategoriesIcons';
+import { ListCheck, Tag } from 'lucide-react';
 import styles from './CategoryChip.module.css';
 
 const CategoryChip = ({
@@ -21,7 +20,7 @@ const CategoryChip = ({
   const { name, slug, color, description } = category;
 
   // Use specific icon for 'all', otherwise use generic Tag icon
-  const Icon = slug === 'all' ? CategoryIcons['all'] : <Tag size={14} />;
+  const Icon = slug === 'all' ? <ListCheck size={14} /> : <Tag size={14} />;
 
   const handleMouseEnter = () => {
     setIsHovered(true);
