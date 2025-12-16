@@ -43,10 +43,26 @@ export const useUpdateRegistrationStatus = () => {
     mutationKey: ['updateRegistrationStatus'],
     mutationFn: managerApi.updateStatus,
     onSuccess: (data, variables) => {
-      // Invalidate specific volunteer list if eventId was known,
-      // but since variables is { registrationId, status }, we might not know eventId directly.
-      // However, we can invalidate all 'volunteers' queries under manager.
-      queryClient.invalidateQueries({ queryKey: ['manager', 'volunteers'] });
+      // Invalidate manager registrations list (UI for ManagerRegistrations)
+      queryClient.invalidateQueries({
+        queryKey: managerKeys.registrations(),
+      });
+
+      // Invalidate specific volunteer list and event details
+      if (data?.registration?.eventId) {
+        // Handle both populated object and direct ID
+        const eventId = data.registration.eventId._id || data.registration.eventId;
+        
+        // Invalidate the specific event's volunteer list
+        queryClient.invalidateQueries({ 
+          queryKey: managerKeys.volunteers(eventId) 
+        });
+        
+        // Invalidate event details (for counts)
+        queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+        queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
+      }
+
       toast.success('Volunteer status updated successfully');
     },
     onError: (error) => {

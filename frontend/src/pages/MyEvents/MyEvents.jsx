@@ -4,7 +4,10 @@ import { Pagination } from '@mui/material';
 import EventList from '../../components/EventCard/EventList.jsx';
 import SearchBox from '../../components/SearchBox/SearchBox.jsx';
 import styles from './MyEvents.module.css';
-import { useMyRegistrations } from '../../hooks/useRegistrations';
+import {
+  useMyRegistrations,
+  useEvents,
+} from '../../hooks/useEvents';
 import { useBookmarkedEvents } from '../../hooks/useUser';
 import useAuth from '../../hooks/useAuth';
 
@@ -13,6 +16,10 @@ const MyEvents = () => {
   const [activeTab, setActiveTab] = useState('enrolled');
   const [currentPage, setCurrentPage] = useState(1);
   const [eventsPerPage] = useState(12);
+  const [searchParams, setSearchParams] = useState({
+    keyword: '',
+    category: '',
+  });
 
   // Restrict access for Admin and Manager
   if (user && (user.role === 'admin' || user.role === 'manager')) {
@@ -50,10 +57,11 @@ const MyEvents = () => {
   }, [activeTab]);
 
   // Fetch Registrations (Enrolled, Requested, Past)
+  // Note: We fetch ALL items (limit: 1000) to perform client-side filtering comfortably
+  // since backend pagination doesn't support complex filtering on registrations endpoint easily yet.
   const { data: regData, isLoading: isRegLoading } = useMyRegistrations({
     status: registrationStatus,
-    page: currentPage,
-    limit: eventsPerPage,
+    limit: 1000,
     // Only fetch if NOT on bookmarked tab
     enabled: activeTab !== 'bookmarked',
   });
@@ -61,28 +69,53 @@ const MyEvents = () => {
   // Fetch Bookmarks
   const { data: bookData, isLoading: isBookLoading } = useBookmarkedEvents();
 
-  // Process Data based on Active Tab
+  // Process Data based on Active Tab & Search Params
   const { currentEvents, totalPages, isLoading } = useMemo(() => {
+    let rawEvents = [];
+    let loading = false;
+
     if (activeTab === 'bookmarked') {
-      const allBookmarks = bookData?.bookmarks || [];
-      const total = allBookmarks.length;
-      const start = (currentPage - 1) * eventsPerPage;
-      const end = start + eventsPerPage;
-      return {
-        currentEvents: allBookmarks.slice(start, end),
-        totalPages: Math.ceil(total / eventsPerPage),
-        isLoading: isBookLoading,
-      };
+      rawEvents = bookData?.bookmarks || [];
+      loading = isBookLoading;
     } else {
-      // For registrations, data is already paginated by backend
-      // Map registration objects to event objects
-      const events = regData?.data?.map((reg) => reg.eventId) || [];
-      return {
-        currentEvents: events,
-        totalPages: regData?.pagination?.totalPages || 0,
-        isLoading: isRegLoading,
-      };
+      rawEvents = regData?.data?.map((reg) => reg.eventId) || [];
+      loading = isRegLoading;
     }
+
+    // Client-side Filtering
+    let filteredEvents = rawEvents.filter((event) => {
+      if (!event) return false;
+
+      // Keyword Filter
+      if (searchParams.keyword) {
+        const keyword = searchParams.keyword.toLowerCase();
+        const nameMatch = event.name?.toLowerCase().includes(keyword);
+        const descMatch = event.description?.toLowerCase().includes(keyword);
+        if (!nameMatch && !descMatch) return false;
+      }
+
+      // Category Filter
+      if (searchParams.category) {
+        // Assuming event.categories is an array of objects with 'slug'
+        const hasCategory = event.categories?.some(
+          (cat) => cat.slug === searchParams.category
+        );
+        if (!hasCategory) return false;
+      }
+
+      return true;
+    });
+
+    // Pagination
+    const total = filteredEvents.length;
+    const start = (currentPage - 1) * eventsPerPage;
+    const end = start + eventsPerPage;
+
+    return {
+      currentEvents: filteredEvents.slice(start, end),
+      totalPages: Math.ceil(total / eventsPerPage),
+      isLoading: loading,
+    };
   }, [
     activeTab,
     bookData,
@@ -91,6 +124,7 @@ const MyEvents = () => {
     eventsPerPage,
     isBookLoading,
     isRegLoading,
+    searchParams,
   ]);
 
   // Change page
@@ -103,11 +137,16 @@ const MyEvents = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
+    setSearchParams({ keyword: '', category: '' }); // Optional: Reset search on tab change?
   };
 
   const handleSearch = (searchData) => {
     console.log('Search data:', searchData);
-    // TODO: Implement client-side filtering or pass params to hooks
+    setSearchParams({
+      keyword: searchData.keyword || '',
+      category: searchData.category || '',
+    });
+    setCurrentPage(1); // Reset to first page on new search
   };
 
   return (

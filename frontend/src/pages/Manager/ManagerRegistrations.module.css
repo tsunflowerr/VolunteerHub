@@ -248,7 +248,7 @@
 /* Status */
 .status {
   display: inline-flex;
-  padding: 0.375rem 0.875rem;
+
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -257,16 +257,19 @@
 }
 
 .status-pending {
+  padding: 6px 18px;
   background-color: #fff3e0;
   color: #ff9800;
 }
 
 .status-approved {
+  padding: 6px 18px;
   background-color: #e8f5e9;
   color: #4caf50;
 }
 
 .status-rejected {
+  padding: 6px 18px;
   background-color: #ffebee;
   color: #f44336;
 }

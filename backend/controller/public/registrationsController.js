@@ -3,6 +3,7 @@ import Event from "../../models/eventModel.js";
 import { createAndSendNotification, generateNotificationContent, generateNewRegistrationContent } from '../../utils/notificationHelper.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
+import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 const NOTIFICATION_CACHE_TTL = 300;
 
@@ -44,24 +45,18 @@ export async function registerEvent(req, res) {
             });
         }
         
-        const updatedEvent = await Event.findOneAndUpdate(
-            {
-                _id: eventId,
-                $expr: { $lt: ['$registrationsCount', '$capacity'] }
-            },
-            { $inc: { registrationsCount: 1 } },
-            { new: true }
-        );
-
-        if (!updatedEvent) {
-            return res.status(409).json({ 
-                success: false, 
-                message: "Event capacity reached" 
-            });
-        }
+        // Removed registrationsCount increment and capacity check logic from here
+        // Count should only increase when manager approves
         
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
+
+        // Invalidate caches
+        await invalidateCache(`event:detail:${eventId}`);
+        await invalidateCacheByPattern('events:all:*');
+        await invalidateCacheByPattern('events:trending:*');
+        await invalidateCache('events:upcoming');
+        await invalidateCacheByPattern('events:category:*');
         
         // Generate notification content for volunteer (registration confirmation)
         const volunteerContent = generateNotificationContent(
@@ -172,12 +167,22 @@ export async function unregisterEvent(req, res) {
             });
         }
         
-        await Registration.findByIdAndDelete(registration._id);
+        // Only decrease count if the registration was confirmed/approved or completed
+        if (['confirmed', 'completed'].includes(registration.status)) {
+            await Event.findByIdAndUpdate(
+                eventId,
+                { $inc: { registrationsCount: -1 } }
+            );
+        }
         
-        await Event.findByIdAndUpdate(
-            eventId,
-            { $inc: { registrationsCount: -1 } }
-        );
+        await Registration.findByIdAndDelete(registration._id);
+
+        // Invalidate caches
+        await invalidateCache(`event:detail:${eventId}`);
+        await invalidateCacheByPattern('events:all:*');
+        await invalidateCacheByPattern('events:trending:*');
+        await invalidateCache('events:upcoming');
+        await invalidateCacheByPattern('events:category:*');
         
         res.status(200).json({ 
             success: true, 

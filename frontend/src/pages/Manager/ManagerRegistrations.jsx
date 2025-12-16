@@ -19,7 +19,7 @@ import {
 const ManagerRegistrations = () => {
   // Fetch registrations
   const { data: responseData, isLoading } = useManagerRegistrations({
-    limit: 1000,
+    limit: 10,
   });
   const { mutate: updateStatus } = useUpdateRegistrationStatus();
 

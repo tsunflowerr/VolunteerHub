@@ -16,10 +16,18 @@ const ROLES = {
   },
   manager: {
     events: {
-      manage: (user, event) =>
-        event.managerId?._id === user.id || event.managerId === user.id,
+      manage: (user, event) => {
+        const userId = user.id || user._id;
+        const managerId = event.managerId?._id || event.managerId;
+        return managerId === userId;
+      },
       register: false,
       bookmark: true,
+      discussion: (user, event) => {
+        const userId = user.id || user._id;
+        const managerId = event.managerId?._id || event.managerId;
+        return managerId === userId;
+      },
     },
     dashboard: {
       view: true,
@@ -30,6 +38,9 @@ const ROLES = {
       manage: false,
       register: true,
       bookmark: true,
+      discussion: (user, event) =>
+        event.currentUserState === 'approved' ||
+        event.currentUserState === 'confirmed',
     },
     dashboard: {
       view: false,
@@ -76,4 +87,5 @@ export const ACTIONS = {
   REGISTER: 'register',
   BOOKMARK: 'bookmark',
   VIEW: 'view',
+  DISCUSSION: 'discussion',
 };

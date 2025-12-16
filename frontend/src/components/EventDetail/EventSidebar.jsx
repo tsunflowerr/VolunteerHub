@@ -16,7 +16,7 @@ import {
   useRegisterEvent,
   useUnregisterEvent,
   useMyRegistrations,
-} from '../../hooks/useRegistrations';
+} from '../../hooks/useEvents';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 const EventSidebar = ({
@@ -86,23 +86,37 @@ const EventSidebar = ({
     event.capacity && event.registrationsCount >= event.capacity;
 
   const handleManageEvent = () => {
-    navigate(`/events/${event._id}/manage`);
+    navigate(`/manager/events/${event._id}`);
   };
+
+  // Combine event data with user state for ABAC checks
+  const permissionData = { ...event, currentUserState };
 
   // Attribute-Based Access Control (ABAC) Logic
   const permissions = {
-    canManage: checkPermission(user, RESOURCES.EVENTS, ACTIONS.MANAGE, event),
+    canManage: checkPermission(
+      user,
+      RESOURCES.EVENTS,
+      ACTIONS.MANAGE,
+      permissionData
+    ),
     canRegister: checkPermission(
       user,
       RESOURCES.EVENTS,
       ACTIONS.REGISTER,
-      event
+      permissionData
     ),
     canBookmark: checkPermission(
       user,
       RESOURCES.EVENTS,
       ACTIONS.BOOKMARK,
-      event
+      permissionData
+    ),
+    canDiscuss: checkPermission(
+      user,
+      RESOURCES.EVENTS,
+      ACTIONS.DISCUSSION,
+      permissionData
     ),
   };
 
@@ -114,7 +128,7 @@ const EventSidebar = ({
 
   return (
     <aside className={styles['event-detail__sidebar']}>
-      {/* Discussion Card - Available for everyone */}
+      {/* Discussion Card - Available based on permissions */}
 
       {/* Registration Card */}
       <div className={styles['event-detail__sidebar-card']}>
@@ -204,7 +218,8 @@ const EventSidebar = ({
                     <Ellipsis size={16} />
                   </span>
                   <p>
-                    Your registration is pending, we'll notify you once approved.
+                    Your registration is pending, we'll notify you once
+                    approved.
                   </p>
                 </div>
                 <button
@@ -216,11 +231,24 @@ const EventSidebar = ({
                 </button>
               </>
             )}
+
+            {currentUserState === 'cancelled' && (
+              <>
+                <div className={styles['event-detail__sidebar-status']}>
+                  <span
+                    className={`${styles['event-detail__sidebar-status-icon']} ${styles['red']}`}
+                  >
+                    <X size={16} />
+                  </span>
+                  <p>Your registration was not approved.</p>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
 
-      {!previewMode && (
+      {!previewMode && permissions.canDiscuss && (
         <div className={styles['event-detail__sidebar-card']}>
           <div className={styles['event-detail__sidebar-discussion-header']}>
             <MessageSquare size={24} />
