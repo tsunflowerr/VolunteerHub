@@ -59,8 +59,8 @@ export async function invalidateCache(...keys) {
     if (!keys.length) return;
     
     try {
-        const result = await redisClient.del(keys);
-        console.log(`🗑️ Invalidated ${result} cache key(s):`, keys);
+        await Promise.all(keys.map(key => redisClient.del(key)));
+        console.log(`🗑️ Invalidated cache key(s):`, keys);
     } catch (error) {
         console.error('⚠️ Cache invalidation error:', error.message);
     }
@@ -76,15 +76,24 @@ export async function invalidateCacheByPattern(pattern) {
         const keys = [];
         
         // Sử dụng SCAN để tìm tất cả keys match pattern
-        for await (const key of redisClient.scanIterator({ MATCH: pattern, COUNT: 100 })) {
-            keys.push(key);
+        for await (const result of redisClient.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+            if (Array.isArray(result)) {
+                keys.push(...result);
+            } else {
+                keys.push(result);
+            }
         }
         
-        if (keys.length > 0) {
-            // Phải spread array thành các arguments riêng lẻ -> SAI với Redis v4+
-            // Redis v4+ hỗ trợ array: .del(['key1', 'key2'])
-            await redisClient.del(keys);
-            console.log(`🗑️ Invalidated ${keys.length} cache key(s) matching pattern: ${pattern}`);
+        // Filter valid keys
+        const validKeys = keys.filter(k => k && typeof k === 'string');
+        
+        if (validKeys.length > 0) {
+            console.log(`Found ${validKeys.length} keys for pattern ${pattern}:`, validKeys);
+            // Delete sequentially to avoid issues
+            for (const key of validKeys) {
+                await redisClient.del(key);
+            }
+            console.log(`🗑️ Invalidated ${validKeys.length} cache key(s) matching pattern: ${pattern}`);
         } else {
             console.log(`ℹ️ No cache keys found for pattern: ${pattern}`);
         }

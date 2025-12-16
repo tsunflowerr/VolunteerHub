@@ -12,6 +12,7 @@ import {
   useAdminDeleteEvent,
   adminKeys,
 } from '../../hooks/useAdmin';
+import { eventKeys } from '../../hooks/useEvents';
 import styles from '../../components/Admin/EventsTable/EventsTable.module.css';
 
 function EventsManagement() {
@@ -109,14 +110,17 @@ function EventsManagement() {
           eventId,
           status: 'approved',
         });
-        removeEventFromCache(eventId);
+        // Invalidate public events list so the approved event appears there
+        queryClient.invalidateQueries({ queryKey: eventKeys.all });
+        // Ensure pending list is refreshed
+        queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
       } catch (err) {
         console.error('Failed to approve event:', err);
       } finally {
         setActionLoading(null);
       }
     },
-    [updateStatusMutation, removeEventFromCache]
+    [updateStatusMutation, queryClient]
   );
 
   const handleReject = useCallback(

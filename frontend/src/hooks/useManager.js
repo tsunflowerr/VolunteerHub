@@ -97,11 +97,8 @@ export const useUpdateEvent = () => {
     mutationKey: ['updateEvent'],
     mutationFn: managerApi.updateEvent,
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: eventKeys.all });
       queryClient.invalidateQueries({ queryKey: managerKeys.events() });
-      queryClient.invalidateQueries({
-        queryKey: eventKeys.detail(variables.id),
-      });
       toast.success('Event updated successfully!');
     },
     onError: (error) => {

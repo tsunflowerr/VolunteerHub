@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 import VolunteerListDialog from '../../components/Manager/VolunteerListDialog';
 import CategoryChip from '../../components/common/Category/CategoryChip';
-import { useEvent } from '../../hooks/useEvents';
+import { useEvent, eventKeys } from '../../hooks/useEvents';
 import {
   useDeleteEvent,
   useEventVolunteers,
@@ -26,6 +27,7 @@ import styles from './ManagerEventDetail.module.css';
 const ManagerEventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showVolunteersDialog, setShowVolunteersDialog] = useState(false);
 
   // Data Fetching
@@ -45,6 +47,7 @@ const ManagerEventDetail = () => {
     volunteersData?.volunteers?.map((v) => ({
       ...v,
       registrationStatus: v.registrationStatus,
+      completionStatus: v.registrationStatus,
     })) || [];
 
   const handleMarkComplete = (registrationIds) => {
@@ -69,6 +72,7 @@ const ManagerEventDetail = () => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       deleteMutation.mutate(id, {
         onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: eventKeys.all });
           navigate('/manager/events');
         },
       });
@@ -113,10 +117,12 @@ const ManagerEventDetail = () => {
           Back
         </button>
         <div className={styles.actions}>
-          <button className={styles.discussionBtn} onClick={handleDiscussion}>
-            <MessageSquare size={18} />
-            Discussion
-          </button>
+          {(event.status === 'approved' || event.status === 'completed') && (
+            <button className={styles.discussionBtn} onClick={handleDiscussion}>
+              <MessageSquare size={18} />
+              Discussion
+            </button>
+          )}
           <button className={styles.editBtn} onClick={handleEdit}>
             <Edit size={18} />
             Edit

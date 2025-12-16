@@ -45,7 +45,14 @@ export async function updateRegistrationStatus(req, res) {
     }
 
     // Update registration status
-    if (registration.status !== 'pending') {
+    if (status === 'completed') {
+      if (registration.status !== 'confirmed') {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot mark as completed. Volunteer must be confirmed first. Current: ${registration.status}`,
+        });
+      }
+    } else if (registration.status !== 'pending') {
       return res.status(400).json({
         success: false,
         message: `Cannot update registration that is already ${registration.status}`,

@@ -134,8 +134,8 @@ const ManagerEventForm = () => {
         activities: event.activities || '',
         prepare: event.prepare || '',
         location: event.location || '',
-        startDate: event.startDate ? event.startDate.slice(0, 16) : '',
-        endDate: event.endDate ? event.endDate.slice(0, 16) : '',
+        startDate: event.startDate ? event.startDate.slice(0, 10) : '',
+        endDate: event.endDate ? event.endDate.slice(0, 10) : '',
         category: event.categories?.map((c) => c._id || c) || [],
         capacity: event.capacity || '',
         thumbnail: event.thumbnail || '',
@@ -394,13 +394,13 @@ const ManagerEventForm = () => {
           {/* Date Range */}
           <div className={styles.dateRow}>
             <FormField
-              label="Start Date & Time"
+              label="Start Date"
               icon={Calendar}
               required
               error={errors.startDate}
             >
               <TextInput
-                type="datetime-local"
+                type="date"
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
@@ -409,13 +409,13 @@ const ManagerEventForm = () => {
             </FormField>
 
             <FormField
-              label="End Date & Time"
+              label="End Date"
               icon={Calendar}
               required
               error={errors.endDate}
             >
               <TextInput
-                type="datetime-local"
+                type="date"
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}

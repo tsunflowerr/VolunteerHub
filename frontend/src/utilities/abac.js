@@ -8,7 +8,8 @@ const ROLES = {
       manage: false, // Admins do not manage events directly
       register: false,
       bookmark: false, // Admins manage, don't bookmark
-      discussion: true,
+      discussion: (user, event) =>
+        event.status === 'approved' || event.status === 'completed',
     },
     dashboard: {
       view: true,
@@ -26,7 +27,10 @@ const ROLES = {
       discussion: (user, event) => {
         const userId = user.id || user._id;
         const managerId = event.managerId?._id || event.managerId;
-        return managerId === userId;
+        return (
+          managerId === userId &&
+          (event.status === 'approved' || event.status === 'completed')
+        );
       },
     },
     dashboard: {
@@ -39,8 +43,9 @@ const ROLES = {
       register: true,
       bookmark: true,
       discussion: (user, event) =>
-        event.currentUserState === 'approved' ||
-        event.currentUserState === 'confirmed',
+        (event.currentUserState === 'approved' ||
+          event.currentUserState === 'confirmed') &&
+        (event.status === 'approved' || event.status === 'completed'),
     },
     dashboard: {
       view: false,

@@ -35,12 +35,20 @@ const EventSidebar = ({
     isLoading: isBookmarkLoading,
   } = useToggleBookmark(event._id);
 
-  const { data: registrationsData, isLoading: isLoadingRegistrations } =
-    useMyRegistrations({ limit: 100 });
+  const {
+    data: registrationsData,
+    isLoading: isLoadingRegistrations,
+    refetch: refetchRegistrations,
+  } = useMyRegistrations({ limit: 100 });
 
   const { mutate: register, isPending: isRegistering } = useRegisterEvent();
-  const { mutate: unregister, isPending: isUnregistering } =
-    useUnregisterEvent();
+  const { mutate: unregister, isPending: isUnregistering } = useUnregisterEvent(
+    {
+      onSuccess: () => {
+        refetchRegistrations();
+      },
+    }
+  );
 
   const myRegistration = registrationsData?.data?.find(
     (r) => (r.eventId._id || r.eventId) === event._id
@@ -241,6 +249,19 @@ const EventSidebar = ({
                     <X size={16} />
                   </span>
                   <p>Your registration was not approved.</p>
+                </div>
+              </>
+            )}
+
+            {currentUserState === 'completed' && (
+              <>
+                <div className={styles['event-detail__sidebar-status']}>
+                  <span
+                    className={`${styles['event-detail__sidebar-status-icon']} ${styles['green']}`}
+                  >
+                    <Check size={16} />
+                  </span>
+                  <p>Thank you for contributing in the event!</p>
                 </div>
               </>
             )}
