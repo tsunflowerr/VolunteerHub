@@ -22,10 +22,6 @@ async function checkEventStatus(eventId) {
 
 
 export async function addComment(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const {eventId, postId} = req.params;  
         const {content} = req.body;
@@ -38,13 +34,12 @@ export async function addComment(req, res) {
             return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
         }
 
-        const post = await Post.findOne({_id: postId, eventId}).session(session);
+        const post = await Post.findOne({_id: postId, eventId});
         if(!post) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Post not found in this event'});
         }
 
-        // 🔹 Step 1: Create comment (với session)
+        // 🔹 Step 1: Create comment
         const comment = new Comment({
             postId,
             eventId,
@@ -52,17 +47,16 @@ export async function addComment(req, res) {
             author: req.user._id,
         });
 
-        const saved = await comment.save({ session });
+        const saved = await comment.save();
         await saved.populate('author', 'username email avatar');
 
-        // 🔹 Step 2: Update post count (với session)
+        // 🔹 Step 2: Update post count
         await Post.findByIdAndUpdate(
             postId, 
-            {$inc: {commentsCount: 1}},
-            { session }
+            {$inc: {commentsCount: 1}}
         );
 
-        // 🔹 Step 3: Create notification (với session, nếu cần)
+        // 🔹 Step 3: Create notification (nếu cần)
         if (post.author.toString() !== req.user._id.toString()) {
             const cacheKey = `comment_notification:${req.user._id}:${post.author}:comment:${postId}`;
             let shouldSendNotification = true;
@@ -83,7 +77,7 @@ export async function addComment(req, res) {
                     content: `${req.user.username} commented on your post "${post.title}".`,
                     post: postId,
                 });
-                await newNotification.save({ session });
+                await newNotification.save();
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
                 } catch (error) {
@@ -91,28 +85,16 @@ export async function addComment(req, res) {
                 }
             }
         }
-
-        // ✅ Tất cả thành công → COMMIT
-        await session.commitTransaction();
         
         res.status(201).json({success: true, comment: saved});
     }
     catch(error) {
-        // ❌ Có lỗi → ROLLBACK tất cả
-        await session.abortTransaction();
         console.error('Error adding comment:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 
 export async function replyComment(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const {eventId, postId, commentId} = req.params;
         const {content} = req.body;
@@ -126,13 +108,12 @@ export async function replyComment(req, res) {
             return res.status(eventCheck.status).json({ success: false, message: eventCheck.message });
         }
 
-        const parentComment = await Comment.findOne({_id: commentId, postId, eventId}).session(session);
+        const parentComment = await Comment.findOne({_id: commentId, postId, eventId});
         if(!parentComment) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Parent comment not found'});
         }
 
-        // 🔹 Step 1: Create reply (với session)
+        // 🔹 Step 1: Create reply
         const reply = new Comment({
             postId,
             eventId,
@@ -141,17 +122,16 @@ export async function replyComment(req, res) {
             parentComment: commentId,
         });
 
-        const saved = await reply.save({ session });
+        const saved = await reply.save();
         await saved.populate('author', 'username email avatar');
 
-        // 🔹 Step 2: Update post count (với session)
+        // 🔹 Step 2: Update post count
         await Post.findByIdAndUpdate(
             postId, 
-            {$inc: {commentsCount: 1}},
-            { session }
+            {$inc: {commentsCount: 1}}
         );
 
-        // 🔹 Step 3: Create notification (với session, nếu cần)
+        // 🔹 Step 3: Create notification (nếu cần)
         if (parentComment.author.toString() !== req.user._id.toString()) {
             const cacheKey = `comment_reply_notification:${req.user._id}:${parentComment.author}:comment_reply:${commentId}`;
             let shouldSendNotification = true;
@@ -172,7 +152,7 @@ export async function replyComment(req, res) {
                     content: `${req.user.username} replied to your comment.`,
                     post: postId,
                 });
-                await newNotification.save({ session });
+                await newNotification.save();
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
                 } catch (error) {
@@ -181,19 +161,11 @@ export async function replyComment(req, res) {
             }
         }
 
-        // ✅ Tất cả thành công → COMMIT
-        await session.commitTransaction();
-
         res.status(201).json({success: true, comment: saved});
     }
     catch(error) {
-        // ❌ Có lỗi → ROLLBACK tất cả
-        await session.abortTransaction();
         console.error('Error replying to comment:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 
@@ -353,15 +325,11 @@ export async function updateComment(req, res) {
 }
 
 export async function deleteComment(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {   
         const {commentId} = req.params;
         
-        const comment = await Comment.findById(commentId).select('author postId eventId parentComment').session(session);
+        const comment = await Comment.findById(commentId).select('author postId eventId parentComment');
         if(!comment) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Comment not found'});
         }
         const isOwner = comment.author.toString() === req.user._id.toString();
@@ -369,16 +337,15 @@ export async function deleteComment(req, res) {
         
         let isManager = false;
         if(!isOwner && !isAdmin) {
-            const event = await Event.findById(comment.eventId).select('managerId').session(session);
+            const event = await Event.findById(comment.eventId).select('managerId');
             isManager = event && event.managerId.toString() === req.user._id.toString();
         }
 
         if(!isOwner && !isAdmin && !isManager) {
-            await session.abortTransaction();
             return res.status(403).json({success: false, message: 'You are not authorized to delete this comment'});
         }
 
-        const childComments = await Comment.find({parentComment: commentId}).select('_id').session(session);
+        const childComments = await Comment.find({parentComment: commentId}).select('_id');
         const allCommentIds = [commentId, ...childComments.map(c => c._id)];
         const totalDeleteCount = allCommentIds.length;
         
@@ -389,7 +356,7 @@ export async function deleteComment(req, res) {
             Like.deleteMany({
                 likeableId: { $in: allCommentIds.map(id => id.toString()) },
                 likeableType: 'comment'
-            }, { session }),
+            }),
             
             // 2. Delete all notifications
             NotificationModel.deleteMany({
@@ -397,7 +364,7 @@ export async function deleteComment(req, res) {
                     { content: { $regex: commentId.toString() } },
                     ...childComments.map(c => ({ content: { $regex: c._id.toString() } }))
                 ]
-            }, { session }),
+            }),
             
             // 3. Delete comments and replies
             Comment.deleteMany({
@@ -405,7 +372,7 @@ export async function deleteComment(req, res) {
                     {_id: commentId},
                     {parentComment: commentId}
                 ]
-            }, { session })
+            })
         ]);
         
         console.log(`   ✅ Deleted ${deletedLikes.deletedCount} likes`);
@@ -415,12 +382,8 @@ export async function deleteComment(req, res) {
         // 4. Update post comment count (phải chạy sau khi delete xong)
         await Post.findByIdAndUpdate(
             comment.postId, 
-            {$inc: {commentsCount: -totalDeleteCount}},
-            { session }
+            {$inc: {commentsCount: -totalDeleteCount}}
         );
-
-        // ✅ Tất cả thành công → COMMIT
-        await session.commitTransaction();
 
         res.status(200).json({
             success: true, 
@@ -433,12 +396,7 @@ export async function deleteComment(req, res) {
         });
     }
     catch(error) {
-        // ❌ Có lỗi → ROLLBACK tất cả
-        await session.abortTransaction();
         console.error('Error deleting comment:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }

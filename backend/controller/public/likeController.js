@@ -7,50 +7,41 @@ import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
 
 export async function likeEvent(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const {eventId} = req.params;
         const userId = req.user._id;
         
-        const isLike = await Like.findOne({userId, likeableId: eventId, likeableType: 'event'}).session(session);
+        const isLike = await Like.findOne({userId, likeableId: eventId, likeableType: 'event'});
         
         // UNLIKE: Xóa like và giảm count
         if(isLike) {
-            await Like.deleteOne({_id: isLike._id}, { session });
+            await Like.deleteOne({_id: isLike._id});
             const event = await Event.findByIdAndUpdate(
                 eventId, 
                 {$inc: {likesCount: -1}}, 
-                {new: true, session}
+                {new: true}
             );
             if(!event) {
-                await session.abortTransaction();
                 return res.status(404).json({success: false, message: 'Event not found'});
             }
             
-            // ✅ COMMIT
-            await session.commitTransaction();
             return res.status(200).json({success: true, action: 'unliked', totalLikes: event.likesCount});
         }
         
         // LIKE: Tạo like + tăng count + notification
         const newLike = new Like({userId, likeableId: eventId, likeableType: 'event'});
-        await newLike.save({ session });
+        await newLike.save();
         
         const event = await Event.findByIdAndUpdate(
             eventId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, select: 'likesCount name managerId', session}
+            {new: true, select: 'likesCount name managerId'}
         );
         if(!event) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Event not found'});
         }
         
-        // Notification (với session) - FIXED LOGIC
-        // Không gửi notification nếu user tự like event của mình
+        // Notification - FIXED LOGIC
         if(!userId.equals(event.managerId)) {
             const cacheKey = `like_notification:${userId}:${event.managerId}:like:${eventId}`;
             let shouldSendNotification = true;
@@ -62,7 +53,6 @@ export async function likeEvent(req, res) {
                 }
             } catch(redisError) {
                 console.error('Redis error:', redisError);
-                // Fallback: vẫn gửi notification nếu Redis lỗi
             }
 
             if(shouldSendNotification) {
@@ -73,7 +63,7 @@ export async function likeEvent(req, res) {
                     content: `${req.user.username} liked your event "${event.name}".`,
                     event: eventId,
                 });
-                await newNotification.save({ session });
+                await newNotification.save();
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
@@ -83,65 +73,49 @@ export async function likeEvent(req, res) {
             }
         }
         
-        // ✅ COMMIT
-        await session.commitTransaction();
         return res.status(200).json({success: true, action: 'liked', totalLikes: event.likesCount});
     } catch (error) {
-        // ❌ ROLLBACK
-        await session.abortTransaction();
         console.error('Error in likeEvent:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 
 export async function likePost(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const {postId} = req.params;
         const userId = req.user._id;
         
-        const isLike = await Like.findOne({userId, likeableId: postId, likeableType: 'post'}).session(session);
+        const isLike = await Like.findOne({userId, likeableId: postId, likeableType: 'post'});
         
         // UNLIKE
         if(isLike) {
-            await Like.deleteOne({_id: isLike._id}, { session });
+            await Like.deleteOne({_id: isLike._id});
             const post = await Post.findByIdAndUpdate(
                 postId, 
                 {$inc: {likesCount: -1}}, 
-                {new: true, session}
+                {new: true}
             );
             if(!post) {
-                await session.abortTransaction();
                 return res.status(404).json({success: false, message: 'Post not found'});
             }
             
-            // ✅ COMMIT
-            await session.commitTransaction();
             return res.status(200).json({success: true, action: 'unliked', totalLikes: post.likesCount});
         }
         
         // LIKE
         const newLike = new Like({userId, likeableId: postId, likeableType: 'post'});
-        await newLike.save({ session });
+        await newLike.save();
         
         const post = await Post.findByIdAndUpdate(
             postId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, select: 'likesCount author', session}
+            {new: true, select: 'likesCount author'}
         );
         if(!post) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Post not found'});
         }
 
-        // Notification (với session)
-        // Không gửi notification nếu user tự like post của mình
+        // Notification
         if(!userId.equals(post.author)) {
             const cacheKey = `like_notification:${userId}:${post.author}:like:${postId}`;
             let shouldSendNotification = true;
@@ -163,7 +137,7 @@ export async function likePost(req, res) {
                     content: `${req.user.username} liked your post.`,
                     post: postId,
                 });
-                await newNotification.save({ session });
+                await newNotification.save();
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
@@ -173,65 +147,49 @@ export async function likePost(req, res) {
             }
         }
         
-        // ✅ COMMIT
-        await session.commitTransaction();
         return res.status(200).json({success: true, action: 'liked', totalLikes: post.likesCount});
     } catch (error) {
-        // ❌ ROLLBACK
-        await session.abortTransaction();
         console.error('Error in likePost:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 
 export async function likeComment(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const {commentId} = req.params;
         const userId = req.user._id;
         
-        const isLike = await Like.findOne({userId, likeableId: commentId, likeableType: 'comment'}).session(session);
+        const isLike = await Like.findOne({userId, likeableId: commentId, likeableType: 'comment'});
         
         // UNLIKE
         if(isLike) {
-            await Like.deleteOne({_id: isLike._id}, { session });
+            await Like.deleteOne({_id: isLike._id});
             const comment = await Comment.findByIdAndUpdate(
                 commentId, 
                 {$inc: {likesCount: -1}}, 
-                {new: true, session}
+                {new: true}
             );
             if(!comment) {
-                await session.abortTransaction();
                 return res.status(404).json({success: false, message: 'Comment not found'});
             }
             
-            // ✅ COMMIT
-            await session.commitTransaction();
             return res.status(200).json({success: true, action: 'unliked', totalLikes: comment.likesCount});
         }
         
         // LIKE
         const newLike = new Like({userId, likeableId: commentId, likeableType: 'comment'});
-        await newLike.save({ session });
+        await newLike.save();
         
         const comment = await Comment.findByIdAndUpdate(
             commentId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, select: 'likesCount author postId', session}
+            {new: true, select: 'likesCount author postId'}
         );
         if(!comment) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: 'Comment not found'});
         }
         
-        // Notification (với session)
-        // Không gửi notification nếu user tự like comment của mình
+        // Notification
         if(!userId.equals(comment.author)) {
             const cacheKey = `like_notification:${userId}:${comment.author}:like:${commentId}`;
             let shouldSendNotification = true;
@@ -243,7 +201,6 @@ export async function likeComment(req, res) {
                 }
             } catch (redisError) {
                 console.error('Redis error:', redisError);
-                // Fallback: vẫn gửi notification nếu Redis lỗi
             }
             
             if(shouldSendNotification) {
@@ -254,7 +211,7 @@ export async function likeComment(req, res) {
                     content: `${req.user.username} liked your comment.`,
                     post: comment.postId,
                 });
-                await newNotification.save({ session });
+                await newNotification.save();
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
@@ -264,16 +221,9 @@ export async function likeComment(req, res) {
             }
         }
         
-        // ✅ COMMIT
-        await session.commitTransaction();
         return res.status(200).json({success: true, action: 'liked', totalLikes: comment.likesCount});
     } catch (error) {
-        // ❌ ROLLBACK
-        await session.abortTransaction();
         console.error('Error in likeComment:', error);
         res.status(500).json({success: false, message: 'Server error'});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }

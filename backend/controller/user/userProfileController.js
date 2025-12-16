@@ -142,16 +142,12 @@ export async function updateUserProfile(req, res) {
 }
 
 export async function deleteUser(req, res) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const userId = req.user._id;
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
-    const user = await User.findById(userObjectId).session(session);
+    const user = await User.findById(userObjectId);
     if (!user) {
-      await session.abortTransaction();
       return res
         .status(404)
         .json({ success: false, message: 'User not found' });
@@ -159,16 +155,14 @@ export async function deleteUser(req, res) {
 
     const userEvents = await Event.find({ managerId: userObjectId })
       .select('_id')
-      .lean()
-      .session(session);
+      .lean();
     const eventIds = userEvents.map((e) => e._id);
 
     const [eventPosts, userPosts] = await Promise.all([
       Post.find({ eventId: { $in: eventIds } })
         .select('_id')
-        .lean()
-        .session(session),
-      Post.find({ author: userObjectId }).select('_id').lean().session(session),
+        .lean(),
+      Post.find({ author: userObjectId }).select('_id').lean(),
     ]);
 
     const allPostIds = [
@@ -181,19 +175,18 @@ export async function deleteUser(req, res) {
       postId: { $in: allPostIds },
     })
       .select('_id')
-      .lean()
-      .session(session);
+      .lean();
     const commentsByUserPostIds = commentsByUserPosts.map((c) => c._id);
     const commentsByUserPostIdsStr = commentsByUserPostIds.map((id) =>
       id.toString()
     );
 
     await Promise.all([
-      Event.deleteMany({ managerId: userObjectId }).session(session),
+      Event.deleteMany({ managerId: userObjectId }),
 
       Post.deleteMany({
         $or: [{ eventId: { $in: eventIds } }, { author: userObjectId }],
-      }).session(session),
+      }),
 
       Comment.deleteMany({
         $or: [
@@ -201,7 +194,7 @@ export async function deleteUser(req, res) {
           { postId: { $in: allPostIds } },
           { author: userObjectId },
         ],
-      }).session(session),
+      }),
 
       Like.deleteMany({
         $or: [
@@ -216,11 +209,11 @@ export async function deleteUser(req, res) {
             likeableType: 'comment',
           },
         ],
-      }).session(session),
+      }),
 
       Registration.deleteMany({
         $or: [{ userId: userObjectId }, { eventId: { $in: eventIds } }],
-      }).session(session),
+      }),
 
       Notification.deleteMany({
         $or: [
@@ -229,27 +222,23 @@ export async function deleteUser(req, res) {
           { event: { $in: eventIds } },
           { post: { $in: allPostIds } },
         ],
-      }).session(session),
+      }),
 
       User.updateMany(
         { bookmarks: userObjectId },
         { $pull: { bookmarks: userObjectId } }
-      ).session(session),
+      ),
     ]);
 
-    await User.findByIdAndDelete(userObjectId).session(session);
+    await User.findByIdAndDelete(userObjectId);
 
-    await session.commitTransaction();
     res.status(200).json({
       success: true,
       message: 'User and all related data deleted successfully',
     });
   } catch (err) {
-    await session.abortTransaction();
     console.error('Error deleting user:', err);
     res.status(500).json({ success: false, message: 'Server error' });
-  } finally {
-    session.endSession();
   }
 }
 

@@ -76,29 +76,22 @@ export async function updateEvent(req, res) {
 }
 
 export async function deleteEvent(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     const eventId = req.params.id;
     const managerId = req.user._id;
     
     try {
         // Check if event exists and belongs to manager
-        const event = await Event.findById(eventId).session(session);
+        const event = await Event.findById(eventId);
         if (!event) {
-            await session.abortTransaction();
             return res.status(404).json({success: false, message: "Event not found"});
         }
         
         // Check ownership
         if (event.managerId.toString() !== managerId.toString()) {
-            await session.abortTransaction();
             return res.status(403).json({success: false, message: "Unauthorized to delete this event"});
         }
         
-        const postIds = await Post.find({ eventId }).distinct('_id').session(session);
-        const postIdsStr = postIds.map(id => id.toString());
+        const postIds = await Post.find({ eventId }).distinct('_id');
         
         // Get all comment IDs to delete their likes
         const commentIds = await Comment.find({ 
@@ -106,10 +99,8 @@ export async function deleteEvent(req, res) {
                 { eventId },
                 { postId: { $in: postIds } }
             ]
-        }).distinct('_id').session(session);
-        const commentIdsStr = commentIds.map(id => id.toString());
+        }).distinct('_id');
         
-        // � CASCADE DELETE PARALLEL (chạy song song để nhanh hơn)
         const [
             deletedComments,
             deletedLikes,
@@ -124,40 +115,36 @@ export async function deleteEvent(req, res) {
                     { eventId },
                     { postId: { $in: postIds } }
                 ]
-            }, { session }),
+            }),
             
             Like.deleteMany({
                 $or: [
                     { likeableId: eventId.toString(), likeableType: 'event' },
-                    { likeableId: { $in: postIdsStr }, likeableType: 'post' },
-                    { likeableId: { $in: commentIdsStr }, likeableType: 'comment' }
+                    { likeableId: { $in: postIds.map(id => id.toString()) }, likeableType: 'post' },
+                    { likeableId: { $in: commentIds.map(id => id.toString()) }, likeableType: 'comment' }
                 ]
-            }, { session }),
+            }),
             
-            Registration.deleteMany({ eventId }, { session }),
+            Registration.deleteMany({ eventId }),
             
             Notification.deleteMany({ 
                 $or: [
                     { event: eventId },
                     { post: { $in: postIds } }
                 ]
-            }, { session }),
+            }),
             
             User.updateMany(
                 { bookmarks: eventId },
-                { $pull: { bookmarks: eventId } },
-                { session }
+                { $pull: { bookmarks: eventId } }
             ),
             
-            Post.deleteMany({ eventId }, { session }),
+            Post.deleteMany({ eventId }),
             
-            Event.findByIdAndDelete(eventId, { session })
+            Event.findByIdAndDelete(eventId)
         ]);
         
-        // ✅ COMMIT
-        await session.commitTransaction();
-        
-        // Xóa cache sau khi delete event (không cần session)
+        // Xóa cache sau khi delete event
         await invalidateCacheByPattern('events:*');
         await invalidateCacheByPattern('search:events:*');
         await invalidateCacheByPattern(`event:detail:*`);
@@ -175,13 +162,8 @@ export async function deleteEvent(req, res) {
             }
         });
     } catch (error) {
-        // ❌ ROLLBACK
-        await session.abortTransaction();
         console.error("Error deleting event:", error);
         res.status(500).json({success: false, message: "Failed to delete event"});
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 

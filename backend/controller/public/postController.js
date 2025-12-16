@@ -7,16 +7,12 @@ import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 
 export async function createPost(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const eventId = req.params.eventId;
         const { title, content, image } = req.body;
         
-        const event = await Event.findById(eventId).session(session);
+        const event = await Event.findById(eventId);
         if (!event) {
-            await session.abortTransaction();
             return res.status(404).json({
                 success: false,
                 message: 'Event not found'
@@ -24,7 +20,6 @@ export async function createPost(req, res) {
         }
         
         if(event.status === 'pending' || event.status === 'rejected' || event.status === 'draft') {
-            await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot create post when event is not approved' 
@@ -39,13 +34,12 @@ export async function createPost(req, res) {
             eventId
         });
 
-        let saved = await post.save({ session });
+        let saved = await post.save();
         saved = await saved.populate('author', 'username email avatar');
 
         await Event.findByIdAndUpdate(
             eventId, 
-            { $inc: { postsCount: 1 } },
-            { session }
+            { $inc: { postsCount: 1 } }
         );
 
         let shouldSendNotification = true;
@@ -67,7 +61,7 @@ export async function createPost(req, res) {
                 content: `A new post has been created in your event "${event.name}".`,
                 event: eventId,
             });
-            await newNotification.save({ session });
+            await newNotification.save();
             try {
                 await redisClient.setEx(cacheKey, 300, '1');
             }
@@ -76,21 +70,16 @@ export async function createPost(req, res) {
             }
         }
 
-        await session.commitTransaction();
-
         res.status(201).json({
             success: true,
             post: saved
         });
     } catch (error) {
-        await session.abortTransaction();
         console.error('Error creating post:', error);
         res.status(500).json({
             success: false,
             message: 'Server error'
         });
-    } finally {
-        session.endSession();
     }
 }
 
@@ -130,22 +119,17 @@ export async function getAllPosts(req, res) {
 }
 
 export async function updatePost(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const { eventId, postId } = req.params;
         const { title, content, image } = req.body;
         
-        const event = await Event.findById(eventId).session(session);
+        const event = await Event.findById(eventId);
         if (!event) {
-            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Event not found' });
         }
         
         const now = new Date();
         if (event.endDate && now > event.endDate) {
-            await session.abortTransaction();
             return res.status(400).json({ 
                 success: false, 
                 message: 'Cannot update post after event has ended' 
@@ -166,39 +150,29 @@ export async function updatePost(req, res) {
                 author: req.user._id
             },
             updateData,
-            { new: true, runValidators: true, session }
+            { new: true, runValidators: true }
         ).populate('author', 'username email avatar');
         
         if (!updatedPost) {
-            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Post not found or you are not the author' });
         }
-        
-        await session.commitTransaction();
         
         res.status(200).json({ success: true, post: updatedPost });
         
     } catch(error) {
-        await session.abortTransaction();
         console.error('Error updating post:', error);
         res.status(500).json({ success: false, message: 'Server error' });
-    } finally {
-        session.endSession();
     }
 }
 
 export async function deletePost(req, res) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const { eventId, postId } = req.params;
         const userId = req.user._id;
         const userRole = req.user.role;
 
-        const post = await Post.findOne({ _id: postId, eventId: eventId }).populate('eventId').session(session);
+        const post = await Post.findOne({ _id: postId, eventId: eventId }).populate('eventId');
         if(!post) {
-            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Post not found' });
         }
         
@@ -208,7 +182,6 @@ export async function deletePost(req, res) {
         const isAuthor = post.author.toString() === userId.toString();
         
         if (!isAdmin && !isManager && !isAuthor) {
-            await session.abortTransaction();
             return res.status(403).json({ 
                 success: false, 
                 message: 'Unauthorized: You do not have permission to delete this post' 
@@ -216,21 +189,20 @@ export async function deletePost(req, res) {
         }
         
         const [deletedComments, deletedLikes, deletedNotifications] = await Promise.all([
-            Comment.deleteMany({ postId: postId }, { session }),
+            Comment.deleteMany({ postId: postId }),
             Like.deleteMany({ 
                 likeableId: postId.toString(), 
                 likeableType: 'post' 
-            }, { session }),
-            Notification.deleteMany({ post: postId }, { session })
+            }),
+            Notification.deleteMany({ post: postId })
         ]);
         
         await Promise.all([
-            Post.findByIdAndDelete(postId, { session }),
+            Post.findByIdAndDelete(postId),
             Event.findByIdAndUpdate(eventId, { 
                 $inc: { postsCount: -1 }
-            }, { session })
+            })
         ]);
-        await session.commitTransaction();
         
         res.status(200).json({ 
             success: true, 
@@ -243,10 +215,7 @@ export async function deletePost(req, res) {
         });
         
     } catch(error) {
-        await session.abortTransaction();
         console.error('Error deleting post:', error);
         res.status(500).json({ success: false, message: 'Server error' });
-    } finally {
-        session.endSession();
     }
 }

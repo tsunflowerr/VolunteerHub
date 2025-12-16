@@ -7,10 +7,6 @@ import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 
 export async function updateRegistrationStatus(req, res) {
-    // 🔒 START TRANSACTION
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
     try {
         const { registrationId } = req.params;
         const { status } = req.body;
@@ -20,11 +16,9 @@ export async function updateRegistrationStatus(req, res) {
         }
 
         const registration = await Registration.findOne({ _id: registrationId })
-            .populate('eventId')
-            .session(session);
+            .populate('eventId');
 
         if (!registration) {
-            await session.abortTransaction();
             return res.status(404).json({ 
                 success: false, 
                 message: "Registration not found" 
@@ -35,7 +29,6 @@ export async function updateRegistrationStatus(req, res) {
         
         // Authorization check: Ensure the event belongs to the current manager
         if (event.managerId.toString() !== req.user._id.toString()) {
-            await session.abortTransaction();
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized: This registration is not for your event"
@@ -44,17 +37,16 @@ export async function updateRegistrationStatus(req, res) {
 
         // Update registration status
         if (registration.status !== "pending") {
-            await session.abortTransaction();
             return res.status(400).json({
                 success: false,
                 message: `Cannot update registration that is already ${registration.status}`
             });
         }
 
-        // 🔹 Update registration (với session)
+        // 🔹 Update registration
         registration.status = status;
         registration.reviewedAt = new Date();
-        await registration.save({ session });
+        await registration.save();
 
         // Use helper function to generate notification content
         const notificationContent = generateNotificationContent(
@@ -90,9 +82,6 @@ export async function updateRegistrationStatus(req, res) {
             console.error("Error checking Redis cache:", error);
         }
 
-        // ✅ COMMIT trước khi send notification
-        await session.commitTransaction();
-
         if (shouldSendNotification) {
             createAndSendNotification(volunteerNotificationData, volunteerPushPayload);
             try {
@@ -104,13 +93,8 @@ export async function updateRegistrationStatus(req, res) {
 
         res.status(200).json({ success: true, registration });
     } catch (error) {
-        // ❌ ROLLBACK
-        await session.abortTransaction();
         console.error("Error updating registration status:", error);
         res.status(500).json({ success: false, message: "Server error" });
-    } finally {
-        // 🔓 Đóng session
-        session.endSession();
     }
 }
 
