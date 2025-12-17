@@ -59,6 +59,7 @@ export const useAddComment = () => {
     onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: commentKeys.byPost(variables.postId) });
       queryClient.invalidateQueries({ queryKey: postKeys.byEvent(variables.eventId) });
+      queryClient.invalidateQueries({ queryKey: postKeys.detail(variables.postId) });
       if (!error) toast.success('Comment added');
     },
   });
@@ -103,6 +104,7 @@ export const useDeleteComment = () => {
       queryClient.invalidateQueries({ queryKey: commentKeys.byPost(variables.postId) });
       // Invalidate posts to update comment count
       queryClient.invalidateQueries({ queryKey: postKeys.byEvent(variables.eventId) });
+      queryClient.invalidateQueries({ queryKey: postKeys.detail(variables.postId) });
       toast.success('Comment deleted');
     },
     onError: (error) => {

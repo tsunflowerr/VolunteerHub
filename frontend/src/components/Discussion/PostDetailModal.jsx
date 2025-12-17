@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   X,
@@ -23,6 +24,7 @@ import {
   useDeleteComment,
   useLikeComment,
 } from '../../hooks/useComment';
+import { usePost, useLikePost } from '../../hooks/usePosts';
 
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
@@ -250,26 +252,33 @@ const CommentItem = ({
 };
 
 const PostDetailModal = ({
-  post,
+  post: initialPost, // Optional now, used for fallback data
   onClose,
-  onLike,
-  eventId,
+  eventId, // Can also be got from params, but prop is fine
   currentUser,
   event,
 }) => {
+  const { postId } = useParams();
   const [newComment, setNewComment] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const commentInputRef = useRef(null);
 
-  const { data: commentsData, isLoading } = usePostComments(eventId, post._id);
+  // Use postId from URL
+  const { data: postData } = usePost(eventId, postId);
+  
+  // Merge initialPost (if provided) with fetched data
+  const post = postData?.post || initialPost || { _id: postId, author: {}, content: '', image: [] };
+
+  const { data: commentsData, isLoading } = usePostComments(eventId, postId);
   const comments = commentsData?.comments || [];
-  console.log('Comments Data:', commentsData);
+  // console.log('Comments Data:', commentsData);
 
   const addCommentMutation = useAddComment();
   const replyCommentMutation = useReplyComment();
   const updateCommentMutation = useUpdateComment();
   const deleteCommentMutation = useDeleteComment();
   const likeCommentMutation = useLikeComment();
+  const likePostMutation = useLikePost();
 
   // Focus comment input on mount
   useEffect(() => {
@@ -278,14 +287,18 @@ const PostDetailModal = ({
     }, 300);
   }, []);
 
+  const handleLikePost = () => {
+    likePostMutation.mutate({ eventId, postId });
+  };
+
   const handleLikeComment = (commentId) => {
-    likeCommentMutation.mutate({ eventId, postId: post._id, commentId });
+    likeCommentMutation.mutate({ eventId, postId, commentId });
   };
 
   const handleReply = (parentId, text) => {
     replyCommentMutation.mutate({
       eventId,
-      postId: post._id,
+      postId,
       commentId: parentId,
       content: text,
     });
@@ -294,7 +307,7 @@ const PostDetailModal = ({
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
     addCommentMutation.mutate(
-      { eventId, postId: post._id, content: newComment.trim() },
+      { eventId, postId, content: newComment.trim() },
       { onSuccess: () => setNewComment('') }
     );
   };
@@ -302,7 +315,7 @@ const PostDetailModal = ({
   const handleUpdateComment = (commentId, content) => {
     updateCommentMutation.mutate({
       eventId,
-      postId: post._id,
+      postId,
       commentId,
       content,
     });
@@ -310,7 +323,7 @@ const PostDetailModal = ({
 
   const handleDeleteComment = (commentId) => {
     if (window.confirm('Are you sure you want to delete this comment?')) {
-      deleteCommentMutation.mutate({ eventId, postId: post._id, commentId });
+      deleteCommentMutation.mutate({ eventId, postId, commentId });
     }
   };
 
@@ -401,7 +414,7 @@ const PostDetailModal = ({
               className={`${styles.actionBtn} ${
                 post.isLiked ? styles.liked : ''
               }`}
-              onClick={() => onLike(post._id)}
+              onClick={handleLikePost}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

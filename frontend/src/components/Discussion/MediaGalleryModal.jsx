@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image, Video, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { useEventMedia } from '../../hooks/usePosts';
 import styles from './MediaGalleryModal.module.css';
 
-const MediaGalleryModal = ({ media, filter, onFilterChange, onClose }) => {
+const MediaGalleryModal = ({ eventId, filter, onFilterChange, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(null);
+  
+  const { data: mediaData, isLoading } = useEventMedia(eventId);
+  const media = mediaData?.media || [];
 
   // Filter media based on type
   const filteredMedia = media.filter((item) => {
     if (filter === 'all') return true;
     if (filter === 'images') return item.type === 'image';
-    if (filter === 'videos') return item.type === 'video';
     return true;
   });
 
@@ -70,15 +73,6 @@ const MediaGalleryModal = ({ media, filter, onFilterChange, onClose }) => {
           >
             <Image size={16} />
             Photos ({media.filter((m) => m.type === 'image').length})
-          </button>
-          <button
-            className={`${styles.filterTab} ${
-              filter === 'videos' ? styles.active : ''
-            }`}
-            onClick={() => onFilterChange('videos')}
-          >
-            <Video size={16} />
-            Videos ({media.filter((m) => m.type === 'video').length})
           </button>
         </div>
 

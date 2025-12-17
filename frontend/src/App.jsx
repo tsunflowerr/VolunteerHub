@@ -54,6 +54,7 @@ const App = () => {
           <Route index element={<Events />} />
           <Route path=":id" element={<EventDetail />} />
           <Route path=":id/discussion" element={<EventDiscussion />} />
+          <Route path=":id/discussion/posts/:postId" element={<EventDiscussion />} />
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>

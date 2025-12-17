@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -25,8 +25,6 @@ import styles from './EventDiscussion.module.css';
 // Hooks
 import {
   useEvent,
-  useRegisterEvent,
-  useUnregisterEvent,
   useMyRegistrations,
 } from '../../hooks/useEvents';
 import { useEventVolunteers } from '../../hooks/useManager';
@@ -36,11 +34,12 @@ import {
   useUpdatePost,
   useLikePost,
   useDeletePost,
+  useEventMedia,
 } from '../../hooks/usePosts';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 const EventDiscussion = () => {
-  const { id } = useParams();
+  const { id, postId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -48,14 +47,19 @@ const EventDiscussion = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [editingPost, setEditingPost] = useState(null); // New state for editing
-  const [selectedPost, setSelectedPost] = useState(null);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all');
 
   // Queries
   const { data: eventData, isLoading: isEventLoading } = useEvent(id);
   const { data: volunteersData } = useEventVolunteers(id);
-  const { data: postsData, isLoading: isPostsLoading } = useEventPosts(id);
+  const {
+    data: postsData,
+    isLoading: isPostsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useEventPosts(id);
   const { data: myRegistrations } = useMyRegistrations({ limit: 100 });
 
   // Mutations
@@ -63,13 +67,18 @@ const EventDiscussion = () => {
   const updatePostMutation = useUpdatePost(); // New mutation
   const likePostMutation = useLikePost();
   const deletePostMutation = useDeletePost();
-  const registerMutation = useRegisterEvent();
-  const unregisterMutation = useUnregisterEvent();
 
   // Derived Data
   const eventDetails = eventData?.event;
   const participants = volunteersData?.volunteers || [];
-  const posts = postsData?.posts || [];
+  const posts = useMemo(() => {
+    return postsData?.pages.flatMap((page) => page.posts) || [];
+  }, [postsData]);
+
+  const selectedPost = useMemo(() => {
+    if (!postId) return null;
+    return posts.find((p) => p._id === postId) || { _id: postId, author: {}, content: '', image: [] }; // Fallback for initial load
+  }, [posts, postId]);
 
   const isJoined = useMemo(() => {
     return myRegistrations?.data?.some(
@@ -169,20 +178,6 @@ const EventDiscussion = () => {
     deletePostMutation.mutate({ eventId: id, postId });
   };
 
-  const handleJoinLeave = () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    if (isJoined) {
-      if (window.confirm('Are you sure you want to leave this event?')) {
-        unregisterMutation.mutate(id);
-      }
-    } else {
-      registerMutation.mutate(id);
-    }
-  };
-
   const handleCreatePostClick = () => {
     if (!user) {
       navigate('/login');
@@ -203,21 +198,33 @@ const EventDiscussion = () => {
   }, [posts, searchQuery]);
 
   // Get all media from posts
-  const allMedia = useMemo(() => {
-    return posts.reduce((acc, post) => {
-      if (post.image && post.image.length > 0) {
-        post.image.forEach((img) => {
-          acc.push({
-            url: img,
-            type: img.includes('video') ? 'video' : 'image', // Basic check
-            postId: post._id,
-            author: post.author,
-          });
-        });
+  const { data: mediaData } = useEventMedia(id);
+  const allMedia = mediaData?.media || [];
+
+  // Infinite Scroll
+  const observerTarget = useRef(null);
+
+  useEffect(() => {
+    const currentTarget = observerTarget.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
       }
-      return acc;
-    }, []);
-  }, [posts]);
+    };
+  }, [hasNextPage, fetchNextPage]);
 
   if (isEventLoading || isPostsLoading) {
     return (
@@ -416,10 +423,10 @@ const EventDiscussion = () => {
                       key={post._id}
                       post={post}
                       onLike={handleLikePost}
-                      onComment={() => setSelectedPost(post)}
+                      onComment={() => navigate(`/events/${id}/discussion/posts/${post._id}`)}
                       onDelete={handleDeletePost}
                       onEdit={() => handleEditClick(post)}
-                      onClick={() => setSelectedPost(post)}
+                      onClick={() => navigate(`/events/${id}/discussion/posts/${post._id}`)}
                       delay={index * 0.1}
                       user={user}
                     />
@@ -434,6 +441,13 @@ const EventDiscussion = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Infinite Scroll Loader */}
+              {filteredPosts.length > 0 && (
+                <div ref={observerTarget} className={styles.loadingMore}>
+                  {isFetchingNextPage && <div className={styles.spinnerSmall}></div>}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -552,7 +566,7 @@ const EventDiscussion = () => {
         {selectedPost && (
           <PostDetailModal
             post={selectedPost}
-            onClose={() => setSelectedPost(null)}
+            onClose={() => navigate(`/events/${id}/discussion`)}
             onLike={handleLikePost}
             eventId={id}
             event={eventDetails} // Pass eventDetails object for ABAC
@@ -564,7 +578,7 @@ const EventDiscussion = () => {
       <AnimatePresence>
         {showMediaGallery && (
           <MediaGalleryModal
-            media={allMedia}
+            eventId={id}
             filter={mediaFilter}
             onFilterChange={setMediaFilter}
             onClose={() => setShowMediaGallery(false)}

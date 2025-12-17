@@ -11,7 +11,7 @@ import {
 import { createandUpdatePostSchema, eventPostParamsSchema } from '../validators/postValidator.js';
 import { createAndUpdateCommentSchema, eventPostCommentParamsSchema } from '../validators/commentValidator.js';
 import { getAllEvents, getEventById, getTrendingEvents, getEventsByCategorySlug, getUpcomingEvents, addBookMark, removeBookMark } from '../controller/public/eventController.js';
-import { createPost, getAllPosts, updatePost, deletePost } from '../controller/public/postController.js';
+import { createPost, getAllPosts, updatePost, deletePost, getSpecificPost, getAllMediaFromPost } from '../controller/public/postController.js';
 import { addComment, replyComment, getCommentsByPost, updateComment, deleteComment } from '../controller/public/commentController.js';
 import { likeEvent, likeComment, likePost } from '../controller/public/likeController.js';
 import { registerEvent, unregisterEvent, getMyRegistrations, getRegistrationDetail } from '../controller/public/registrationsController.js';
@@ -369,6 +369,10 @@ router.delete('/:eventId/bookmarks', authMiddleware, bookmarkLimiter, validate(e
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/:eventId/posts', optionalAuthMiddleware, validate(eventIdSchema, 'params'), getAllPosts);
+// Get specific post
+router.get('/:eventId/posts/:postId', optionalAuthMiddleware, validate(eventPostParamsSchema, 'params'), getSpecificPost);
+// Get all media from event posts
+router.get('/:eventId/media', optionalAuthMiddleware, validate(eventIdSchema, 'params'), getAllMediaFromPost);
 // Áp dụng rate limiting cho create, update và delete operations
 router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSchema, 'params'), upload.array('image', 5), mapFilesToBody, validate(createandUpdatePostSchema), createPost);
 

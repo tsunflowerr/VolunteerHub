@@ -2,8 +2,20 @@ import api from './api';
 
 export const postApi = {
   // Posts
-  getPostsByEvent: async (eventId) => {
-    const response = await api.get(`/events/${eventId}/posts`);
+  getPostsByEvent: async (eventId, { pageParam = 1 } = {}) => {
+    const response = await api.get(`/events/${eventId}/posts`, {
+      params: { page: pageParam, limit: 10 },
+    });
+    return response.data;
+  },
+
+  getPost: async ({ eventId, postId }) => {
+    const response = await api.get(`/events/${eventId}/posts/${postId}`);
+    return response.data;
+  },
+
+  getEventMedia: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/media`);
     return response.data;
   },
 

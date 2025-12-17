@@ -61,6 +61,21 @@
   background-color: #2a3f19;
 }
 
+.loadingMore {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.spinnerSmall {
+  width: 30px;
+  height: 30px;
+  border: 3px solid var(--color-gray-200);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 /* ========== Header Section ========== */
 .headerSection {
   background-color: var(--text-white-color);

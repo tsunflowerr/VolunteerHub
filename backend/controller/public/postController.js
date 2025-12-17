@@ -139,6 +139,93 @@ export async function getAllPosts(req, res) {
     }
 }
 
+export async function getSpecificPost(req, res) {
+    try {
+        const { eventId, postId } = req.params;
+        
+        const event = await Event.findById(eventId);
+        if(!event) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+        
+        const post = await Post.findOne({ _id: postId, eventId })
+            .populate('author', 'username email avatar')
+            .lean();
+
+        if (!post) {
+            return res.status(404).json({ success: false, message: 'Post not found' });
+        }
+
+        // Check if user has liked this post
+        if (req.user) {
+            const like = await Like.findOne({
+                userId: req.user._id,
+                likeableId: post._id,
+                likeableType: 'post'
+            }).lean();
+
+            post.isLiked = !!like;
+        } else {
+            post.isLiked = false;
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            post
+        });
+    } catch (error) {
+        console.error('Error fetching specific post:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+}
+
+export async function getAllMediaFromPost(req, res) {
+    try {
+        const { eventId } = req.params;
+        
+        const event = await Event.findById(eventId);
+        if(!event) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        // Find all posts in this event that have images
+        const postsWithMedia = await Post.find({ 
+            eventId, 
+            image: { $exists: true, $not: { $size: 0 } } 
+        })
+        .select('image author createdAt title')
+        .populate('author', 'username avatar')
+        .sort({ createdAt: -1 })
+        .lean();
+
+        // Flatten the structure to return a list of media items
+        const media = postsWithMedia.reduce((acc, post) => {
+            if (post.image && Array.isArray(post.image)) {
+                post.image.forEach(imgUrl => {
+                    acc.push({
+                        url: imgUrl,
+                        type: imgUrl.includes('video') ? 'video' : 'image', // Basic check, ideally store type
+                        postId: post._id,
+                        postTitle: post.title,
+                        author: post.author,
+                        createdAt: post.createdAt
+                    });
+                });
+            }
+            return acc;
+        }, []);
+
+        res.status(200).json({ 
+            success: true, 
+            media
+        });
+
+    } catch (error) {
+        console.error('Error fetching event media:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+}
+
 export async function updatePost(req, res) {
     try {
         const { eventId, postId } = req.params;
