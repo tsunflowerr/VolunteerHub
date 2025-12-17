@@ -11,7 +11,7 @@
 .centeredWrapper {
   max-width: 1250px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 10px;
 }
 
 /* Loading & Error */
@@ -67,28 +67,6 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   margin-bottom: 1.5rem;
   padding-top: 0.5rem;
-}
-
-.backBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  margin: 0.5rem 0 1rem 0;
-  background-color: transparent;
-  border: 1px solid var(--color-gray-300);
-  border-radius: 0.5rem;
-  color: var(--color-gray-700);
-  font-size: 0.938rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: fit-content;
-}
-
-.backBtn:hover {
-  background-color: var(--color-gray-100);
-  border-color: var(--color-gray-400);
 }
 
 /* Banner */
@@ -154,7 +132,7 @@
 }
 
 .eventName {
-  font-size: 1.625rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--text-black-color);
   margin: 0 0 0.75rem 0;
@@ -218,44 +196,10 @@
   border: 3px solid var(--text-white-color);
 }
 
-/* Join Button */
-.joinBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background-color: var(--primary-color);
-  color: var(--text-white-color);
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.938rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-left: auto;
-}
-
-.joinBtn:hover {
-  background-color: #2a3f19;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52, 79, 31, 0.3);
-}
-
-.joinBtn.joined {
-  background-color: var(--color-gray-200);
-  color: var(--color-gray-700);
-}
-
-.joinBtn.joined:hover {
-  background-color: #f44336;
-  color: var(--text-white-color);
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-}
-
 /* Search Wrapper */
 .searchWrapper {
   position: relative;
-  max-width: 400px;
+  max-width: 100%;
 }
 
 .searchIcon {
@@ -318,7 +262,7 @@
   gap: 1.25rem;
   max-width: 1250px;
   margin: 0 auto;
-  padding: 0;
+  padding: 0 10px;
 }
 
 /* Posts Column */
@@ -589,7 +533,7 @@
   }
 
   .eventName {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 
   .participantsInfo {
@@ -598,18 +542,8 @@
     gap: 1rem;
   }
 
-  .joinBtn {
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
-  }
-
   .searchWrapper {
     max-width: 100%;
-  }
-
-  .backBtn {
-    margin: 1rem;
   }
 
   .managerBar {

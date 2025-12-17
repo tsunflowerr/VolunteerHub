@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,7 +14,6 @@ import {
   MapPin,
   Info,
   Grid3X3,
-  Lock,
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth';
 import PostCard from '../../components/Discussion/PostCard';
@@ -23,267 +22,152 @@ import PostDetailModal from '../../components/Discussion/PostDetailModal';
 import MediaGalleryModal from '../../components/Discussion/MediaGalleryModal';
 import styles from './EventDiscussion.module.css';
 
+// Hooks
+import {
+  useEvent,
+  useRegisterEvent,
+  useUnregisterEvent,
+  useMyRegistrations,
+} from '../../hooks/useEvents';
+import { useEventVolunteers } from '../../hooks/useManager';
+import {
+  useEventPosts,
+  useCreatePost,
+  useLikePost,
+  useDeletePost,
+} from '../../hooks/usePosts';
+import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
+
 const EventDiscussion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   // State
-  const [event, setEvent] = useState(null);
-  const [participants, setParticipants] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all');
-  const [isJoined, setIsJoined] = useState(false);
 
-  // Current user info
-  const currentUser = user || {
-    _id: 'guest',
-    fullName: 'Guest',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
-  };
+  // Queries
+  const { data: eventData, isLoading: isEventLoading } = useEvent(id);
+  const { data: volunteersData } = useEventVolunteers(id);
+  const { data: postsData, isLoading: isPostsLoading } = useEventPosts(id);
+  const { data: myRegistrations } = useMyRegistrations({ limit: 100 });
 
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      // TODO: Replace with API calls
-      setTimeout(() => {
-        // Mock event data
-        setEvent({
-          _id: id,
-          name: 'Beach Cleanup Initiative',
-          description:
-            'Join us for a community beach cleanup event to protect our marine life and keep our beaches beautiful. This is a great opportunity to make a positive impact on our environment.',
-          about:
-            'This event aims to bring together volunteers from all walks of life to clean our local beaches. We will provide all necessary equipment and refreshments. Volunteers will learn about marine conservation and the impact of pollution on our oceans.',
-          location: 'Santa Monica Beach, 1550 PCH, Santa Monica, CA 90401',
-          startDate: '2025-12-20T08:00:00Z',
-          endDate: '2025-12-20T12:00:00Z',
-          thumbnail:
-            'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=1200',
-          capacity: 50,
-          registrationsCount: 32,
-          manager: {
-            _id: 'manager1',
-            username: 'John Manager',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager',
-          },
-          status: 'approved',
-        });
+  // Mutations
+  const createPostMutation = useCreatePost();
+  const likePostMutation = useLikePost();
+  const deletePostMutation = useDeletePost();
+  const registerMutation = useRegisterEvent();
+  const unregisterMutation = useUnregisterEvent();
 
-        // Mock participants
-        const mockParticipants = [
-          {
-            _id: 'user1',
-            username: 'Alice Johnson',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-          },
-          {
-            _id: 'user2',
-            username: 'Bob Smith',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-          },
-          {
-            _id: 'user3',
-            username: 'Carol Williams',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carol',
-          },
-          {
-            _id: 'user4',
-            username: 'David Brown',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-          },
-          {
-            _id: 'user5',
-            username: 'Eva Martinez',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eva',
-          },
-        ];
-        setParticipants(mockParticipants);
+  // Derived Data
+  const event = eventData?.event;
+  const participants = volunteersData?.volunteers || [];
+  const posts = postsData?.posts || [];
 
-        // Check if current user is joined
-        if (user) {
-          const userJoined = mockParticipants.some((p) => p._id === user.id);
-          setIsJoined(userJoined);
-        }
+  console.log(postsData);
 
-        // Mock posts
-        setPosts([
-          {
-            _id: 'post1',
-            title: 'Excited for the cleanup! 🌊',
-            content:
-              "Can't wait to join everyone this weekend for the beach cleanup! I've been looking forward to this event for weeks. Let's make our beach beautiful again!",
-            author: {
-              _id: 'user1',
-              username: 'Alice Johnson',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-            },
-            image: [
-              'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
-            ],
-            likesCount: 24,
-            commentsCount: 8,
-            createdAt: '2025-11-27T10:30:00Z',
-            isLiked: true,
-          },
-          {
-            _id: 'post2',
-            title: 'What to bring?',
-            content:
-              'Hey everyone! First time joining a beach cleanup. What should I bring? I have my own gloves but not sure about other equipment. Any tips would be appreciated! 🙏',
-            author: {
-              _id: 'user2',
-              username: 'Bob Smith',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-            },
-            image: [],
-            likesCount: 12,
-            commentsCount: 15,
-            createdAt: '2025-11-26T15:45:00Z',
-            isLiked: false,
-          },
-          {
-            _id: 'post3',
-            title: 'Photos from last year! 📸',
-            content:
-              "Here are some photos from last year's cleanup event. We collected over 500 pounds of trash! Let's beat that record this year!",
-            author: {
-              _id: 'user3',
-              username: 'Carol Williams',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carol',
-            },
-            image: [
-              'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=800',
-              'https://images.unsplash.com/photo-1559825481-12a05cc00344?w=800',
-              'https://images.unsplash.com/photo-1484291470158-b8f8d608850d?w=800',
-            ],
-            likesCount: 45,
-            commentsCount: 22,
-            createdAt: '2025-11-25T09:20:00Z',
-            isLiked: true,
-          },
-          {
-            _id: 'post4',
-            title: 'Carpooling from Downtown?',
-            content:
-              'Anyone carpooling from downtown area? I have 3 extra seats in my car. Leaving at 7 AM to arrive early. Drop a comment if interested!',
-            author: {
-              _id: 'user4',
-              username: 'David Brown',
-              avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-            },
-            image: [],
-            likesCount: 8,
-            commentsCount: 6,
-            createdAt: '2025-11-24T18:00:00Z',
-            isLiked: false,
-          },
-        ]);
+  const isJoined = useMemo(() => {
+    return myRegistrations?.data?.some(
+      (r) =>
+        (r.eventId._id || r.eventId) === id &&
+        ['confirmed', 'completed', 'approved'].includes(r.status)
+    );
+  }, [myRegistrations, id]);
 
-        setLoading(false);
-      }, 1000);
-    };
-
-    loadData();
-  }, [id, user]);
+  const canDiscuss = useMemo(() => {
+    if (!event || !user) return false;
+    // Basic check: Admin, Manager, or Joined Volunteer
+    // You can replace this with checkPermission if needed, e.g.:
+    const currentUserState = isJoined ? 'approved' : 'none';
+    return checkPermission(user, RESOURCES.EVENTS, ACTIONS.DISCUSSION, {
+      ...event,
+      currentUserState,
+    });
+  }, [event, user, isJoined]);
 
   // Handlers
-  const handleCreatePost = useCallback(
-    (newPost) => {
-      // Temporarily disabled login check for UI testing
-      const postAuthor = user
-        ? {
-            _id: user.id,
-            username: user.fullName,
-            avatar: user.avatar,
-          }
-        : {
-            _id: 'guest',
-            username: 'Guest User',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
-          };
-
-      const post = {
-        _id: `post${Date.now()}`,
-        ...newPost,
-        author: postAuthor,
-        likesCount: 0,
-        commentsCount: 0,
-        createdAt: new Date().toISOString(),
-        isLiked: false,
-      };
-      setPosts((prev) => [post, ...prev]);
-      setShowCreatePost(false);
-    },
-    [user, navigate]
-  );
-
-  const handleLikePost = useCallback((postId) => {
-    // Temporarily disabled login check for UI testing
-    setPosts((prev) =>
-      prev.map((post) =>
-        post._id === postId
-          ? {
-              ...post,
-              isLiked: !post.isLiked,
-              likesCount: post.isLiked
-                ? post.likesCount - 1
-                : post.likesCount + 1,
-            }
-          : post
-      )
+  const handleCreatePost = (newPost) => {
+    if (!user) return;
+    createPostMutation.mutate(
+      {
+        eventId: id,
+        data: {
+          title: newPost.title,
+          content: newPost.content,
+          image: newPost.image || [], // Handle images if API supports it
+        },
+      },
+      {
+        onSuccess: () => setShowCreatePost(false),
+      }
     );
-  }, []);
+  };
 
-  const handleDeletePost = useCallback((postId) => {
-    setPosts((prev) => prev.filter((post) => post._id !== postId));
-  }, []);
+  const handleLikePost = (postId) => {
+    if (!user) return;
+    likePostMutation.mutate({ eventId: id, postId });
+  };
 
-  const handleJoinLeave = useCallback(() => {
+  const handleDeletePost = (postId) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    deletePostMutation.mutate({ eventId: id, postId });
+  };
+
+  const handleJoinLeave = () => {
     if (!user) {
-      alert('Please login to join this event');
       navigate('/login');
       return;
     }
-    setIsJoined((prev) => !prev);
-    // TODO: API call to join/leave event
-  }, [user, navigate]);
+    if (isJoined) {
+      if (window.confirm('Are you sure you want to leave this event?')) {
+        unregisterMutation.mutate(id);
+      }
+    } else {
+      registerMutation.mutate(id);
+    }
+  };
 
   const handleCreatePostClick = () => {
-    // Temporarily disabled login check for UI testing
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     setShowCreatePost(true);
   };
 
   // Filter posts by search
-  const filteredPosts = posts.filter(
-    (post) =>
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.author.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery) return posts;
+    return posts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.author?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [posts, searchQuery]);
 
   // Get all media from posts
-  const allMedia = posts.reduce((acc, post) => {
-    if (post.image && post.image.length > 0) {
-      post.image.forEach((img) => {
-        acc.push({
-          url: img,
-          type: img.includes('video') ? 'video' : 'image',
-          postId: post._id,
-          author: post.author,
+  const allMedia = useMemo(() => {
+    return posts.reduce((acc, post) => {
+      if (post.image && post.image.length > 0) {
+        post.image.forEach((img) => {
+          acc.push({
+            url: img,
+            type: img.includes('video') ? 'video' : 'image', // Basic check
+            postId: post._id,
+            author: post.author,
+          });
         });
-      });
-    }
-    return acc;
-  }, []);
+      }
+      return acc;
+    }, []);
+  }, [posts]);
 
-  if (loading) {
+  if (isEventLoading || isPostsLoading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
@@ -301,22 +185,18 @@ const EventDiscussion = () => {
     );
   }
 
+  // Current user info for UI
+  const currentUser = user || {
+    _id: 'guest',
+    fullName: 'Guest',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest',
+  };
+
   return (
     <div className={styles.container}>
       {/* Header Section */}
       <section className={styles.headerSection}>
         <div className={styles.centeredWrapper}>
-          {/* Back button */}
-          <motion.button
-            className={styles.backBtn}
-            onClick={() => navigate(-1)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <ArrowLeft size={20} />
-            Back
-          </motion.button>
-
           {/* Event Banner */}
           <motion.div
             className={styles.banner}
@@ -335,12 +215,16 @@ const EventDiscussion = () => {
             {/* Manager Info Bar */}
             <div className={styles.managerBar}>
               <img
-                src={event.manager.avatar}
-                alt={event.manager.username}
+                src={
+                  event.managerId?.avatar ||
+                  'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager'
+                }
+                alt={event.managerId?.username || 'Manager'}
                 className={styles.managerAvatar}
               />
               <span className={styles.managerName}>
-                Organized by <strong>{event.manager.username}</strong>
+                Organized by{' '}
+                <strong>{event.managerId?.username || 'Unknown'}</strong>
               </span>
             </div>
           </motion.div>
@@ -366,7 +250,10 @@ const EventDiscussion = () => {
                 {participants.slice(0, 5).map((participant, index) => (
                   <motion.img
                     key={participant._id}
-                    src={participant.avatar}
+                    src={
+                      participant.avatar ||
+                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${participant.username}`
+                    }
                     alt={participant.username}
                     className={styles.participantAvatar}
                     style={{ zIndex: 5 - index }}
@@ -382,25 +269,6 @@ const EventDiscussion = () => {
                   </div>
                 )}
               </div>
-
-              <motion.button
-                className={`${styles.joinBtn} ${isJoined ? styles.joined : ''}`}
-                onClick={handleJoinLeave}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isJoined ? (
-                  <>
-                    <UserMinus size={18} />
-                    Leave
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={18} />
-                    Join
-                  </>
-                )}
-              </motion.button>
             </div>
 
             {/* Search Bar */}
@@ -430,71 +298,89 @@ const EventDiscussion = () => {
       <section className={styles.mainContent}>
         {/* Posts Column */}
         <div className={styles.postsColumn}>
-          {/* Create Post Card */}
-          <motion.div
-            className={styles.createPostCard}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <img
-              src={currentUser.avatar}
-              alt="Your avatar"
-              className={styles.createPostAvatar}
-            />
-            <button
-              className={styles.createPostInput}
-              onClick={handleCreatePostClick}
+          {/* Create Post Card - Only show if user can discuss */}
+          {canDiscuss && (
+            <motion.div
+              className={styles.createPostCard}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              {user
-                ? "What's on your mind?"
-                : 'Login to share your thoughts...'}
-            </button>
-            <div className={styles.createPostActions}>
+              <img
+                src={
+                  currentUser.avatar ||
+                  'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
+                }
+                alt="Your avatar"
+                className={styles.createPostAvatar}
+              />
               <button
-                className={styles.createPostAction}
+                className={styles.createPostInput}
                 onClick={handleCreatePostClick}
               >
-                <Image size={20} color="#4CAF50" />
-                <span>Photo</span>
+                {user
+                  ? "What's on your mind?"
+                  : 'Login to share your thoughts...'}
               </button>
-              <button
-                className={styles.createPostAction}
-                onClick={handleCreatePostClick}
-              >
-                <Video size={20} color="#F44336" />
-                <span>Video</span>
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Posts List */}
-          <div className={styles.postsList}>
-            <AnimatePresence>
-              {filteredPosts.length > 0 ? (
-                filteredPosts.map((post, index) => (
-                  <PostCard
-                    key={post._id}
-                    post={post}
-                    onLike={handleLikePost}
-                    onComment={() => setSelectedPost(post)}
-                    onDelete={handleDeletePost}
-                    onClick={() => setSelectedPost(post)}
-                    delay={index * 0.1}
-                    currentUserId={user?.id}
-                  />
-                ))
-              ) : (
-                <motion.div
-                  className={styles.noPosts}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+              <div className={styles.createPostActions}>
+                <button
+                  className={styles.createPostAction}
+                  onClick={handleCreatePostClick}
                 >
-                  <p>No posts found. Be the first to share something!</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  <Image size={20} color="#4CAF50" />
+                  <span>Photo</span>
+                </button>
+                <button
+                  className={styles.createPostAction}
+                  onClick={handleCreatePostClick}
+                >
+                  <Video size={20} color="#F44336" />
+                  <span>Video</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {!canDiscuss && !isEventLoading && (
+            <div className={styles.noAccess}>
+              <Lock size={48} />
+              <h3>Join the event to discuss</h3>
+              <p>
+                You must be a registered participant to view and join the
+                conversation.
+              </p>
+            </div>
+          )}
+
+          {/* Posts List - Only show if can discuss */}
+          {canDiscuss && (
+            <div className={styles.postsList}>
+              <AnimatePresence>
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map((post, index) => (
+                    <PostCard
+                      key={post._id}
+                      post={post}
+                      onLike={handleLikePost}
+                      onComment={() => setSelectedPost(post)}
+                      onDelete={handleDeletePost}
+                      onClick={() => setSelectedPost(post)}
+                      delay={index * 0.1}
+                      currentUserId={user?.id}
+                    />
+                  ))
+                ) : (
+                  <motion.div
+                    className={styles.noPosts}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    <p>No posts found. Be the first to share something!</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -589,7 +475,7 @@ const EventDiscussion = () => {
             onClose={() => setShowCreatePost(false)}
             onSubmit={handleCreatePost}
             userAvatar={currentUser.avatar}
-            userName={currentUser.username}
+            userName={currentUser.username || currentUser.fullName}
           />
         )}
       </AnimatePresence>
