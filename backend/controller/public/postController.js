@@ -101,6 +101,27 @@ export async function getAllPosts(req, res) {
                 .lean(),
             Post.countDocuments({ eventId })
         ]);
+
+        // Check if user has liked these posts
+        if (req.user) {
+            const postIds = posts.map(p => p._id);
+            const likes = await Like.find({
+                userId: req.user._id,
+                likeableId: { $in: postIds },
+                likeableType: 'post'
+            }).select('likeableId').lean();
+
+            const likedPostIds = new Set(likes.map(l => l.likeableId.toString()));
+
+            posts.forEach(post => {
+                post.isLiked = likedPostIds.has(post._id.toString());
+            });
+        } else {
+             posts.forEach(post => {
+                post.isLiked = false;
+            });
+        }
+
         res.status(200).json({ 
             success: true, 
             posts,

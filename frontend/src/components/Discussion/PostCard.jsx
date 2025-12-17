@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import styles from './PostCard.module.css';
 import { formatDistanceToNow } from 'date-fns';
+import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 //using date fns to format time ago
 const formatTimeAgo = (dateString) => {
@@ -19,9 +20,20 @@ const formatTimeAgo = (dateString) => {
 };
 
 const PostCard = memo(
-  ({ post, onLike, onComment, onDelete, onClick, delay = 0 }) => {
+  ({ post, onLike, onComment, onDelete, onEdit, onClick, delay = 0, user }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [imageIndex, setImageIndex] = useState(0);
+
+    // const isAuthor = currentUserId && (post.author._id === currentUserId || post.author.id === currentUserId);
+    // ABAC checks will now determine edit/delete permissions
+
+    const canEdit = checkPermission(user, RESOURCES.POSTS, ACTIONS.EDIT, post);
+    const canDelete = checkPermission(
+      user,
+      RESOURCES.POSTS,
+      ACTIONS.DELETE,
+      post
+    );
 
     const handleLike = (e) => {
       e.stopPropagation();
@@ -35,9 +47,14 @@ const PostCard = memo(
 
     const handleDelete = (e) => {
       e.stopPropagation();
-      if (window.confirm('Are you sure you want to delete this post?')) {
-        onDelete(post._id);
-      }
+      onDelete(post._id);
+      setShowMenu(false);
+    };
+
+    const handleEdit = (e) => {
+      e.stopPropagation();
+
+      onEdit(post);
       setShowMenu(false);
     };
 
@@ -136,14 +153,18 @@ const PostCard = memo(
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
               >
-                <button className={styles.menuItem}>
-                  <Edit size={16} />
-                  Edit Post
-                </button>
-                <button className={styles.menuItem} onClick={handleDelete}>
-                  <Trash2 size={16} />
-                  Delete Post
-                </button>
+                {canEdit && (
+                  <button className={styles.menuItem} onClick={handleEdit}>
+                    <Edit size={16} />
+                    Edit Post
+                  </button>
+                )}
+                {canDelete && (
+                  <button className={styles.menuItem} onClick={handleDelete}>
+                    <Trash2 size={16} />
+                    Delete Post
+                  </button>
+                )}
                 <button className={styles.menuItem}>
                   <Flag size={16} />
                   Report

@@ -1,5 +1,6 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import { optionalAuthMiddleware } from '../middleware/optionalAuthMiddleware.js';
 import { validate } from '../middleware/validate.js';
 import { 
     paginationSchema, 
@@ -27,16 +28,43 @@ const router = express.Router();
 
 // Helper to map files to body for validation
 const mapFilesToBody = (req, res, next) => {
-    if (req.files && req.files.length > 0) {
-        req.body.image = req.files.map(file => file.path);
-    } else if (!req.body.image) {
-        // If no files and no image field in body, set to empty array for Joi (optional)
-        // or leave undefined if Joi allows optional.
-        // My schema says Joi.array().items(Joi.string().uri()) but it's not required? 
-        // Wait, schema: image: Joi.array()... NOT required.
-        // If it sends empty array [], Joi is happy.
-        req.body.image = [];
+    let images = [];
+    
+    // Handle existing images passed as text (could be string or array of strings)
+    if (req.body.image) {
+        if (Array.isArray(req.body.image)) {
+            images = [...req.body.image];
+        } else {
+            images = [req.body.image];
+        }
     }
+
+    // Append new uploaded files
+    if (req.files && req.files.length > 0) {
+        const newImages = req.files.map(file => file.path);
+        images = [...images, ...newImages];
+    }
+
+    // Update req.body.image only if we have images or if we need to clear it (empty array)
+    // Note: If no images at all, we might want to set it to [] if the intent is to clear, 
+    // or undefined if we want to ignore (but Joi might require it).
+    // For update, if we send explicit empty array, it clears.
+    // For create, it defaults to [].
+    if (images.length > 0 || req.body.image !== undefined) {
+         req.body.image = images;
+    } else {
+        // If nothing sent, default to [] for Create, but for Update we might want to skip?
+        // But the validator expects an array if present.
+        // Let's default to [] to be safe for Create. 
+        // For Update, if undefined, the controller ignores it.
+        // But mapFilesToBody runs before controller.
+        // If we set it to [], updatePost will clear images.
+        // So we should only set it if req.files existed or req.body.image existed.
+        if (req.method === 'POST') {
+             req.body.image = [];
+        }
+    }
+    
     next();
 };
 
@@ -340,7 +368,7 @@ router.delete('/:eventId/bookmarks', authMiddleware, bookmarkLimiter, validate(e
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:eventId/posts', validate(eventIdSchema, 'params'), getAllPosts);
+router.get('/:eventId/posts', optionalAuthMiddleware, validate(eventIdSchema, 'params'), getAllPosts);
 // Áp dụng rate limiting cho create, update và delete operations
 router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSchema, 'params'), upload.array('image', 5), mapFilesToBody, validate(createandUpdatePostSchema), createPost);
 
@@ -430,7 +458,7 @@ router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSc
  *       403:
  *         description: Not authorized to delete this post
  */
-router.put('/:eventId/posts/:postId', authMiddleware, updateLimiter, validate(eventPostParamsSchema, 'params'), validate(createandUpdatePostSchema), updatePost);
+router.put('/:eventId/posts/:postId', authMiddleware, updateLimiter, validate(eventPostParamsSchema, 'params'), upload.array('image', 5), mapFilesToBody, validate(createandUpdatePostSchema), updatePost);
 router.delete('/:eventId/posts/:postId', authMiddleware, deleteLimiter, validate(eventPostParamsSchema, 'params'), deletePost);
 
 // ====== Comment Routes for Posts ======

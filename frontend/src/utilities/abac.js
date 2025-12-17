@@ -14,6 +14,10 @@ const ROLES = {
     dashboard: {
       view: true,
     },
+    posts: {
+      edit: false,
+      delete: true, // Admin can delete any post
+    },
   },
   manager: {
     events: {
@@ -36,6 +40,14 @@ const ROLES = {
     dashboard: {
       view: true,
     },
+    posts: {
+      edit: (user, post) => {
+        const userId = user._id || user.id;
+        const authorId = post.author?._id || post.author?.id;
+        return authorId === userId;
+      },
+      delete: true,
+    },
   },
   user: {
     events: {
@@ -49,6 +61,18 @@ const ROLES = {
     },
     dashboard: {
       view: false,
+    },
+    posts: {
+      edit: (user, post) => {
+        const userId = user.id || user._id;
+        const authorId = post.author?._id || post.author;
+        return authorId === userId; // User can edit their own posts
+      },
+      delete: (user, post) => {
+        const userId = user.id || user._id;
+        const authorId = post.author?._id || post.author;
+        return authorId === userId; // User can delete their own posts
+      },
     },
   },
 };
@@ -85,6 +109,7 @@ export function checkPermission(user, resource, action, data) {
 export const RESOURCES = {
   EVENTS: 'events',
   DASHBOARD: 'dashboard',
+  POSTS: 'posts',
 };
 
 export const ACTIONS = {
@@ -93,4 +118,6 @@ export const ACTIONS = {
   BOOKMARK: 'bookmark',
   VIEW: 'view',
   DISCUSSION: 'discussion',
+  EDIT: 'edit',
+  DELETE: 'delete',
 };

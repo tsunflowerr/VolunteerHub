@@ -3,10 +3,22 @@ import { motion } from 'framer-motion';
 import { X, Image, Video, Smile, MapPin, Tag, Loader2 } from 'lucide-react';
 import styles from './CreatePostModal.module.css';
 
-const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [images, setImages] = useState([]);
+const CreatePostModal = ({
+  onClose,
+  onSubmit,
+  userAvatar,
+  userName,
+  initialData,
+}) => {
+  const [title, setTitle] = useState(initialData?.title || '');
+  const [content, setContent] = useState(initialData?.content || '');
+  const [images, setImages] = useState(
+    initialData?.image?.map((url) => ({
+      preview: url,
+      file: null, // No file for existing images
+      isExisting: true,
+    })) || []
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -38,21 +50,25 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
     setIsSubmitting(true);
 
     try {
+      // Separate existing images (URLs) and new files
+      const existingImages = images
+        .filter((img) => img.isExisting)
+        .map((img) => img.preview);
+      const newFiles = images
+        .filter((img) => !img.isExisting)
+        .map((img) => img.file);
+
       await onSubmit({
         title: title.trim(),
         content: content.trim(),
-        files: images.map((img) => img.file),
+        existingImages, // Pass existing URLs
+        files: newFiles, // Pass new File objects
       });
-      // onClose is handled by parent on success, or we can close here?
-      // Usually parent handles success.
-      // But if parent uses mutation, it might take time.
-      // We'll keep isSubmitting true until unmount or error.
     } catch (error) {
       console.error(error);
       setIsSubmitting(false);
     }
   };
-
   // Auto-resize textarea
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -62,7 +78,7 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
     }
   };
 
-  const isValid = title.trim() && content.trim();
+  const isValid = title.trim() && content.trim().length > 10;
 
   return (
     <motion.div
@@ -75,8 +91,10 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
       <motion.div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
-          <h2 className={styles.headerTitle}>Create Post</h2>
-          <motion.button className={styles.closeBtn} onClick={onClose}>
+          <h2 className={styles.headerTitle}>
+            {initialData ? 'Edit Post' : 'Create Post'}
+          </h2>
+          <motion.button className={styles.closeBtn} onClick={onClose} e>
             <X size={24} />
           </motion.button>
         </div>
@@ -212,8 +230,10 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
           {isSubmitting ? (
             <>
               <Loader2 size={20} className={styles.spinner} />
-              Posting...
+              {initialData ? 'Saving...' : 'Posting...'}
             </>
+          ) : initialData ? (
+            'Save Changes'
           ) : (
             'Post'
           )}

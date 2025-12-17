@@ -33,6 +33,7 @@ import { useEventVolunteers } from '../../hooks/useManager';
 import {
   useEventPosts,
   useCreatePost,
+  useUpdatePost,
   useLikePost,
   useDeletePost,
 } from '../../hooks/usePosts';
@@ -46,6 +47,7 @@ const EventDiscussion = () => {
   // State
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [editingPost, setEditingPost] = useState(null); // New state for editing
   const [selectedPost, setSelectedPost] = useState(null);
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all');
@@ -58,6 +60,7 @@ const EventDiscussion = () => {
 
   // Mutations
   const createPostMutation = useCreatePost();
+  const updatePostMutation = useUpdatePost(); // New mutation
   const likePostMutation = useLikePost();
   const deletePostMutation = useDeletePost();
   const registerMutation = useRegisterEvent();
@@ -113,6 +116,51 @@ const EventDiscussion = () => {
     );
   };
 
+  const handleUpdatePost = (updatedData) => {
+    if (!user || !editingPost) return;
+
+    const formData = new FormData();
+    formData.append('title', updatedData.title);
+    formData.append('content', updatedData.content);
+
+    // Handle existing images
+    if (updatedData.existingImages && updatedData.existingImages.length > 0) {
+      updatedData.existingImages.forEach((url) => {
+        formData.append('image', url);
+      });
+    } else {
+      // If empty, send empty array to clear images?
+      // Or if we don't append, backend defaults to [].
+      // But backend merge logic expects explicit if needed.
+      // My updated backend logic: "if (req.body.image) ... if (req.files) ... merge".
+      // If I append nothing for 'image', req.body.image is undefined.
+      // And backend mapFilesToBody: "else if (!req.body.image) { req.body.image = [] }".
+      // So clearing images works if I don't append anything.
+      // Wait, if I have 0 existing and 0 new, I append nothing.
+    }
+
+    // Handle new files
+    if (updatedData.files && updatedData.files.length > 0) {
+      updatedData.files.forEach((file) => {
+        formData.append('image', file);
+      });
+    }
+
+    updatePostMutation.mutate(
+      {
+        eventId: id,
+        postId: editingPost._id,
+        data: formData,
+      },
+      {
+        onSuccess: () => setEditingPost(null),
+      }
+    );
+  };
+
+  const handleEditClick = (post) => {
+    setEditingPost(post);
+  };
   const handleLikePost = (postId) => {
     if (!user) return;
     likePostMutation.mutate({ eventId: id, postId });
@@ -372,9 +420,10 @@ const EventDiscussion = () => {
                       onLike={handleLikePost}
                       onComment={() => setSelectedPost(post)}
                       onDelete={handleDeletePost}
+                      onEdit={() => handleEditClick(post)}
                       onClick={() => setSelectedPost(post)}
                       delay={index * 0.1}
-                      currentUserId={user?.id}
+                      user={user}
                     />
                   ))
                 ) : (
@@ -393,6 +442,7 @@ const EventDiscussion = () => {
 
         {/* Sidebar */}
         <div className={styles.sidebar}>
+          {/* ... (rest of sidebar) ... */}
           {/* Event Info Card */}
           <motion.div
             className={styles.sidebarCard}
@@ -484,6 +534,18 @@ const EventDiscussion = () => {
             onSubmit={handleCreatePost}
             userAvatar={currentUser.avatar}
             userName={currentUser.username || currentUser.fullName}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editingPost && (
+          <CreatePostModal
+            onClose={() => setEditingPost(null)}
+            onSubmit={handleUpdatePost}
+            userAvatar={currentUser.avatar}
+            userName={currentUser.username || currentUser.fullName}
+            initialData={editingPost}
           />
         )}
       </AnimatePresence>

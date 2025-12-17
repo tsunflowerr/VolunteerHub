@@ -338,13 +338,8 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
               <span className={styles.authorName}>{post.author.username}</span>
               <div className={styles.postMeta}>
                 <span>{formatTimeAgo(post.createdAt)}</span>
-                <span className={styles.dot}>·</span>
-                <Globe size={12} />
               </div>
             </div>
-            <button className={styles.menuBtn}>
-              <MoreHorizontal size={20} />
-            </button>
           </div>
 
           {/* Post Content */}
