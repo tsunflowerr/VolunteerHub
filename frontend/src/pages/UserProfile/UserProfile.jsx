@@ -23,6 +23,7 @@ import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
 import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
+import LoadingOverlay from '../../components/common/LoadingOverlay';
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -62,14 +63,9 @@ const UserProfile = () => {
 
   const handleChangePage = (e, value) => setCurrentPage(value);
 
-  const handleEditProfile = async (data) => {
-    try {
-      await updateProfile.mutateAsync(data);
-      setOpen(false);
-    } catch (error) {
-      // Error handling is done in the hook
-      console.error(error);
-    }
+  const handleEditProfile = (data) => {
+    setOpen(false);
+    updateProfile.mutate(data);
   };
 
   const handleChangePasswordSubmit = async (data) => {
@@ -100,17 +96,7 @@ const UserProfile = () => {
   if (loading) {
     return (
       <div className={styles['profile']}>
-        <div
-          className={styles['profile__container']}
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '50vh',
-          }}
-        >
-          <h2>Loading...</h2>
-        </div>
+        <LoadingOverlay message="Loading user profile..."></LoadingOverlay>
       </div>
     );
   }
@@ -311,6 +297,15 @@ const UserProfile = () => {
           )}
         </main>
       </div>
+      {(updateProfile.isPending || deleteAccount.isPending) && (
+        <LoadingOverlay
+          message={
+            deleteAccount.isPending
+              ? 'Deleting account...'
+              : 'Updating profile...'
+          }
+        />
+      )}
     </div>
   );
 };

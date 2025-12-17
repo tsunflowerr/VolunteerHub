@@ -23,6 +23,7 @@ import {
   ImagePicker,
   FormActions,
 } from '../Form';
+
 // Validation schema
 const userInfoSchema = Yup.object().shape({
   username: Yup.string()
@@ -43,12 +44,14 @@ const UserInfo = ({ user, onSubmit }) => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(user);
   const [formData, setFormData] = useState(user);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (file && formData) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData({
@@ -76,6 +79,7 @@ const UserInfo = ({ user, onSubmit }) => {
 
   const revertChanges = () => {
     setFormData(userData);
+    setAvatarFile(null);
   };
 
   const handleSubmit = async (e) => {
@@ -101,17 +105,40 @@ const UserInfo = ({ user, onSubmit }) => {
         (formData.location || '') !== (userData.location || '') ||
         (formData.bio || '') !== (userData.bio || '') ||
         (formData.about || '') !== (userData.about || '') ||
-        (formData.avatar || '') !== (userData.avatar || '');
+        avatarFile !== null;
 
       if (!hasChanged) {
         setIsSaving(false);
         return;
       }
 
+      // Create FormData
+      const payload = new FormData();
+      payload.append('username', formData.username);
+      payload.append('email', formData.email); // Included for completeness, though typically read-only or unused
+      payload.append('phoneNumber', formData.phoneNumber || '');
+      payload.append('location', formData.location || '');
+      payload.append('bio', formData.bio || '');
+      payload.append('about', formData.about || '');
+      
+      if (avatarFile) {
+        payload.append('avatar', avatarFile);
+      } else if (formData.avatar && !formData.avatar.startsWith('data:')) {
+         // If we want to preserve old avatar URL explicitly (optional depending on backend)
+         // backend ignores missing avatar file, so we don't strictly need to send this if it's not a file
+         // but if we send it, it will be treated as text in body, which backend logic ignores for avatar field
+         // (backend checks req.file). So we can skip appending it if it's not a file.
+      }
+
       // Call the parent submit handler (mutation)
       if (onSubmit) {
-        await onSubmit(formData);
+        await onSubmit(payload);
+        
+        // After successful submit (assuming optimistic or parent handles error), 
+        // we should ideally wait for parent confirmation, but here we just update local state
+        // In a perfect world, we'd refetch or wait for response, but for now:
         setUserData(formData); // Update local baseline
+        setAvatarFile(null);
       }
     } catch (validationErrors) {
       // Handle Yup validation errors
@@ -281,6 +308,7 @@ const UserInfo = ({ user, onSubmit }) => {
         onCancel={revertChanges}
         submitText="Save"
         loadingText="Saving..."
+        loading={isSaving}
       />
     </form>
   );

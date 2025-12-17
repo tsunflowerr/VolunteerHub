@@ -8,13 +8,31 @@ export const postApi = {
   },
 
   createPost: async ({ eventId, data }) => {
-    // data: { title, content, image: [] }
-    const response = await api.post(`/events/${eventId}/posts`, data);
+    // data: { title, content, image: [] } or FormData
+    const isFormData = data instanceof FormData;
+    const response = await api.post(
+      `/events/${eventId}/posts`,
+      data,
+      isFormData
+        ? {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        : {}
+    );
     return response.data;
   },
 
   updatePost: async ({ eventId, postId, data }) => {
-    const response = await api.put(`/events/${eventId}/posts/${postId}`, data);
+    const isFormData = data instanceof FormData;
+    const response = await api.put(
+      `/events/${eventId}/posts/${postId}`,
+      data,
+      isFormData
+        ? {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        : {}
+    );
     return response.data;
   },
 
@@ -30,32 +48,47 @@ export const postApi = {
 
   // Comments
   getCommentsByPost: async ({ eventId, postId }) => {
-    const response = await api.get(`/events/${eventId}/posts/${postId}/comments`);
+    const response = await api.get(
+      `/events/${eventId}/posts/${postId}/comments`
+    );
     return response.data;
   },
 
   addComment: async ({ eventId, postId, content }) => {
-    const response = await api.post(`/events/${eventId}/posts/${postId}/comments`, { content });
+    const response = await api.post(
+      `/events/${eventId}/posts/${postId}/comments`,
+      { content }
+    );
     return response.data;
   },
 
   replyComment: async ({ eventId, postId, commentId, content }) => {
-    const response = await api.post(`/events/${eventId}/posts/${postId}/comments/${commentId}/reply`, { content });
+    const response = await api.post(
+      `/events/${eventId}/posts/${postId}/comments/${commentId}/reply`,
+      { content }
+    );
     return response.data;
   },
 
   updateComment: async ({ eventId, postId, commentId, content }) => {
-    const response = await api.put(`/events/${eventId}/posts/${postId}/comments/${commentId}`, { content });
+    const response = await api.put(
+      `/events/${eventId}/posts/${postId}/comments/${commentId}`,
+      { content }
+    );
     return response.data;
   },
 
   deleteComment: async ({ eventId, postId, commentId }) => {
-    const response = await api.delete(`/events/${eventId}/posts/${postId}/comments/${commentId}`);
+    const response = await api.delete(
+      `/events/${eventId}/posts/${postId}/comments/${commentId}`
+    );
     return response.data;
   },
 
   likeComment: async ({ eventId, postId, commentId }) => {
-    const response = await api.post(`/events/${eventId}/posts/${postId}/comments/${commentId}/like`);
+    const response = await api.post(
+      `/events/${eventId}/posts/${postId}/comments/${commentId}/like`
+    );
     return response.data;
   },
 };

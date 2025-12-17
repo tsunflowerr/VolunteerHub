@@ -10,22 +10,12 @@ import {
   Globe,
 } from 'lucide-react';
 import styles from './PostCard.module.css';
+import { formatDistanceToNow } from 'date-fns';
 
-// Format time ago
+//using date fns to format time ago
 const formatTimeAgo = (dateString) => {
   const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
-
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatDistanceToNow(date, { addSuffix: true });
 };
 
 const PostCard = memo(
@@ -83,7 +73,11 @@ const PostCard = memo(
       if (imageCount === 3) {
         return (
           <div className={styles.imagesTriple}>
-            <img src={post.image[0]} alt="Post 1" className={styles.mainImage} />
+            <img
+              src={post.image[0]}
+              alt="Post 1"
+              className={styles.mainImage}
+            />
             <div className={styles.sideImages}>
               {post.image.slice(1).map((img, idx) => (
                 <img key={idx} src={img} alt={`Post ${idx + 2}`} />
@@ -109,15 +103,7 @@ const PostCard = memo(
     };
 
     return (
-      <motion.article
-        className={styles.card}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ delay, duration: 0.3 }}
-        onClick={onClick}
-        whileHover={{ y: -2 }}
-      >
+      <motion.article className={styles.card} onClick={onClick}>
         {/* Header */}
         <header className={styles.header}>
           <img
@@ -128,9 +114,9 @@ const PostCard = memo(
           <div className={styles.authorInfo}>
             <span className={styles.authorName}>{post.author.username}</span>
             <div className={styles.postMeta}>
-              <span className={styles.time}>{formatTimeAgo(post.createdAt)}</span>
-              <span className={styles.dot}>·</span>
-              <Globe size={12} />
+              <span className={styles.time}>
+                {formatTimeAgo(post.createdAt)}
+              </span>
             </div>
           </div>
           <div className={styles.menuWrapper}>
@@ -196,20 +182,15 @@ const PostCard = memo(
         {/* Actions */}
         <div className={styles.actions}>
           <motion.button
-            className={`${styles.actionBtn} ${post.isLiked ? styles.liked : ''}`}
+            className={`${styles.actionBtn} ${
+              post.isLiked ? styles.liked : ''
+            }`}
             onClick={handleLike}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
           >
             <Heart size={20} fill={post.isLiked ? '#f44336' : 'none'} />
             <span>Like</span>
           </motion.button>
-          <motion.button
-            className={styles.actionBtn}
-            onClick={handleComment}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <motion.button className={styles.actionBtn} onClick={handleComment}>
             <MessageCircle size={20} />
             <span>Comment</span>
           </motion.button>

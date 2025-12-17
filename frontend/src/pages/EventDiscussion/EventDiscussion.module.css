@@ -284,6 +284,12 @@
   position: relative;
 }
 
+.createPostInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .createPostAvatar {
   width: 44px;
   height: 44px;
@@ -550,10 +556,10 @@
     padding: 0.75rem 1rem;
   }
 
-  .createPostActions {
+  /* .createPostActions {
     flex-direction: column;
     gap: 0.5rem;
-  }
+  } */
 
   .createPostAction {
     justify-content: center;

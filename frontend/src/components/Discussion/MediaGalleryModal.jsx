@@ -43,23 +43,11 @@ const MediaGalleryModal = ({ media, filter, onFilterChange, onClose }) => {
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
-      <motion.div
-        className={styles.modal}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <motion.div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
           <h2 className={styles.headerTitle}>Media Gallery</h2>
-          <motion.button
-            className={styles.closeBtn}
-            onClick={onClose}
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-          >
+          <motion.button className={styles.closeBtn} onClick={onClose}>
             <X size={24} />
           </motion.button>
         </div>
@@ -67,20 +55,26 @@ const MediaGalleryModal = ({ media, filter, onFilterChange, onClose }) => {
         {/* Filter Tabs */}
         <div className={styles.filterTabs}>
           <button
-            className={`${styles.filterTab} ${filter === 'all' ? styles.active : ''}`}
+            className={`${styles.filterTab} ${
+              filter === 'all' ? styles.active : ''
+            }`}
             onClick={() => onFilterChange('all')}
           >
             All ({media.length})
           </button>
           <button
-            className={`${styles.filterTab} ${filter === 'images' ? styles.active : ''}`}
+            className={`${styles.filterTab} ${
+              filter === 'images' ? styles.active : ''
+            }`}
             onClick={() => onFilterChange('images')}
           >
             <Image size={16} />
             Photos ({media.filter((m) => m.type === 'image').length})
           </button>
           <button
-            className={`${styles.filterTab} ${filter === 'videos' ? styles.active : ''}`}
+            className={`${styles.filterTab} ${
+              filter === 'videos' ? styles.active : ''
+            }`}
             onClick={() => onFilterChange('videos')}
           >
             <Video size={16} />
@@ -112,7 +106,10 @@ const MediaGalleryModal = ({ media, filter, onFilterChange, onClose }) => {
                   )}
                   <div className={styles.itemOverlay}>
                     <div className={styles.itemAuthor}>
-                      <img src={item.author.avatar} alt={item.author.username} />
+                      <img
+                        src={item.author.avatar}
+                        alt={item.author.username}
+                      />
                       <span>{item.author.username}</span>
                     </div>
                   </div>

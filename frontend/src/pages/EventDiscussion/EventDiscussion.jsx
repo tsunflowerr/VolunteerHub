@@ -92,14 +92,20 @@ const EventDiscussion = () => {
   // Handlers
   const handleCreatePost = (newPost) => {
     if (!user) return;
+
+    const formData = new FormData();
+    formData.append('title', newPost.title);
+    formData.append('content', newPost.content);
+    if (newPost.files && newPost.files.length > 0) {
+      newPost.files.forEach((file) => {
+        formData.append('image', file);
+      });
+    }
+
     createPostMutation.mutate(
       {
         eventId: id,
-        data: {
-          title: newPost.title,
-          content: newPost.content,
-          image: newPost.image || [], // Handle images if API supports it
-        },
+        data: formData,
       },
       {
         onSuccess: () => setShowCreatePost(false),
@@ -306,22 +312,24 @@ const EventDiscussion = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <img
-                src={
-                  currentUser.avatar ||
-                  'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
-                }
-                alt="Your avatar"
-                className={styles.createPostAvatar}
-              />
-              <button
-                className={styles.createPostInput}
-                onClick={handleCreatePostClick}
-              >
-                {user
-                  ? "What's on your mind?"
-                  : 'Login to share your thoughts...'}
-              </button>
+              <div className={styles.createPostInputWrapper}>
+                <img
+                  src={
+                    currentUser.avatar ||
+                    'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
+                  }
+                  alt="Your avatar"
+                  className={styles.createPostAvatar}
+                />
+                <button
+                  className={styles.createPostInput}
+                  onClick={handleCreatePostClick}
+                >
+                  {user
+                    ? "What's on your mind?"
+                    : 'Login to share your thoughts...'}
+                </button>
+              </div>
               <div className={styles.createPostActions}>
                 <button
                   className={styles.createPostAction}

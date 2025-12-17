@@ -21,6 +21,7 @@ import {
   ImagePicker,
   CategoryCheckboxes,
 } from '../../components/Form';
+import LoadingOverlay from '../../components/common/LoadingOverlay';
 import { useCreateEvent, useUpdateEvent } from '../../hooks/useManager';
 import { useEvent } from '../../hooks/useEvents';
 import useAuth from '../../hooks/useAuth.js';
@@ -118,6 +119,7 @@ const ManagerEventForm = () => {
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [showPreview, setShowPreview] = useState(false);
 
@@ -204,12 +206,14 @@ const ManagerEventForm = () => {
         return;
       }
 
+      setThumbnailFile(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result;
         setFormData((prev) => ({
           ...prev,
-          thumbnail: base64String,
+          thumbnail: base64String, // Keep for validation/preview
         }));
         setThumbnailPreview(base64String);
       };
@@ -231,6 +235,7 @@ const ManagerEventForm = () => {
       thumbnail: '',
     }));
     setThumbnailPreview('');
+    setThumbnailFile(null);
   };
 
   // Handle submit
@@ -244,19 +249,26 @@ const ManagerEventForm = () => {
         context: { isEdit: isEditMode },
       });
 
-      const payload = {
-        name: formData.name,
-        description: formData.about,
-        activities: formData.activities,
-        prepare: formData.prepare,
-        location: formData.location,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        categories: formData.category,
-        capacity: Number(formData.capacity),
-        thumbnail: formData.thumbnail,
-        images: [],
-      };
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('description', formData.about);
+      payload.append('activities', formData.activities || '');
+      payload.append('prepare', formData.prepare || '');
+      payload.append('location', formData.location);
+      payload.append('startDate', formData.startDate);
+      payload.append('endDate', formData.endDate);
+      payload.append('capacity', formData.capacity);
+      
+      // Append categories
+      formData.category.forEach(cat => payload.append('categories', cat));
+
+      // Append thumbnail
+      if (thumbnailFile) {
+        payload.append('thumbnail', thumbnailFile);
+      } else if (isEditMode && formData.thumbnail && !formData.thumbnail.startsWith('data:')) {
+        // If editing and no new file (and it's not a base64 string from a cancelled file pick), send the old URL
+        payload.append('thumbnail', formData.thumbnail);
+      }
 
       if (isEditMode) {
         await updateEvent.mutateAsync({ id, data: payload });
@@ -515,6 +527,7 @@ const ManagerEventForm = () => {
           onClose={() => setShowPreview(false)}
         />
       )}
+      {loading && <LoadingOverlay message={isEditMode ? "Updating event..." : "Creating event..."} />}
     </div>
   );
 };

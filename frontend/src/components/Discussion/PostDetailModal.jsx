@@ -11,29 +11,18 @@ import {
   Globe,
 } from 'lucide-react';
 import styles from './PostDetailModal.module.css';
+import { formatDistanceToNow } from 'date-fns';
 
-// Format time ago
 const formatTimeAgo = (dateString) => {
   const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
-
-  if (seconds < 60) return 'Just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatDistanceToNow(date, { addSuffix: true });
 };
 
 // Mock comments data
 const mockComments = [
   {
     _id: 'comment1',
-    content: 'This is amazing! Can\'t wait to join the event! 🎉',
+    content: "This is amazing! Can't wait to join the event! 🎉",
     author: {
       _id: 'user1',
       username: 'Alice Johnson',
@@ -57,7 +46,7 @@ const mockComments = [
       },
       {
         _id: 'reply2',
-        content: 'Let\'s make it a great event!',
+        content: "Let's make it a great event!",
         author: {
           _id: 'user3',
           username: 'Carol Williams',
@@ -71,7 +60,7 @@ const mockComments = [
   },
   {
     _id: 'comment2',
-    content: 'Great initiative! I\'ve shared this with my friends.',
+    content: "Great initiative! I've shared this with my friends.",
     author: {
       _id: 'user4',
       username: 'David Brown',
@@ -96,7 +85,8 @@ const mockComments = [
     replies: [
       {
         _id: 'reply3',
-        content: 'Please arrive 30 minutes before the start time. Yes, there is free parking available at the venue.',
+        content:
+          'Please arrive 30 minutes before the start time. Yes, there is free parking available at the venue.',
         author: {
           _id: 'manager1',
           username: 'John Manager',
@@ -111,7 +101,9 @@ const mockComments = [
 ];
 
 const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
-  const [showReplies, setShowReplies] = useState(depth === 0 && comment.replies?.length > 0);
+  const [showReplies, setShowReplies] = useState(
+    depth === 0 && comment.replies?.length > 0
+  );
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
 
@@ -123,7 +115,10 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
   };
 
   return (
-    <div className={styles.commentItem} style={{ marginLeft: depth > 0 ? '44px' : 0 }}>
+    <div
+      className={styles.commentItem}
+      style={{ marginLeft: depth > 0 ? '44px' : 0 }}
+    >
       <img
         src={comment.author.avatar}
         alt={comment.author.username}
@@ -131,12 +126,16 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
       />
       <div className={styles.commentContent}>
         <div className={styles.commentBubble}>
-          <span className={styles.commentAuthor}>{comment.author.username}</span>
+          <span className={styles.commentAuthor}>
+            {comment.author.username}
+          </span>
           <p className={styles.commentText}>{comment.content}</p>
         </div>
         <div className={styles.commentActions}>
           <button
-            className={`${styles.commentAction} ${comment.isLiked ? styles.liked : ''}`}
+            className={`${styles.commentAction} ${
+              comment.isLiked ? styles.liked : ''
+            }`}
             onClick={() => onLike(comment._id)}
           >
             Like
@@ -147,11 +146,11 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
           >
             Reply
           </button>
-          <span className={styles.commentTime}>{formatTimeAgo(comment.createdAt)}</span>
+          <span className={styles.commentTime}>
+            {formatTimeAgo(comment.createdAt)}
+          </span>
           {comment.likesCount > 0 && (
-            <span className={styles.commentLikes}>
-              ❤️ {comment.likesCount}
-            </span>
+            <span className={styles.commentLikes}>❤️ {comment.likesCount}</span>
           )}
         </div>
 
@@ -185,7 +184,8 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
                 onClick={() => setShowReplies(true)}
               >
                 <ChevronDown size={16} />
-                View {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
+                View {comment.replies.length}{' '}
+                {comment.replies.length === 1 ? 'reply' : 'replies'}
               </button>
             )}
             {showReplies && (
@@ -314,23 +314,13 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <motion.div
-        className={styles.modal}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <motion.div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
-          <span className={styles.headerTitle}>{post.author.username}'s Post</span>
-          <motion.button
-            className={styles.closeBtn}
-            onClick={onClose}
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-          >
+          <span className={styles.headerTitle}>
+            {post.author.username}'s Post
+          </span>
+          <motion.button className={styles.closeBtn} onClick={onClose}>
             <X size={24} />
           </motion.button>
         </div>
@@ -405,7 +395,9 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
           {/* Actions */}
           <div className={styles.actions}>
             <motion.button
-              className={`${styles.actionBtn} ${post.isLiked ? styles.liked : ''}`}
+              className={`${styles.actionBtn} ${
+                post.isLiked ? styles.liked : ''
+              }`}
               onClick={() => onLike(post._id)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

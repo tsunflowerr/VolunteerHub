@@ -6,12 +6,18 @@ export const managerApi = {
     return response.data;
   },
   createEvent: async (eventData) => {
-    const response = await api.post('/manager/events', eventData);
+    const isFormData = eventData instanceof FormData;
+    const response = await api.post('/manager/events', eventData, isFormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {});
     return response.data;
   },
 
   updateEvent: async ({ id, data }) => {
-    const response = await api.put(`/manager/events/${id}`, data);
+    const isFormData = data instanceof FormData;
+    const response = await api.put(`/manager/events/${id}`, data, isFormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {});
     return response.data;
   },
 

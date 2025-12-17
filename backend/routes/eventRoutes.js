@@ -22,7 +22,23 @@ import {
 } from '../validators/registrationValidator.js';
 import { categorySlugSchema } from '../validators/categoryValidator.js';
 import { createLimiter, likeLimiter, bookmarkLimiter, registrationActionLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
+import upload from '../middleware/uploadMiddleware.js';
 const router = express.Router();
+
+// Helper to map files to body for validation
+const mapFilesToBody = (req, res, next) => {
+    if (req.files && req.files.length > 0) {
+        req.body.image = req.files.map(file => file.path);
+    } else if (!req.body.image) {
+        // If no files and no image field in body, set to empty array for Joi (optional)
+        // or leave undefined if Joi allows optional.
+        // My schema says Joi.array().items(Joi.string().uri()) but it's not required? 
+        // Wait, schema: image: Joi.array()... NOT required.
+        // If it sends empty array [], Joi is happy.
+        req.body.image = [];
+    }
+    next();
+};
 
 // ====== Public Event Routes ======
 
@@ -326,7 +342,7 @@ router.delete('/:eventId/bookmarks', authMiddleware, bookmarkLimiter, validate(e
  */
 router.get('/:eventId/posts', validate(eventIdSchema, 'params'), getAllPosts);
 // Áp dụng rate limiting cho create, update và delete operations
-router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSchema, 'params'), validate(createandUpdatePostSchema), createPost);
+router.post('/:eventId/posts', authMiddleware, createLimiter, validate(eventIdSchema, 'params'), upload.array('image', 5), mapFilesToBody, validate(createandUpdatePostSchema), createPost);
 
 /**
  * @swagger

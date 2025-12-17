@@ -19,7 +19,20 @@ import {
   updateLimiter,
   deleteLimiter,
 } from '../middleware/rateLimiter.js';
+import upload from '../middleware/uploadMiddleware.js';
+
 const router = express.Router();
+
+// Helper to map file path to body for validation
+const mapFileToBody = (req, res, next) => {
+    if (req.file) {
+        req.body.avatar = req.file.path;
+    } else if (typeof req.body.avatar === 'object' && req.body.avatar !== null) {
+        // Sanitize: If avatar is an object (e.g. {}), remove it so Joi ignores it
+        delete req.body.avatar;
+    }
+    next();
+};
 
 // Apply authMiddleware to all user routes (protected)
 router.use(authMiddleware);
@@ -68,7 +81,7 @@ router.get('/profile', getUserProfile);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -78,33 +91,26 @@ router.get('/profile', getUserProfile);
  *             properties:
  *               username:
  *                 type: string
- *                 example: JohnDoe
  *               email:
  *                 type: string
  *                 format: email
- *                 example: john@example.com
  *               phone_number:
  *                 type: string
- *                 example: "0912345678"
  *               avatar:
  *                 type: string
- *                 example: "https://example.com/avatar.jpg"
+ *                 format: binary
  *               location:
  *                 type: string
- *                 example: "San Francisco, CA"
  *               bio:
  *                 type: string
  *                 maxLength: 100
- *                 example: "Passionate Volunteer"
  *               about:
  *                 type: string
  *                 maxLength: 500
- *                 example: "Dedicated to making a positive impact in the community."
  *               interests:
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["health", "education", "community-development"]
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -122,6 +128,8 @@ router.get('/profile', getUserProfile);
 router.put(
   '/profile',
   updateLimiter,
+  upload.single('avatar'),
+  mapFileToBody,
   validate(updateUserProfileSchema),
   updateUserProfile
 );

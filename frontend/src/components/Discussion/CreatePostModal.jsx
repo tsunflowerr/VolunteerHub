@@ -37,19 +37,20 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
 
     setIsSubmitting(true);
 
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // TODO: Upload images to server and get URLs
-    const imageUrls = images.map((img) => img.preview);
-
-    onSubmit({
-      title: title.trim(),
-      content: content.trim(),
-      image: imageUrls,
-    });
-
-    setIsSubmitting(false);
+    try {
+      await onSubmit({
+        title: title.trim(),
+        content: content.trim(),
+        files: images.map((img) => img.file),
+      });
+      // onClose is handled by parent on success, or we can close here?
+      // Usually parent handles success.
+      // But if parent uses mutation, it might take time.
+      // We'll keep isSubmitting true until unmount or error.
+    } catch (error) {
+      console.error(error);
+      setIsSubmitting(false);
+    }
   };
 
   // Auto-resize textarea
@@ -71,23 +72,11 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <motion.div
-        className={styles.modal}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <motion.div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.header}>
           <h2 className={styles.headerTitle}>Create Post</h2>
-          <motion.button
-            className={styles.closeBtn}
-            onClick={onClose}
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.9 }}
-          >
+          <motion.button className={styles.closeBtn} onClick={onClose}>
             <X size={24} />
           </motion.button>
         </div>
@@ -97,7 +86,6 @@ const CreatePostModal = ({ onClose, onSubmit, userAvatar, userName }) => {
           <img src={userAvatar} alt={userName} className={styles.avatar} />
           <div className={styles.userDetails}>
             <span className={styles.userName}>{userName}</span>
-            <span className={styles.visibility}>🌍 Public</span>
           </div>
         </div>
 

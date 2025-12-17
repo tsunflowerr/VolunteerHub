@@ -15,7 +15,7 @@ export const createAndUpdateEventSchema = Joi.object(
             'string.min': `"description" should have a minimum length of {#limit}`,
             'string.max': `"description" should have a maximum length of {#limit}`,
         }),
-        categories: Joi.array().items(Joi.string().hex().length(24)).min(1).required().messages({
+        categories: Joi.array().items(Joi.string().hex().length(24)).min(1).single().required().messages({
             'array.base': `"categories" should be an array`,
             'array.min': `"categories" must contain at least 1 category`,
             'string.hex': `"categories" items must be valid ObjectIds`,

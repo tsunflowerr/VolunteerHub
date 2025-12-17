@@ -11,8 +11,20 @@ import {
 } from '../validators/registrationValidator.js';
 import { validate } from '../middleware/validate.js';
 import { createLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
+
+// Helper to map file path to body for validation
+const mapFileToBody = (req, res, next) => {
+    if (req.file) {
+        req.body.thumbnail = req.file.path;
+    } else if (typeof req.body.thumbnail === 'object' && req.body.thumbnail !== null) {
+         // Sanitize: If thumbnail is an object (e.g. {}), remove it so Joi ignores it
+        delete req.body.thumbnail;
+    }
+    next();
+};
 
 // Apply authMiddleware and managerMiddleware to all routes
 router.use(authMiddleware, managerMiddleware);
@@ -31,7 +43,7 @@ router.use(authMiddleware, managerMiddleware);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -42,87 +54,43 @@ router.use(authMiddleware, managerMiddleware);
  *               - endDate
  *               - categories
  *               - capacity
+ *               - thumbnail
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Beach Cleanup Drive"
  *               description:
  *                 type: string
- *                 example: "Join us to clean up the local beach"
  *               location:
  *                 type: string
- *                 example: "Nha Trang Beach, Vietnam"
  *               startDate:
  *                 type: string
  *                 format: date-time
- *                 example: "2025-11-15T08:00:00Z"
  *               endDate:
  *                 type: string
  *                 format: date-time
- *                 example: "2025-11-15T18:00:00Z"
  *               categories:
  *                 type: array
  *                 items:
  *                   type: string
- *                 example: ["6123456789abcdef01234567"]
  *               activities:
  *                 type: string
- *                 example: "Collecting trash, sorting recyclables"
  *               prepare:
  *                 type: string
- *                 example: "Wear comfortable clothes, bring water"
  *               capacity:
  *                 type: number
- *                 example: 50
  *               thumbnail:
  *                 type: string
- *                 example: "https://example.com/thumbnail.jpg"
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Event created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   $ref: '#/components/schemas/Event'
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden - Manager role required
- *   get:
- *     summary: Get all events created by current manager
- *     tags: [Manager]
- *     security:
- *       - cookieAuth: []
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of manager's events
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Event'
  */
 // Áp dụng rate limiting cho event creation
-router.post('/events', createLimiter, validate(createAndUpdateEventSchema), createEvent);
+router.post('/events', createLimiter, upload.single('thumbnail'), mapFileToBody, validate(createAndUpdateEventSchema), createEvent);
 router.get('/events', getEventsByManager);
 
 /**
@@ -144,77 +112,41 @@ router.get('/events', getEventsByManager);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Beach Cleanup Drive - Updated"
  *               description:
  *                 type: string
  *               location:
  *                 type: string
  *               startDate:
  *                 type: string
- *                 format: date-time
- *                 example: "2025-11-15T08:00:00Z"
  *               endDate:
  *                 type: string
- *                 format: date-time
- *                 example: "2025-11-15T18:00:00Z"
  *               capacity:
  *                 type: number
- *                 example: 60
  *               categories:
  *                 type: array
- *                 items:
- *                   type: string
  *               activities:
  *                 type: string
  *               prepare:
  *                 type: string
  *               thumbnail:
  *                 type: string
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Event updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
  *       403:
  *         description: Not authorized to update this event
  *       404:
  *         description: Event not found
- *   delete:
- *     summary: Delete an event (Manager only)
- *     tags: [Manager]
- *     security:
- *       - cookieAuth: []
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Event ID
- *     responses:
- *       200:
- *         description: Event deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       403:
- *         description: Not authorized to delete this event
  */
-router.put('/events/:id', updateLimiter, validate(objectIdSchema, 'params'), validate(createAndUpdateEventSchema), updateEvent);
+router.put('/events/:id', updateLimiter, validate(objectIdSchema, 'params'), upload.single('thumbnail'), mapFileToBody, validate(createAndUpdateEventSchema), updateEvent);
+
 router.delete('/events/:id', deleteLimiter, validate(objectIdSchema, 'params'), deleteEvent);
 
 /**
