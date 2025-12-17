@@ -67,11 +67,9 @@ const EventDiscussion = () => {
   const unregisterMutation = useUnregisterEvent();
 
   // Derived Data
-  const event = eventData?.event;
+  const eventDetails = eventData?.event;
   const participants = volunteersData?.volunteers || [];
   const posts = postsData?.posts || [];
-
-  console.log(postsData);
 
   const isJoined = useMemo(() => {
     return myRegistrations?.data?.some(
@@ -82,15 +80,15 @@ const EventDiscussion = () => {
   }, [myRegistrations, id]);
 
   const canDiscuss = useMemo(() => {
-    if (!event || !user) return false;
+    if (!eventDetails || !user) return false;
     // Basic check: Admin, Manager, or Joined Volunteer
     // You can replace this with checkPermission if needed, e.g.:
     const currentUserState = isJoined ? 'approved' : 'none';
     return checkPermission(user, RESOURCES.EVENTS, ACTIONS.DISCUSSION, {
-      ...event,
+      ...eventDetails,
       currentUserState,
     });
-  }, [event, user, isJoined]);
+  }, [eventDetails, user, isJoined]);
 
   // Handlers
   const handleCreatePost = (newPost) => {
@@ -230,7 +228,7 @@ const EventDiscussion = () => {
     );
   }
 
-  if (!event) {
+  if (!eventDetails) {
     return (
       <div className={styles.error}>
         <h2>Event not found</h2>
@@ -259,8 +257,8 @@ const EventDiscussion = () => {
           >
             <div className={styles.thumbnailWrapper}>
               <img
-                src={event.thumbnail}
-                alt={event.name}
+                src={eventDetails.thumbnail}
+                alt={eventDetails.name}
                 className={styles.thumbnail}
               />
               <div className={styles.thumbnailOverlay} />
@@ -270,15 +268,15 @@ const EventDiscussion = () => {
             <div className={styles.managerBar}>
               <img
                 src={
-                  event.managerId?.avatar ||
+                  eventDetails.managerId?.avatar ||
                   'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager'
                 }
-                alt={event.managerId?.username || 'Manager'}
+                alt={eventDetails.managerId?.username || 'Manager'}
                 className={styles.managerAvatar}
               />
               <span className={styles.managerName}>
                 Organized by{' '}
-                <strong>{event.managerId?.username || 'Unknown'}</strong>
+                <strong>{eventDetails.managerId?.username || 'Unknown'}</strong>
               </span>
             </div>
           </motion.div>
@@ -290,13 +288,13 @@ const EventDiscussion = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <h1 className={styles.eventName}>{event.name}</h1>
+            <h1 className={styles.eventName}>{eventDetails.name}</h1>
 
             <div className={styles.participantsInfo}>
               <div className={styles.participantCount}>
                 <Users size={18} />
                 <span>
-                  {event.registrationsCount} / {event.capacity} participants
+                  {eventDetails.registrationsCount} / {eventDetails.capacity} participants
                 </span>
               </div>
 
@@ -454,12 +452,12 @@ const EventDiscussion = () => {
               <Info size={20} />
               About This Event
             </h3>
-            <p className={styles.eventDescription}>{event.description}</p>
+            <p className={styles.eventDescription}>{eventDetails.description}</p>
             <div className={styles.eventDetails}>
               <div className={styles.eventDetail}>
                 <Calendar size={16} />
                 <span>
-                  {new Date(event.startDate).toLocaleDateString('en-US', {
+                  {new Date(eventDetails.startDate).toLocaleDateString('en-US', {
                     weekday: 'long',
                     month: 'long',
                     day: 'numeric',
@@ -469,7 +467,7 @@ const EventDiscussion = () => {
               </div>
               <div className={styles.eventDetail}>
                 <MapPin size={16} />
-                <span>{event.location}</span>
+                <span>{eventDetails.location}</span>
               </div>
             </div>
             <button
@@ -557,6 +555,7 @@ const EventDiscussion = () => {
             onClose={() => setSelectedPost(null)}
             onLike={handleLikePost}
             eventId={id}
+            event={eventDetails} // Pass eventDetails object for ABAC
             currentUser={user}
           />
         )}

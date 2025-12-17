@@ -550,7 +550,7 @@ router.delete('/:eventId/posts/:postId', authMiddleware, deleteLimiter, validate
  *       401:
  *         description: Unauthorized
  */
-router.get('/:eventId/posts/:postId/comments', validate(eventPostParamsSchema, 'params'), getCommentsByPost);
+router.get('/:eventId/posts/:postId/comments', optionalAuthMiddleware, validate(eventPostParamsSchema, 'params'), getCommentsByPost);
 // Áp dụng rate limiting cho comment operations
 router.post('/:eventId/posts/:postId/comments', authMiddleware, createLimiter, validate(eventPostParamsSchema, 'params'), validate(createAndUpdateCommentSchema), addComment);
 

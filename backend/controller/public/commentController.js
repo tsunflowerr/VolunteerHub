@@ -175,112 +175,59 @@ export async function getCommentsByPost(req, res) {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         
-        const comments = await Comment.aggregate([
-            // Stage 1: Match parent comments only
-            {
-                $match: {
-                    postId: new mongoose.Types.ObjectId(postId),
-                    parentComment: null
-                }
-            },
-            
-            // Stage 2: Sort
-            { $sort: { createdAt: -1 } },
-            
-            // Stage 3: Pagination
-            { $skip: (page - 1) * limit },
-            { $limit: limit * 1 },
-            
-            // Stage 4: Lookup replies using $graphLookup (1 query!)
-            {
-                $graphLookup: {
-                    from: 'comments',
-                    startWith: '$_id',
-                    connectFromField: '_id',
-                    connectToField: 'parentComment',
-                    as: 'replies',
-                    maxDepth: 0, // Only direct children
-                    depthField: 'depth'
-                }
-            },
-            
-            // Stage 5: Lookup author for parent comments
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'author',
-                    foreignField: '_id',
-                    as: 'authorData'
-                }
-            },
-            
-            // Stage 6: Lookup authors for replies
-            {
-                $unwind: {
-                    path: '$replies',
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'replies.author',
-                    foreignField: '_id',
-                    as: 'replies.authorData'
-                }
-            },
-            
-            // Stage 7: Group back
-            {
-                $group: {
-                    _id: '$_id',
-                    postId: { $first: '$postId' },
-                    eventId: { $first: '$eventId' },
-                    content: { $first: '$content' },
-                    author: { $first: { $arrayElemAt: ['$authorData', 0] } },
-                    likesCount: { $first: '$likesCount' },
-                    createdAt: { $first: '$createdAt' },
-                    replies: { 
-                        $push: {
-                            $cond: [
-                                { $eq: ['$replies', {}] },
-                                '$$REMOVE',
-                                {
-                                    _id: '$replies._id',
-                                    content: '$replies.content',
-                                    author: { $arrayElemAt: ['$replies.authorData', 0] },
-                                    likesCount: '$replies.likesCount',
-                                    createdAt: '$replies.createdAt'
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            
-            // Stage 8: Sort replies
-            {
-                $addFields: {
-                    replies: {
-                        $sortArray: {
-                            input: '$replies',
-                            sortBy: { createdAt: 1 }
-                        }
-                    }
-                }
-            },
-            
-            // Stage 9: Project (clean up)
-            {
-                $project: {
-                    'author.password': 0,
-                    'author.pushSubscription': 0,
-                    'replies.author.password': 0,
-                    'replies.author.pushSubscription': 0
-                }
-            }
-        ]);
         const total = await Comment.countDocuments({ postId, parentComment: null });
+        
+        const comments = await Comment.find({ 
+            postId, 
+            parentComment: null 
+        })
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('author', 'username email avatar')
+        .populate({
+            path: 'replies',
+            options: { sort: { createdAt: 1 } },
+            populate: {
+                path: 'author',
+                select: 'username email avatar'
+            }
+        })
+        .lean(); // Use lean for easier modification
+
+        if (req.user) {
+            const commentIds = [];
+            comments.forEach(c => {
+                commentIds.push(c._id);
+                if (c.replies) {
+                    c.replies.forEach(r => commentIds.push(r._id));
+                }
+            });
+
+            const likes = await Like.find({
+                userId: req.user._id,
+                likeableId: { $in: commentIds },
+                likeableType: 'comment'
+            }).select('likeableId').lean();
+
+            const likedCommentIds = new Set(likes.map(l => l.likeableId.toString()));
+
+            comments.forEach(c => {
+                c.isLiked = likedCommentIds.has(c._id.toString());
+                if (c.replies) {
+                    c.replies.forEach(r => {
+                        r.isLiked = likedCommentIds.has(r._id.toString());
+                    });
+                }
+            });
+        } else {
+             comments.forEach(c => {
+                c.isLiked = false;
+                if (c.replies) {
+                    c.replies.forEach(r => r.isLiked = false);
+                }
+            });
+        }
         
         res.status(200).json({
             success: true,

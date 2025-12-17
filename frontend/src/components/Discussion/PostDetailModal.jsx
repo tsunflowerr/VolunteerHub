@@ -9,103 +9,72 @@ import {
   ChevronUp,
   MoreHorizontal,
   Globe,
+  Trash2,
+  Edit2,
 } from 'lucide-react';
 import styles from './PostDetailModal.module.css';
 import { formatDistanceToNow } from 'date-fns';
+import useAuth from '../../hooks/useAuth';
+import {
+  usePostComments,
+  useAddComment,
+  useReplyComment,
+  useUpdateComment,
+  useDeleteComment,
+  useLikeComment,
+} from '../../hooks/useComment';
+
+import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 const formatTimeAgo = (dateString) => {
-  const date = new Date(dateString);
-  return formatDistanceToNow(date, { addSuffix: true });
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    return '';
+  }
 };
 
-// Mock comments data
-const mockComments = [
-  {
-    _id: 'comment1',
-    content: "This is amazing! Can't wait to join the event! 🎉",
-    author: {
-      _id: 'user1',
-      username: 'Alice Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alice',
-    },
-    likesCount: 5,
-    isLiked: false,
-    createdAt: '2025-11-27T12:30:00Z',
-    replies: [
-      {
-        _id: 'reply1',
-        content: 'Me too! See you there!',
-        author: {
-          _id: 'user2',
-          username: 'Bob Smith',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bob',
-        },
-        likesCount: 2,
-        isLiked: false,
-        createdAt: '2025-11-27T13:00:00Z',
-      },
-      {
-        _id: 'reply2',
-        content: "Let's make it a great event!",
-        author: {
-          _id: 'user3',
-          username: 'Carol Williams',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carol',
-        },
-        likesCount: 1,
-        isLiked: true,
-        createdAt: '2025-11-27T13:30:00Z',
-      },
-    ],
-  },
-  {
-    _id: 'comment2',
-    content: "Great initiative! I've shared this with my friends.",
-    author: {
-      _id: 'user4',
-      username: 'David Brown',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-    },
-    likesCount: 3,
-    isLiked: true,
-    createdAt: '2025-11-26T18:00:00Z',
-    replies: [],
-  },
-  {
-    _id: 'comment3',
-    content: 'What time should we arrive? Is there parking available?',
-    author: {
-      _id: 'user5',
-      username: 'Eva Martinez',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Eva',
-    },
-    likesCount: 0,
-    isLiked: false,
-    createdAt: '2025-11-26T10:00:00Z',
-    replies: [
-      {
-        _id: 'reply3',
-        content:
-          'Please arrive 30 minutes before the start time. Yes, there is free parking available at the venue.',
-        author: {
-          _id: 'manager1',
-          username: 'John Manager',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager',
-        },
-        likesCount: 8,
-        isLiked: false,
-        createdAt: '2025-11-26T11:00:00Z',
-      },
-    ],
-  },
-];
-
-const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
+const CommentItem = ({
+  comment,
+  onReply,
+  onLike,
+  onUpdate,
+  onDelete,
+  currentUser,
+  event, // Receive event for ABAC
+  depth = 0,
+}) => {
   const [showReplies, setShowReplies] = useState(
     depth === 0 && comment.replies?.length > 0
   );
   const [replyText, setReplyText] = useState('');
+  const [editText, setEditText] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Safe check for author (in case user is deleted)
+  const author = comment.author || {
+    _id: 'deleted',
+    username: 'Deleted User',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Deleted',
+  };
+
+  // ABAC Checks
+  const canEdit = checkPermission(
+    currentUser,
+    RESOURCES.COMMENTS,
+    ACTIONS.EDIT,
+    { comment, event }
+  );
+  const canDelete = checkPermission(
+    currentUser,
+    RESOURCES.COMMENTS,
+    ACTIONS.DELETE,
+    { comment, event }
+  );
 
   const handleSubmitReply = () => {
     if (!replyText.trim()) return;
@@ -114,22 +83,81 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
     setIsReplying(false);
   };
 
+  const handleUpdate = () => {
+    if (!editText.trim() || editText === comment.content) {
+      setIsEditing(false);
+      return;
+    }
+    onUpdate(comment._id, editText);
+    setIsEditing(false);
+  };
+
   return (
     <div
       className={styles.commentItem}
       style={{ marginLeft: depth > 0 ? '44px' : 0 }}
     >
       <img
-        src={comment.author.avatar}
-        alt={comment.author.username}
+        src={author.avatar}
+        alt={author.username}
         className={styles.commentAvatar}
       />
       <div className={styles.commentContent}>
         <div className={styles.commentBubble}>
-          <span className={styles.commentAuthor}>
-            {comment.author.username}
-          </span>
-          <p className={styles.commentText}>{comment.content}</p>
+          <div className={styles.commentHeader}>
+            <span className={styles.commentAuthor}>{author.username}</span>
+            {!isEditing && (
+              <div className={styles.commentMenu}>
+                {canEdit && (
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => setIsEditing(true)}
+                    title="Edit"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => onDelete(comment._id)}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {isEditing ? (
+            <div className={styles.editContainer}>
+              <input
+                type="text"
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleUpdate();
+                  if (e.key === 'Escape') setIsEditing(false);
+                }}
+                autoFocus
+                className={styles.editInput}
+              />
+              <div className={styles.editActions}>
+                <button onClick={handleUpdate} className={styles.saveBtn}>
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className={styles.cancelBtn}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className={styles.commentText}>{comment.content}</p>
+          )}
         </div>
         <div className={styles.commentActions}>
           <button
@@ -140,12 +168,14 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
           >
             Like
           </button>
-          <button
-            className={styles.commentAction}
-            onClick={() => setIsReplying(!isReplying)}
-          >
-            Reply
-          </button>
+          {depth === 0 && (
+            <button
+              className={styles.commentAction}
+              onClick={() => setIsReplying(!isReplying)}
+            >
+              Reply
+            </button>
+          )}
           <span className={styles.commentTime}>
             {formatTimeAgo(comment.createdAt)}
           </span>
@@ -203,6 +233,10 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
                     comment={reply}
                     onReply={onReply}
                     onLike={onLike}
+                    onUpdate={onUpdate}
+                    onDelete={onDelete}
+                    currentUser={currentUser}
+                    event={event}
                     depth={1}
                   />
                 ))}
@@ -215,11 +249,27 @@ const CommentItem = ({ comment, onReply, onLike, depth = 0 }) => {
   );
 };
 
-const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
-  const [comments, setComments] = useState(mockComments);
+const PostDetailModal = ({
+  post,
+  onClose,
+  onLike,
+  eventId,
+  currentUser,
+  event,
+}) => {
   const [newComment, setNewComment] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const commentInputRef = useRef(null);
+
+  const { data: commentsData, isLoading } = usePostComments(eventId, post._id);
+  const comments = commentsData?.comments || [];
+  console.log('Comments Data:', commentsData);
+
+  const addCommentMutation = useAddComment();
+  const replyCommentMutation = useReplyComment();
+  const updateCommentMutation = useUpdateComment();
+  const deleteCommentMutation = useDeleteComment();
+  const likeCommentMutation = useLikeComment();
 
   // Focus comment input on mount
   useEffect(() => {
@@ -229,81 +279,39 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
   }, []);
 
   const handleLikeComment = (commentId) => {
-    setComments((prev) =>
-      prev.map((comment) => {
-        if (comment._id === commentId) {
-          return {
-            ...comment,
-            isLiked: !comment.isLiked,
-            likesCount: comment.isLiked
-              ? comment.likesCount - 1
-              : comment.likesCount + 1,
-          };
-        }
-        // Check replies
-        if (comment.replies) {
-          return {
-            ...comment,
-            replies: comment.replies.map((reply) =>
-              reply._id === commentId
-                ? {
-                    ...reply,
-                    isLiked: !reply.isLiked,
-                    likesCount: reply.isLiked
-                      ? reply.likesCount - 1
-                      : reply.likesCount + 1,
-                  }
-                : reply
-            ),
-          };
-        }
-        return comment;
-      })
-    );
+    likeCommentMutation.mutate({ eventId, postId: post._id, commentId });
   };
 
   const handleReply = (parentId, text) => {
-    const newReply = {
-      _id: `reply${Date.now()}`,
+    replyCommentMutation.mutate({
+      eventId,
+      postId: post._id,
+      commentId: parentId,
       content: text,
-      author: {
-        _id: 'manager1',
-        username: 'John Manager',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager',
-      },
-      likesCount: 0,
-      isLiked: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment._id === parentId
-          ? { ...comment, replies: [...(comment.replies || []), newReply] }
-          : comment
-      )
-    );
+    });
   };
 
   const handleSubmitComment = () => {
     if (!newComment.trim()) return;
+    addCommentMutation.mutate(
+      { eventId, postId: post._id, content: newComment.trim() },
+      { onSuccess: () => setNewComment('') }
+    );
+  };
 
-    const comment = {
-      _id: `comment${Date.now()}`,
-      content: newComment.trim(),
-      author: {
-        _id: 'manager1',
-        username: 'John Manager',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Manager',
-      },
-      likesCount: 0,
-      isLiked: false,
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
+  const handleUpdateComment = (commentId, content) => {
+    updateCommentMutation.mutate({
+      eventId,
+      postId: post._id,
+      commentId,
+      content,
+    });
+  };
 
-    setComments((prev) => [comment, ...prev]);
-    setNewComment('');
+  const handleDeleteComment = (commentId) => {
+    if (window.confirm('Are you sure you want to delete this comment?')) {
+      deleteCommentMutation.mutate({ eventId, postId: post._id, commentId });
+    }
   };
 
   return (
@@ -384,7 +392,7 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
                 </>
               )}
             </div>
-            <span>{comments.length} comments</span>
+            <span>{post.commentsCount || comments.length} comments</span>
           </div>
 
           {/* Actions */}
@@ -413,21 +421,36 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
 
           {/* Comments Section */}
           <div className={styles.commentsSection}>
-            {comments.map((comment) => (
-              <CommentItem
-                key={comment._id}
-                comment={comment}
-                onReply={handleReply}
-                onLike={handleLikeComment}
-              />
-            ))}
+            {isLoading ? (
+              <p>Loading comments...</p>
+            ) : comments.length > 0 ? (
+              comments.map((comment) => (
+                <CommentItem
+                  key={comment._id}
+                  comment={comment}
+                  onReply={handleReply}
+                  onLike={handleLikeComment}
+                  onUpdate={handleUpdateComment}
+                  onDelete={handleDeleteComment}
+                  currentUser={currentUser}
+                  event={event}
+                />
+              ))
+            ) : (
+              <p className={styles.noComments}>
+                No comments yet. Be the first to share your thoughts!
+              </p>
+            )}
           </div>
         </div>
 
         {/* Comment Input */}
         <div className={styles.commentInputWrapper}>
           <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Manager"
+            src={
+              currentUser?.avatar ||
+              'https://api.dicebear.com/7.x/avataaars/svg?seed=Guest'
+            }
             alt="Your avatar"
             className={styles.inputAvatar}
           />
@@ -444,7 +467,7 @@ const PostDetailModal = ({ post, onClose, onLike, eventId }) => {
             <button
               className={styles.sendBtn}
               onClick={handleSubmitComment}
-              disabled={!newComment.trim()}
+              disabled={!newComment.trim() || addCommentMutation.isPending}
             >
               <Send size={18} />
             </button>

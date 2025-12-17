@@ -8,7 +8,15 @@ const commentSchema = new mongoose.Schema({
     parentComment: {type: mongoose.Schema.Types.ObjectId, ref: "comment", default: null},
     likesCount: { type: Number, default: 0 },
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+commentSchema.virtual('replies', {
+    ref: 'comment',
+    localField: '_id',
+    foreignField: 'parentComment'
 });
 
 commentSchema.index({postId: 1, createdAt: -1});

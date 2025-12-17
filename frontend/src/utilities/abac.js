@@ -16,7 +16,11 @@ const ROLES = {
     },
     posts: {
       edit: false,
-      delete: true, // Admin can delete any post
+      delete: true,
+    },
+    comments: {
+      edit: false, // Admin cannot edit others' comments
+      delete: true, // Admin can delete any comment
     },
   },
   manager: {
@@ -42,11 +46,41 @@ const ROLES = {
     },
     posts: {
       edit: (user, post) => {
-        const userId = user._id || user.id;
-        const authorId = post.author?._id || post.author?.id;
-        return authorId === userId;
+        const userId = user.id || user._id;
+        const managerId =
+          post.eventId?.managerId?._id || post.eventId?.managerId;
+        // Manager can edit posts? User prompt for POSTS said "Manager can edit/delete posts in their events".
+        // OK.
+        return managerId === userId;
       },
-      delete: true,
+      delete: (user, post) => {
+        const userId = user.id || user._id;
+        const managerId =
+          post.eventId?.managerId?._id || post.eventId?.managerId;
+        return managerId === userId;
+      },
+    },
+    comments: {
+      edit: (user, context) => {
+        // context = { comment, event }
+        const userId = user.id || user._id;
+        const authorId = context.comment.author?._id || context.comment.author;
+        return authorId === userId; // Manager can only edit their own comments
+      },
+      delete: (user, context) => {
+        const userId = user.id || user._id;
+        const authorId = context.comment.author?._id || context.comment.author;
+        // Check if author
+        if (authorId === userId) return true;
+
+        // Check if event manager
+        // context.event is required
+        const managerId =
+          context.event?.managerId?._id ||
+          context.event?.managerId ||
+          context.event?.managerId;
+        return managerId === userId;
+      },
     },
   },
   user: {
@@ -66,12 +100,24 @@ const ROLES = {
       edit: (user, post) => {
         const userId = user.id || user._id;
         const authorId = post.author?._id || post.author;
-        return authorId === userId; // User can edit their own posts
+        return authorId === userId;
       },
       delete: (user, post) => {
         const userId = user.id || user._id;
         const authorId = post.author?._id || post.author;
-        return authorId === userId; // User can delete their own posts
+        return authorId === userId;
+      },
+    },
+    comments: {
+      edit: (user, context) => {
+        const userId = user.id || user._id;
+        const authorId = context.comment.author?._id || context.comment.author;
+        return authorId === userId;
+      },
+      delete: (user, context) => {
+        const userId = user.id || user._id;
+        const authorId = context.comment.author?._id || context.comment.author;
+        return authorId === userId;
       },
     },
   },
@@ -110,6 +156,7 @@ export const RESOURCES = {
   EVENTS: 'events',
   DASHBOARD: 'dashboard',
   POSTS: 'posts',
+  COMMENTS: 'comments',
 };
 
 export const ACTIONS = {
