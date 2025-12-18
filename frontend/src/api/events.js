@@ -3,7 +3,21 @@ import api from './api';
 export const eventApi = {
   getAll: async (params = {}) => {
     // params: { page, limit, category, keyword, etc. }
-    const response = await api.get('/search/events', { params });
+    const response = await api.get('/search/events', {
+      params,
+      paramsSerializer: (params) => {
+        const searchParams = new URLSearchParams();
+        Object.keys(params).forEach((key) => {
+          const value = params[key];
+          if (Array.isArray(value)) {
+            value.forEach((val) => searchParams.append(key, val));
+          } else if (value !== undefined && value !== null && value !== '') {
+            searchParams.append(key, value);
+          }
+        });
+        return searchParams.toString();
+      },
+    });
     return response.data;
   },
 

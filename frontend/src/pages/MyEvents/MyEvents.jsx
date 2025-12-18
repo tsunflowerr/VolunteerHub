@@ -4,10 +4,7 @@ import { Pagination } from '@mui/material';
 import EventList from '../../components/EventCard/EventList.jsx';
 import SearchBox from '../../components/SearchBox/SearchBox.jsx';
 import styles from './MyEvents.module.css';
-import {
-  useMyRegistrations,
-  useEvents,
-} from '../../hooks/useEvents';
+import { useMyRegistrations, useEvents } from '../../hooks/useEvents';
 import { useBookmarkedEvents } from '../../hooks/useUser';
 import useAuth from '../../hooks/useAuth';
 
@@ -15,10 +12,14 @@ const MyEvents = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('enrolled');
   const [currentPage, setCurrentPage] = useState(1);
-  const [eventsPerPage] = useState(12);
+  const [eventsPerPage] = useState(10);
   const [searchParams, setSearchParams] = useState({
     keyword: '',
     category: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    sort: 'newest',
   });
 
   // Restrict access for Admin and Manager
@@ -49,7 +50,7 @@ const MyEvents = () => {
         return 'confirmed';
       case 'requested':
         return 'pending';
-      case 'past':
+      case 'completed':
         return 'completed';
       default:
         return undefined;
@@ -61,7 +62,7 @@ const MyEvents = () => {
   // since backend pagination doesn't support complex filtering on registrations endpoint easily yet.
   const { data: regData, isLoading: isRegLoading } = useMyRegistrations({
     status: registrationStatus,
-    limit: 1000,
+    limit: 100,
     // Only fetch if NOT on bookmarked tab
     enabled: activeTab !== 'bookmarked',
   });
@@ -83,27 +84,121 @@ const MyEvents = () => {
     }
 
     // Client-side Filtering
-    let filteredEvents = rawEvents.filter((event) => {
-      if (!event) return false;
+    let filteredEvents = (rawEvents || []).filter((event) => !!event);
 
-      // Keyword Filter
-      if (searchParams.keyword) {
-        const keyword = searchParams.keyword.toLowerCase();
-        const nameMatch = event.name?.toLowerCase().includes(keyword);
-        const descMatch = event.description?.toLowerCase().includes(keyword);
-        if (!nameMatch && !descMatch) return false;
+    // Keyword (searchQuery) - search in name, description, location, manager username
+    if (searchParams.keyword) {
+      const keyword = searchParams.keyword.trim().toLowerCase();
+      if (keyword.length > 0) {
+        filteredEvents = filteredEvents.filter((event) => {
+          const name = event.name || '';
+
+          return name.toLowerCase().includes(keyword);
+        });
       }
+    }
 
-      // Category Filter
-      if (searchParams.category) {
-        // Assuming event.categories is an array of objects with 'slug'
-        const hasCategory = event.categories?.some(
-          (cat) => cat.slug === searchParams.category
+    // Category filter (support multiple categories)
+    if (searchParams.category && searchParams.category.length > 0) {
+      const catSlugs = Array.isArray(searchParams.category)
+        ? searchParams.category
+        : [searchParams.category];
+
+      filteredEvents = filteredEvents.filter((event) =>
+        Array.isArray(event.categories)
+          ? event.categories.some((c) => catSlugs.includes(c.slug))
+          : false
+      );
+    }
+
+    // Location filter (substring match)
+    if (searchParams.location) {
+      const loc = searchParams.location.trim().toLowerCase();
+      if (loc.length > 0) {
+        filteredEvents = filteredEvents.filter((event) =>
+          (event.location || '').toLowerCase().includes(loc)
         );
-        if (!hasCategory) return false;
       }
+    }
 
-      return true;
+    // Date range filter (startDate between dateFrom and dateTo)
+    if (searchParams.startDate || searchParams.endDate) {
+      const from = searchParams.startDate
+        ? new Date(searchParams.startDate)
+        : null;
+      const to = searchParams.endDate ? new Date(searchParams.endDate) : null;
+
+      filteredEvents = filteredEvents.filter((event) => {
+        if (!event.startDate) return false;
+        const evDate = new Date(event.startDate);
+        if (Number.isNaN(evDate.getTime())) return false;
+
+        if (from && evDate < from) return false;
+        if (to && evDate > to) return false;
+        return true;
+      });
+    }
+
+    // Sorting
+    const sortBy = searchParams.sort || 'newest';
+    const now = new Date();
+
+    const getStartDate = (ev) => {
+      const d = ev.startDate ? new Date(ev.startDate) : null;
+      return d && !Number.isNaN(d.getTime()) ? d : null;
+    };
+
+    const relevanceScore = (ev, keyword) => {
+      if (!keyword) return 0;
+      const k = keyword.toLowerCase();
+      let score = 0;
+      if (ev.name?.toLowerCase().includes(k)) score += 10;
+      if (ev.description?.toLowerCase().includes(k)) score += 5;
+      if (ev.location?.toLowerCase().includes(k)) score += 3;
+      if (ev.managerId?.username?.toLowerCase().includes(k)) score += 2;
+      return score;
+    };
+
+    // If sorting by upcoming, only include future events
+    if (sortBy === 'upcoming') {
+      filteredEvents = filteredEvents.filter((ev) => {
+        const sd = getStartDate(ev);
+        return sd && sd > now;
+      });
+    }
+
+    filteredEvents.sort((a, b) => {
+      switch (sortBy) {
+        case 'relevance': {
+          const scoreA = relevanceScore(a, searchParams.keyword);
+          const scoreB = relevanceScore(b, searchParams.keyword);
+          return scoreB - scoreA;
+        }
+        case 'upcoming': {
+          const da = getStartDate(a);
+          const db = getStartDate(b);
+          // prefer nearest future date (future first), then past by proximity
+          const pa = da ? Math.abs(da - now) : Infinity;
+          const pb = db ? Math.abs(db - now) : Infinity;
+          return pa - pb;
+        }
+        case 'popular':
+        case 'trending': {
+          const ra = Number(a.registrationsCount) || 0;
+          const rb = Number(b.registrationsCount) || 0;
+          return rb - ra;
+        }
+        case 'newest':
+        default: {
+          // Newest: latest startDate first
+          const da = getStartDate(a);
+          const db = getStartDate(b);
+          if (!da && !db) return 0;
+          if (!da) return 1;
+          if (!db) return -1;
+          return db - da;
+        }
+      }
     });
 
     // Pagination
@@ -137,14 +232,28 @@ const MyEvents = () => {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
-    setSearchParams({ keyword: '', category: '' }); // Optional: Reset search on tab change?
+    setSearchParams({
+      keyword: '',
+      category: '',
+      location: '',
+      startDate: '',
+      endDate: '',
+      sort: 'newest',
+    }); // Optional: Reset search on tab change?
   };
 
   const handleSearch = (searchData) => {
     console.log('Search data:', searchData);
     setSearchParams({
-      keyword: searchData.keyword || '',
-      category: searchData.category || '',
+      keyword: searchData.searchQuery || '',
+      category:
+        searchData.categories && searchData.categories.length > 0
+          ? searchData.categories
+          : null,
+      location: searchData.location || '',
+      startDate: searchData.dateFrom || '',
+      endDate: searchData.dateTo || '',
+      sort: searchData.sortBy || 'newest',
     });
     setCurrentPage(1); // Reset to first page on new search
   };
@@ -194,11 +303,11 @@ const MyEvents = () => {
           </button>
           <button
             className={`${styles['my-events__tab']} ${
-              activeTab === 'past' ? styles['my-events__tab--active'] : ''
+              activeTab === 'completed' ? styles['my-events__tab--active'] : ''
             }`}
-            onClick={() => handleTabChange('past')}
+            onClick={() => handleTabChange('completed')}
           >
-            Past Events
+            Completed Events
           </button>
         </div>
 

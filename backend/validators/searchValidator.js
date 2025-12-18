@@ -8,9 +8,12 @@ export const eventSearchSchema = Joi.object({
             'string.max': 'Từ khóa không được vượt quá 100 ký tự'
         }),
     
-    category: Joi.string().trim().optional()
+    category: Joi.alternatives().try(
+        Joi.string().trim(),
+        Joi.array().items(Joi.string().trim())
+    ).optional()
         .messages({
-            'string.base': 'Danh mục không hợp lệ'
+            'alternatives.match': 'Danh mục không hợp lệ (phải là chuỗi hoặc danh sách chuỗi)'
         }),
     
     location: Joi.string().trim().optional()

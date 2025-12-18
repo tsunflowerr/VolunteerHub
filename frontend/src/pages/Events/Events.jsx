@@ -27,7 +27,6 @@ const Events = () => {
   const { data, isLoading } = useEvents({
     page: currentPage,
     limit: eventsPerPage,
-    status: 'approved',
     ...activeFilters,
   });
 
@@ -45,8 +44,8 @@ const Events = () => {
       keyword: searchData.searchQuery || '',
       category:
         searchData.categories && searchData.categories.length > 0
-          ? searchData.categories[0]
-          : '',
+          ? searchData.categories
+          : null,
       location: searchData.location || '',
       startDate: searchData.dateFrom || '',
       endDate: searchData.dateTo || '',
