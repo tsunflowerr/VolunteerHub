@@ -1,5 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   EventSearchFilter,
@@ -10,14 +9,10 @@ import {
   useAdminPendingEvents,
   useUpdateEventStatus,
   useAdminDeleteEvent,
-  adminKeys,
 } from '../../hooks/useAdmin';
-import { eventKeys } from '../../hooks/useEvents';
 import styles from '../../components/Admin/EventsTable/EventsTable.module.css';
 
 function EventsManagement() {
-  const queryClient = useQueryClient();
-
   // Data state queries
   const {
     data: pendingEventsData,
@@ -83,89 +78,57 @@ function EventsManagement() {
       };
     }, [filteredEvents, currentPage, itemsPerPage]);
 
+  // Reset page if it exceeds total pages (e.g., after deletion)
+  useEffect(() => {
+    if (currentPage > 1 && currentPage > totalPages) {
+      setCurrentPage((prev) => Math.max(1, prev - 1));
+    }
+  }, [currentPage, totalPages]);
+
   // Handlers
-  const handleSearchChange = useCallback((value) => {
+  const handleSearchChange = (value) => {
     setSearchTerm(value);
     setCurrentPage(1);
-  }, []);
+  };
 
-  const removeEventFromCache = useCallback(
-    (eventId) => {
-      queryClient.setQueryData(adminKeys.pendingEvents(), (oldData) => {
-        if (!oldData?.events) return oldData;
-        return {
-          ...oldData,
-          events: oldData.events.filter((e) => e._id !== eventId),
-        };
-      });
-    },
-    [queryClient]
-  );
-
-  const handleApprove = useCallback(
-    async (eventId) => {
-      try {
-        setActionLoading(eventId);
-        await updateStatusMutation.mutateAsync({
-          eventId,
-          status: 'approved',
-        });
-        // Invalidate public events list so the approved event appears there
-        queryClient.invalidateQueries({ queryKey: eventKeys.all });
-        // Ensure pending list is refreshed
-        queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
-      } catch (err) {
-        console.error('Failed to approve event:', err);
-      } finally {
-        setActionLoading(null);
+  const handleApprove = (eventId) => {
+    // Optimistically set loading
+    setActionLoading(eventId);
+    updateStatusMutation.mutate(
+      { eventId, status: 'approved' },
+      {
+        onSettled: () => setActionLoading(null),
       }
-    },
-    [updateStatusMutation, queryClient]
-  );
+    );
+  };
 
-  const handleReject = useCallback(
-    async (eventId) => {
-      try {
-        setActionLoading(eventId);
-        await updateStatusMutation.mutateAsync({
-          eventId,
-          status: 'rejected',
-        });
-        removeEventFromCache(eventId);
-      } catch (err) {
-        console.error('Failed to reject event:', err);
-      } finally {
-        setActionLoading(null);
+  const handleReject = (eventId) => {
+    setActionLoading(eventId);
+    updateStatusMutation.mutate(
+      { eventId, status: 'rejected' },
+      {
+        onSettled: () => setActionLoading(null),
       }
-    },
-    [updateStatusMutation, removeEventFromCache]
-  );
+    );
+  };
 
-  const handleDelete = useCallback(
-    async (eventId) => {
-      if (!confirm('Are you sure you want to delete this event?')) return;
+  const handleDelete = (eventId) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
 
-      try {
-        setActionLoading(eventId);
-        await deleteEventMutation.mutateAsync(eventId);
-        removeEventFromCache(eventId);
-      } catch (err) {
-        console.error('Failed to delete event:', err);
-      } finally {
-        setActionLoading(null);
-      }
-    },
-    [deleteEventMutation, removeEventFromCache]
-  );
+    setActionLoading(eventId);
+    deleteEventMutation.mutate(eventId, {
+      onSettled: () => setActionLoading(null),
+    });
+  };
 
-  const handlePageChange = useCallback((page) => {
+  const handlePageChange = (page) => {
     setCurrentPage(page);
-  }, []);
+  };
 
-  const handleItemsPerPageChange = useCallback((value) => {
+  const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value);
     setCurrentPage(1);
-  }, []);
+  };
 
   // Loading state
   if (isLoading) {

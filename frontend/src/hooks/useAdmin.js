@@ -157,9 +157,30 @@ export const useUpdateEventStatus = () => {
   return useMutation({
     mutationKey: adminKeys.mutations.updateEventStatus(),
     mutationFn: adminApi.updateEventStatus,
-    onSuccess: (data, { status }) => {
+    onSuccess: (data, { status, eventId }) => {
+      // Manually remove the event from the pending list cache for instant UI update
+      queryClient.setQueryData(adminKeys.pendingEvents(), (oldData) => {
+        if (!oldData || !oldData.events) return oldData;
+        return {
+          ...oldData,
+          events: oldData.events.filter((event) => event._id !== eventId),
+        };
+      });
+
+      // Invalidate pending events list (Admin UI) to ensure consistency
       queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
-      // queryClient.invalidateQueries({ queryKey: ['events'] }); // Also invalidate events list
+
+      // Invalidate public event lists (Events page)
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+
+      // Invalidate specific event details if viewing that event
+      if (eventId) {
+        queryClient.invalidateQueries({ queryKey: ['events', 'detail', eventId] });
+      }
+
+      // Invalidate dashboard stats as approval counts change
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
+
       toast.success(`Event ${status} successfully`);
     },
     onError: (error) => {
