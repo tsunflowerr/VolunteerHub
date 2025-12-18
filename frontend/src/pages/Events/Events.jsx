@@ -7,7 +7,7 @@ import { useEvents } from '../../hooks/useEvents';
 
 const Events = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [eventsPerPage] = useState(12);
+  const [eventsPerPage] = useState(10);
   const [filters, setFilters] = useState({
     keyword: '',
     category: '',
