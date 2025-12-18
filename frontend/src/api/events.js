@@ -58,4 +58,18 @@ export const eventApi = {
     const response = await api.get(`/events/registrations/${registrationId}`);
     return response.data;
   },
+
+  // Get events hosted by a manager (public)
+  getEventsByManager: async (managerId, params = {}) => {
+    const response = await api.get('/events', { 
+      params: { ...params, managerId } 
+    });
+    return response.data;
+  },
+
+  // Get completed registrations for a specific user (public)
+  getUserRegistrations: async (userId, params = {}) => {
+    const response = await api.get(`/events/registrations/user/${userId}`, { params });
+    return response.data;
+  },
 };

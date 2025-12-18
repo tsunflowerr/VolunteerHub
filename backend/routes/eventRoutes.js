@@ -6,7 +6,8 @@ import {
     paginationSchema, 
     objectIdSchema, 
     eventIdSchema, 
-    userEventsQuerySchema 
+    userEventsQuerySchema,
+    userIdSchema
 } from '../validators/eventValidator.js';
 import { createandUpdatePostSchema, eventPostParamsSchema } from '../validators/postValidator.js';
 import { createAndUpdateCommentSchema, eventPostCommentParamsSchema } from '../validators/commentValidator.js';
@@ -14,7 +15,7 @@ import { getAllEvents, getEventById, getTrendingEvents, getEventsByCategorySlug,
 import { createPost, getAllPosts, updatePost, deletePost, getSpecificPost, getAllMediaFromPost } from '../controller/public/postController.js';
 import { addComment, replyComment, getCommentsByPost, updateComment, deleteComment } from '../controller/public/commentController.js';
 import { likeEvent, likeComment, likePost } from '../controller/public/likeController.js';
-import { registerEvent, unregisterEvent, getMyRegistrations, getRegistrationDetail } from '../controller/public/registrationsController.js';
+import { registerEvent, unregisterEvent, getMyRegistrations, getRegistrationDetail, getUserRegistrations } from '../controller/public/registrationsController.js';
 import { 
     registerEventSchema, 
     unregisterEventSchema, 
@@ -976,5 +977,47 @@ router.get('/registrations/my', authMiddleware, validate(getMyRegistrationsSchem
  *         description: Registration not found
  */
 router.get('/registrations/:registrationId', authMiddleware, validate(getRegistrationDetailSchema, 'params'), getRegistrationDetail);
+
+/**
+ * @swagger
+ * /api/events/registrations/user/{userId}:
+ *   get:
+ *     summary: Get completed registrations for a specific user (Public)
+ *     tags: [Registrations]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: List of user's completed registrations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Registration'
+ *                 pagination:
+ *                   type: object
+ */
+router.get('/registrations/user/:userId', validate(userIdSchema, 'params'), validate(paginationSchema, 'query'), getUserRegistrations);
 
 export default router;

@@ -3,7 +3,7 @@ import api from './api';
 export const usersApi = {
   getUserById: async (id) => {
     const response = await api.get(`/users/${id}`);
-    return response.data;
+    return response.data.user;
   },
 
   getProfile: async () => {

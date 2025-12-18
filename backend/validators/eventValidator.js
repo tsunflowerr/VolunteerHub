@@ -94,6 +94,16 @@ export const eventIdSchema = Joi.object({
     }),
 });
 
+// ====== Validation cho userId trong params ======
+export const userIdSchema = Joi.object({
+    userId: Joi.string().hex().length(24).required().messages({
+        'string.base': `"userId" must be a string`,
+        'string.hex': `"userId" must be a valid ObjectId`,
+        'string.length': `"userId" must be 24 characters long`,
+        'any.required': `"userId" is required`,
+    }),
+});
+
 
 // ====== Validation cho getUserEvents query params ======
 export const userEventsQuerySchema = Joi.object({

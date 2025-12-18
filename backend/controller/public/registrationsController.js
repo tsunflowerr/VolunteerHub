@@ -274,3 +274,46 @@ export async function getRegistrationDetail(req, res) {
         res.status(500).json({ success: false, message: "Server error" });
     }
 }
+
+export async function getUserRegistrations(req, res) {
+    try {
+        const { userId } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Only show completed registrations publicly
+        const query = { userId, status: 'completed' };
+
+        const [registrations, total] = await Promise.all([
+            Registration.find(query)
+                .populate({
+                    path: 'eventId',
+                    select: 'name description location startDate endDate thumbnail capacity status managerId categories',
+                    populate: [
+                        { path: 'managerId', select: 'username email avatar' },
+                        { path: 'categories', select: 'name slug color description' }
+                    ]
+                })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Registration.countDocuments(query)
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: registrations,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                totalItems: total,
+                limit
+            }
+        });
+    } catch (error) {
+        console.error("Error getting user registrations:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+}

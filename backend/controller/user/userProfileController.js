@@ -12,14 +12,21 @@ import Notification from '../../models/notificationModel.js';
 async function formatUserResponse(user) {
   const userId = user._id;
 
-  // Get stats from registrations
-  const [completedRegistrations, uniqueHosts] = await Promise.all([
-    Registration.countDocuments({ userId, status: 'completed' }),
-    Registration.distinct('eventId', { userId, status: 'completed' })
-      .then((eventIds) =>
-        Event.distinct('managerId', { _id: { $in: eventIds } })
-      )
-      .then((managerIds) => managerIds.length),
+  // Get stats from registrations and managed events
+  const completedRegistrationsPromise = Registration.countDocuments({
+    userId,
+    status: 'completed',
+  });
+
+  // Count events where this user is the manager
+  const managedEventsCountPromise = Event.countDocuments({
+    managerId: userId,
+    status: { $in: ['approved', 'completed'] },
+  });
+
+  const [completedRegistrations, managedEventsCount] = await Promise.all([
+    completedRegistrationsPromise,
+    managedEventsCountPromise,
   ]);
 
   // Calculate approximate hours (assuming 4 hours per event on average)
@@ -50,7 +57,7 @@ async function formatUserResponse(user) {
     stats: {
       events: completedRegistrations,
       hours: estimatedHours,
-      hosts: uniqueHosts,
+      hosts: managedEventsCount,
     },
   };
 }

@@ -27,10 +27,9 @@ const NavBar = ({ showNavButtons = true }) => {
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
-      // Add your search logic here
-      // For example: navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      navigate(`/result?q=${encodeURIComponent(searchQuery.trim())}`);
       setShowMobileSearch(false);
+      setSearchQuery(''); // Optional: Clear search after navigating
     }
   };
 

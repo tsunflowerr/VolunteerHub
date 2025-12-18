@@ -102,3 +102,21 @@ export const useUnregisterEvent = () => {
     },
   });
 };
+
+export const useEventsByManager = (managerId, params = {}) => {
+  return useQuery({
+    queryKey: [...eventKeys.lists(), 'manager', managerId, params],
+    queryFn: () => eventApi.getEventsByManager(managerId, params),
+    enabled: !!managerId,
+    staleTime: 1000 * 60,
+  });
+};
+
+export const useUserRegistrations = (userId, params = {}) => {
+  return useQuery({
+    queryKey: [...registrationKeys.lists(), 'user', userId, params],
+    queryFn: () => eventApi.getUserRegistrations(userId, params),
+    enabled: !!userId,
+    staleTime: 1000 * 60,
+  });
+};

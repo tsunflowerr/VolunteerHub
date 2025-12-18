@@ -11,23 +11,29 @@ export async function getAllEvents(req, res) {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
+        const managerId = req.query.managerId;
 
-        // Cache key bao gồm page & limit
-        const cacheKey = `events:all:page:${page}:limit:${limit}`;
+        // Cache key bao gồm page, limit và managerId
+        const cacheKey = `events:all:page:${page}:limit:${limit}:manager:${managerId || 'all'}`;
+
+        const query = { status: { $in: ['approved', 'completed'] } };
+        if (managerId) {
+            query.managerId = managerId;
+        }
 
         const result = await getOrSetCache(
             cacheKey,
             CACHE_TTL.EVENTS_LIST,
             async () => {
                 const [events, total] = await Promise.all([
-                    Event.find({status: { $in: ['approved', 'completed'] }})
+                    Event.find(query)
                         .populate('managerId', 'username email avatar')
                         .populate('categories')
                         .sort({ createdAt: -1 })
                         .skip(skip)
                         .limit(limit)
                         .lean(),
-                    Event.countDocuments({status: { $in: ['approved', 'completed'] }})
+                    Event.countDocuments(query)
                 ]);
                 
                 return {

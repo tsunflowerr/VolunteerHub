@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import useAuth from '../../hooks/useAuth';
@@ -9,6 +9,10 @@ import {
   useDeleteAccount,
 } from '../../hooks/useUser';
 import {
+  useEventsByManager,
+  useUserRegistrations,
+} from '../../hooks/useEvents';
+import {
   MapPin,
   Mail,
   Phone,
@@ -18,7 +22,6 @@ import {
   Lock,
 } from 'lucide-react';
 import EventList from '../../components/EventCard/EventList';
-import { volunteerEvents } from '../../dummy/volunteerEvents';
 import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
 import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
@@ -37,6 +40,44 @@ const UserProfile = () => {
 
   const { data: user, isLoading: loading, isError } = useUserProfile(id);
 
+  // Fetch events based on user role
+  const isManager = user?.role === 'manager' || user?.role === 'admin';
+  const userId = user?._id || user?.id;
+
+  const { 
+    data: managerEventsData, 
+    isLoading: isManagerEventsLoading 
+  } = useEventsByManager(
+    isManager ? userId : null, 
+    { page: currentPage, limit: eventsPerPage }
+  );
+
+  const { 
+    data: userRegistrationsData, 
+    isLoading: isUserRegistrationsLoading 
+  } = useUserRegistrations(
+    !isManager && userId ? userId : null, 
+    { page: currentPage, limit: eventsPerPage }
+  );
+
+  // Derive events list and pagination info
+  const { currentEvents, totalPages } = useMemo(() => {
+    if (isManager) {
+      return {
+        currentEvents: managerEventsData?.events || [],
+        totalPages: managerEventsData?.pagination?.totalPages || 0
+      };
+    } else {
+      const regs = userRegistrationsData?.data || [];
+      // Map registrations to event objects
+      const events = regs.map(reg => reg.eventId).filter(Boolean);
+      return {
+        currentEvents: events,
+        totalPages: userRegistrationsData?.pagination?.totalPages || 0
+      };
+    }
+  }, [isManager, managerEventsData, userRegistrationsData]);
+
   const updateProfile = useUpdateProfile();
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
@@ -47,19 +88,6 @@ const UserProfile = () => {
       user &&
       (currentUser.id === user.id || currentUser._id === user._id));
   const stats = user?.stats || { events: 0, hours: 0, hosts: 0 };
-
-  // Filter events that user has contributed to (mock filter)
-  // In production, this would be filtered by user ID from the backend
-  const contributedEvents = volunteerEvents.slice(0, 15); // Mock data
-
-  // Pagination
-  const totalEvents = contributedEvents.length;
-  const indexOfLastEvent = currentPage * eventsPerPage;
-  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
-  const currentEvents = contributedEvents.slice(
-    indexOfFirstEvent,
-    indexOfLastEvent
-  );
 
   const handleChangePage = (e, value) => setCurrentPage(value);
 
@@ -118,6 +146,8 @@ const UserProfile = () => {
       </div>
     );
   }
+
+  const isEventsLoading = isManager ? isManagerEventsLoading : isUserRegistrationsLoading;
 
   return (
     <div className={styles['profile']}>
@@ -200,20 +230,20 @@ const UserProfile = () => {
             {user.interests && user.interests.length > 0 ? (
               <div className={styles['profile__interest-item']}>
                 {user.interests.map((categoryId) => {
-                  const category = categoriesById[categoryId];
-                  if (!category) return null;
-
+                  // TODO: Fetch category details or map if available
+                  // For now just displaying the ID or slug if we don't have the full object
+                  // Ideally user object should have populated interests or we fetch categories
                   return (
                     <div
                       key={categoryId}
                       className={styles['profile__interest']}
                     >
-                      {category.icon && (
+                      {/* {category.icon && (
                         <span className={styles['profile__interest-icon']}>
                           {category.icon}
                         </span>
-                      )}
-                      {category.name}
+                      )} */}
+                      {categoryId}
                     </div>
                   );
                 })}
@@ -266,20 +296,26 @@ const UserProfile = () => {
         <main className={styles['profile__main']}>
           <div className={styles['profile__header']}>
             <h2 className={styles['profile__main-title']}>
-              Contributed Events
+              {isManager ? "Hosted Events" : "Contributed Events"}
             </h2>
             <p className={styles['profile__main-subtitle']}>
-              Events you've participated in and made an impact
+              {isManager 
+                ? "Events you are organizing and managing" 
+                : "Events you've participated in and made an impact"}
             </p>
           </div>
 
-          {currentEvents.length > 0 ? (
+          {isEventsLoading ? (
+            <div className={styles['profile__loading']}>
+               <LoadingOverlay message="Loading events..." contained={true} />
+            </div>
+          ) : currentEvents.length > 0 ? (
             <>
               <EventList events={currentEvents} />
-              {totalEvents > eventsPerPage && (
+              {totalPages > 1 && (
                 <div className={styles['profile__pagination']}>
                   <Pagination
-                    count={Math.ceil(totalEvents / eventsPerPage)}
+                    count={totalPages}
                     shape="rounded"
                     page={currentPage}
                     onChange={handleChangePage}
@@ -291,7 +327,9 @@ const UserProfile = () => {
             <div className={styles['profile__empty']}>
               <Calendar size={80} className={styles['profile__empty-icon']} />
               <p className={styles['profile__empty-text']}>
-                You haven't contributed to any events yet.
+                {isManager 
+                  ? "You haven't hosted any events yet." 
+                  : "You haven't contributed to any events yet."}
               </p>
             </div>
           )}

@@ -6,16 +6,8 @@ import { getOrSetCache, CACHE_TTL } from '../../utils/cacheHelper.js';
 
 export async function searchEvents(req, res) {
   try {
-    const {
-      keyword,
-      location,
-      startDate,
-      endDate,
-      status,
-      sort,
-      page,
-      limit,
-    } = req.query;
+    const { keyword, location, startDate, endDate, status, sort, page, limit } =
+      req.query;
 
     let { category } = req.query;
     // Fallback for category[] if not parsed correctly
@@ -51,7 +43,7 @@ export async function searchEvents(req, res) {
           // or we could let the query run and return 0 events.
           // Let's let the query run with a non-matching ID to return 0 results
           // effectively "no events found for these categories".
-           filter.categories = { $in: [] }; 
+          filter.categories = { $in: [] };
         }
       }
     }
@@ -437,7 +429,7 @@ export async function advancedSearch(req, res) {
           status: { $in: ['approved', 'completed'] },
         })
           .select(
-            'name description location startDate endDate categories viewCount likesCount'
+            'name description location startDate endDate categories viewCount likesCount thumbnail registrationsCount'
           )
           .populate('categories', 'name slug color description')
           .populate('managerId', 'username avatar')
