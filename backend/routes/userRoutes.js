@@ -13,6 +13,8 @@ import {
   changePassword,
   getUserById,
   getUserBookMarks,
+  savePushSubscription,
+  deletePushSubscription,
 } from '../controller/user/userProfileController.js';
 import {
   passwordResetLimiter,
@@ -20,6 +22,7 @@ import {
   deleteLimiter,
 } from '../middleware/rateLimiter.js';
 import upload from '../middleware/uploadMiddleware.js';
+import { pushSubscriptionSchema } from '../validators/userValidator.js';
 
 const router = express.Router();
 
@@ -235,6 +238,81 @@ router.put(
  *                     $ref: '#/components/schemas/Event'
  */
 router.get('/bookmarks', getUserBookMarks);
+
+// ====== Push Notification Routes ======
+
+/**
+ * @swagger
+ * /api/users/push-subscription:
+ *   post:
+ *     summary: Save web push subscription
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - endpoint
+ *               - keys
+ *             properties:
+ *               endpoint:
+ *                 type: string
+ *               keys:
+ *                 type: object
+ *                 properties:
+ *                   p256dh:
+ *                     type: string
+ *                   auth:
+ *                     type: string
+ *     responses:
+ *       200:
+ *         description: Subscription saved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post(
+  '/push-subscription',
+  validate(pushSubscriptionSchema),
+  savePushSubscription
+);
+
+/**
+ * @swagger
+ * /api/users/push-subscription:
+ *   delete:
+ *     summary: Remove web push subscription
+ *     tags: [Users]
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Subscription removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.delete('/push-subscription', deletePushSubscription);
 
 // ====== Public User Info ======
 

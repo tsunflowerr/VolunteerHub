@@ -2,23 +2,34 @@ import { Dialog } from 'radix-ui';
 import React, { useState } from 'react';
 import Notification from './Notification';
 import styles from './NotificationDialog.module.css';
-import { X, Bell } from 'lucide-react';
+import { X, Bell, BellRing, BellOff } from 'lucide-react';
 import {
   useNotifications,
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,
 } from '../../hooks/useNotifications';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const NotificationDialog = ({ children, open, onOpenChange }) => {
   const [filter, setFilter] = useState('all'); // all, unread
-  
+
   // Fetch notifications (fetching a reasonable amount for the dropdown)
-  const { data: notificationsData, isLoading } = useNotifications({ limit: 50 });
+  const { data: notificationsData, isLoading } = useNotifications({
+    limit: 50,
+  });
   const notifications = notificationsData?.notifications || [];
   const serverUnreadCount = notificationsData?.unreadCount || 0;
 
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
+
+  const {
+    isSubscribed,
+    subscribeToPush,
+    unsubscribeFromPush,
+    loading: pushLoading,
+    permission,
+  } = usePushNotifications();
 
   const handleMarkAsRead = (notificationId) => {
     markAsReadMutation.mutate(notificationId);
@@ -33,7 +44,7 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
       ? notifications.filter((n) => !n.isRead)
       : notifications;
 
-  // We can use the server count, but for the filter tab logic matching the list, 
+  // We can use the server count, but for the filter tab logic matching the list,
   // we might want the count of the *fetched* unread if we are only showing those.
   // However, showing total unread count is usually expected.
   // Let's use the local count of the fetched items to be consistent with what's shown,
@@ -84,17 +95,46 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
                 onClick={handleMarkAllAsRead}
                 disabled={markAllAsReadMutation.isPending}
               >
-                {markAllAsReadMutation.isPending ? 'Marking...' : 'Mark all as read'}
+                {markAllAsReadMutation.isPending
+                  ? 'Marking...'
+                  : 'Mark all as read'}
               </button>
+            )}
+          </div>
+
+          {/* Push Notification Opt-in/Opt-out */}
+          <div className={styles.pushOptIn}>
+            {isSubscribed ? (
+              <button
+                className={styles.disablePushButton}
+                onClick={unsubscribeFromPush}
+                disabled={pushLoading}
+              >
+                <BellOff size={16} />
+                {pushLoading ? 'Disabling...' : 'Disable Push Notifications'}
+              </button>
+            ) : permission !== 'denied' ? (
+              <button
+                className={styles.enablePushButton}
+                onClick={subscribeToPush}
+                disabled={pushLoading}
+              >
+                <BellRing size={16} />
+                {pushLoading ? 'Enabling...' : 'Enable Push Notifications'}
+              </button>
+            ) : (
+              <p className={styles.permissionDeniedText}>
+                Push notifications are blocked by browser settings.
+              </p>
             )}
           </div>
 
           {/* Notifications List */}
           <div className={styles.notificationList}>
             {isLoading ? (
-               <div className={styles.emptyState}>
-                 <p className={styles.emptyText}>Loading notifications...</p>
-               </div>
+              <div className={styles.emptyState}>
+                <p className={styles.emptyText}>Loading notifications...</p>
+              </div>
             ) : filteredNotifications.length === 0 ? (
               <div className={styles.emptyState}>
                 <Bell size={48} color="#d1d5db" />

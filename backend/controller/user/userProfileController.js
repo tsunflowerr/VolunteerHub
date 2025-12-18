@@ -48,12 +48,12 @@ async function formatUserResponse(user) {
     location: user.location || '',
     bio: user.bio || '',
     about: user.about || '',
-    interests: user.interests || [],
     bookmarks: user.bookmarks || [],
     status: user.status,
     joinedDate,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    hasPushSubscription: !!user.pushSubscription,
     stats: {
       events: completedRegistrations,
       hours: estimatedHours,
@@ -344,6 +344,35 @@ export async function getUserBookMarks(req, res) {
     res.status(200).json({ success: true, bookmarks: user.bookmarks });
   } catch (error) {
     console.error('Error fetching user bookmarks:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export async function savePushSubscription(req, res) {
+  try {
+    const subscription = req.body;
+    const userId = req.user._id;
+
+    await User.findByIdAndUpdate(userId, { pushSubscription: subscription });
+
+    res.status(200).json({ success: true, message: 'Push subscription saved' });
+  } catch (error) {
+    console.error('Error saving push subscription:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+export async function deletePushSubscription(req, res) {
+  try {
+    const userId = req.user._id;
+
+    await User.findByIdAndUpdate(userId, { pushSubscription: null });
+
+    res
+      .status(200)
+      .json({ success: true, message: 'Push subscription removed' });
+  } catch (error) {
+    console.error('Error removing push subscription:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }

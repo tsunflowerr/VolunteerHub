@@ -15,20 +15,26 @@ export const usersApi = {
     const config = {};
     if (userData instanceof FormData) {
       config.headers = { 'Content-Type': 'multipart/form-data' }; // axios will handle boundary if we pass FormData, but explicitly setting it to multipart/form-data without boundary is BAD.
-      // actually, just let axios handle it. 
-      // But we have a default application/json. 
+      // actually, just let axios handle it.
+      // But we have a default application/json.
       // So we must override it.
       config.headers = { 'Content-Type': 'multipart/form-data' };
     }
     // Wait, axios documentation says: "In browser, axios automatically serializes FormData ... and sets Content-Type header to multipart/form-data"
     // BUT we have a default set in api.js.
     // The safest way is to set it to undefined so axios/browser logic kicks in.
-    
+
     // Let's use a smarter approach:
     const isFormData = userData instanceof FormData;
-    const response = await api.put('/users/profile', userData, isFormData ? {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    } : {});
+    const response = await api.put(
+      '/users/profile',
+      userData,
+      isFormData
+        ? {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          }
+        : {}
+    );
     return response.data;
   },
 
@@ -44,6 +50,20 @@ export const usersApi = {
 
   getBookmarkedEvents: async () => {
     const response = await api.get('/users/bookmarks');
+    return response.data;
+  },
+  removeBookmark: async (eventId) => {
+    const response = await api.delete(`/users/bookmarks/${eventId}`);
+    return response.data;
+  },
+
+  savePushSubscription: async (subscription) => {
+    const response = await api.post('/users/push-subscription', subscription);
+    return response.data;
+  },
+
+  removePushSubscription: async () => {
+    const response = await api.delete('/users/push-subscription');
     return response.data;
   },
 };

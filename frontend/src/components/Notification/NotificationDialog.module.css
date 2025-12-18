@@ -130,6 +130,68 @@
   text-decoration: underline;
 }
 
+/* Push Notification Opt-in */
+.pushOptIn {
+  padding: 0.5rem 1.25rem;
+  background: var(--text-white-color);
+  border-bottom: 1px solid var(--color-gray-300);
+  display: flex;
+  justify-content: center;
+}
+
+.enablePushButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px dashed var(--secondary-color);
+  background: rgba(var(--secondary-color-rgb), 0.1);
+  color: var(--secondary-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.enablePushButton:hover {
+  background: rgba(var(--secondary-color-rgb), 0.2);
+}
+
+.enablePushButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.disablePushButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px dashed var(--color-gray-500);
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.disablePushButton:hover {
+  background: var(--color-gray-200);
+}
+
+.permissionDeniedText {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
 /* Notification List */
 .notificationList {
   flex: 1;

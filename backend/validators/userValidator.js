@@ -121,3 +121,21 @@ export const adminCreateUserSchema = Joi.object({
     'any.only': 'Role must be either user or manager',
   }),
 });
+
+// ====== Validation for Push Subscription ======
+export const pushSubscriptionSchema = Joi.object({
+  endpoint: Joi.string().uri().required().messages({
+    'string.empty': 'Endpoint is required',
+    'string.uri': 'Endpoint must be a valid URI',
+  }),
+  keys: Joi.object({
+    p256dh: Joi.string().required().messages({
+      'string.empty': 'Key p256dh is required',
+    }),
+    auth: Joi.string().required().messages({
+      'string.empty': 'Key auth is required',
+    }),
+  }).required().messages({
+    'any.required': 'Keys are required',
+  }),
+});
