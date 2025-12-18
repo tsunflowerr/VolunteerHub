@@ -4,6 +4,7 @@ import useAuth from '../../hooks/useAuth.js';
 import styles from './NavBar.module.css';
 import NotificationDialog from '../Notification/NotificationDialog.jsx';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
+import { useUnreadNotificationsCount } from '../../hooks/useNotifications';
 
 import { User, LogOut, Bell, Menu, Search, UserStar } from 'lucide-react';
 
@@ -13,10 +14,12 @@ const NavBar = ({ showNavButtons = true }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const { data: unreadData } = useUnreadNotificationsCount();
+  const unreadCount = unreadData?.unreadCount || 0;
 
   const isActive = (path) => {
     if (path === '/') {
@@ -132,7 +135,9 @@ const NavBar = ({ showNavButtons = true }) => {
               <NotificationDialog open={open} onOpenChange={setOpen}>
                 <button className={styles.navbar__notiButton}>
                   <Bell size={20} />
-                  <span className={styles.navbar__notiBadge}>3</span>
+                  {unreadCount > 0 && (
+                    <span className={styles.navbar__notiBadge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  )}
                 </button>
               </NotificationDialog>
 

@@ -155,14 +155,8 @@ export async function getVolunteersForEvent(req, res) {
         .json({ success: false, message: 'Event not found' });
     }
 
-    // Authorization check: Ensure the event belongs to the current manager
-    if (event.managerId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message:
-          'Unauthorized: You can only view volunteers for your own events',
-      });
-    }
+    // Authorization check removed to allow public/admin access to volunteer list
+    // previously: if (event.managerId.toString() !== req.user._id.toString()) { ... }
 
     const [registrations, total] = await Promise.all([
       await Registration.find({

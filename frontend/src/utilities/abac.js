@@ -15,11 +15,19 @@ const ROLES = {
       view: true,
     },
     posts: {
-      edit: false,
+      edit: (user, post) => {
+        const userId = user.id || user._id;
+        const authorId = post.author?._id || post.author;
+        return authorId === userId;
+      },
       delete: true,
     },
     comments: {
-      edit: false, // Admin cannot edit others' comments
+      edit: (user, context) => {
+        const userId = user.id || user._id;
+        const authorId = context.comment.author?._id || context.comment.author;
+        return authorId === userId;
+      },
       delete: true, // Admin can delete any comment
     },
   },

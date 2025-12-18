@@ -26,7 +26,48 @@ const mapFileToBody = (req, res, next) => {
     next();
 };
 
-// Apply authMiddleware and managerMiddleware to all routes
+/**
+ * @swagger
+ * /api/manager/events/{eventId}/volunteers:
+ *   get:
+ *     summary: Get all volunteers for a specific event (Authenticated users)
+ *     tags: [Manager]
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Event ID
+ *     responses:
+ *       200:
+ *         description: List of volunteers registered for the event
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     allOf:
+ *                       - $ref: '#/components/schemas/Registration'
+ *                       - type: object
+ *                         properties:
+ *                           user:
+ *                             $ref: '#/components/schemas/User'
+ *       404:
+ *         description: Event not found
+ */
+// Moved here to allow public (authenticated) access, bypassing managerMiddleware
+router.get('/events/:eventId/volunteers', authMiddleware, validate(eventIdSchema, 'params'), getVolunteersForEvent);
+
+// Apply authMiddleware and managerMiddleware to all routes below
 router.use(authMiddleware, managerMiddleware);
 
 // ====== Event Management Routes ======
@@ -220,48 +261,6 @@ router.get('/stats/volunteers', getTotalConfirmedVolunteers);
  *         description: Registration not found
  */
 router.patch('/registrations/:registrationId/status', updateLimiter, validate(getRegistrationDetailSchema, 'params'), validate(updateRegistrationStatusSchema), updateRegistrationStatus);
-
-/**
- * @swagger
- * /api/manager/events/{eventId}/volunteers:
- *   get:
- *     summary: Get all volunteers for a specific event (Manager only)
- *     tags: [Manager]
- *     security:
- *       - cookieAuth: []
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: eventId
- *         required: true
- *         schema:
- *           type: string
- *         description: Event ID
- *     responses:
- *       200:
- *         description: List of volunteers registered for the event
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     allOf:
- *                       - $ref: '#/components/schemas/Registration'
- *                       - type: object
- *                         properties:
- *                           user:
- *                             $ref: '#/components/schemas/User'
- *       403:
- *         description: Not authorized to view this event's volunteers
- *       404:
- *         description: Event not found
- */
-router.get('/events/:eventId/volunteers', validate(eventIdSchema, 'params'), getVolunteersForEvent);
 
 /**
  * @swagger

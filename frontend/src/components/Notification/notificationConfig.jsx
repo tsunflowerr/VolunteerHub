@@ -8,6 +8,8 @@ import {
   XCircle,
   Clock,
   Bell,
+  LogIn,
+  CalendarCheck,
 } from 'lucide-react';
 
 export const NOTIFICATION_ICONS = {
@@ -32,6 +34,14 @@ export const NOTIFICATION_ICONS = {
       icon: Calendar,
       props: { size: 20, color: '#3b82f6' },
     },
+    rejected: {
+      icon: XCircle,
+      props: { size: 20, color: '#ef4444' },
+    },
+    approved: {
+      icon: CalendarCheck,
+      props: { size: 20, color: '#344f1f' },
+    },
     cancelled: {
       icon: XCircle,
       props: { size: 20, color: '#000000' },
@@ -40,23 +50,19 @@ export const NOTIFICATION_ICONS = {
       icon: CheckCircle,
       props: { size: 20, color: '#344f1f' },
     },
-    confirmed: {
-      icon: Calendar,
-      props: { size: 20, color: '#344f1f' },
-    },
   },
   registration_status_update: {
     default: {
       icon: Calendar,
       props: { size: 20, color: '#3b82f6' },
     },
-    approved: {
-      icon: CheckCircle,
+    confirmed: {
+      icon: LogIn,
       props: { size: 20, color: '#344f1f' },
     },
-    rejected: {
+    cancelled: {
       icon: XCircle,
-      props: { size: 20, color: '#000000' },
+      props: { size: 20, color: '#ef4444' },
     },
     pending: {
       icon: Clock,
