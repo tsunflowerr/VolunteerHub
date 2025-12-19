@@ -5,7 +5,7 @@ import Like from "../../models/likeModel.js";
 import Registration from "../../models/registrationsModel.js";
 import Notification from "../../models/notificationModel.js";
 import User from "../../models/userModel.js";
-import { invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { invalidateCacheByPattern, invalidateCache } from '../../utils/cacheHelper.js';
 import mongoose from 'mongoose';
 
 export async function createEvent(req, res) {
@@ -33,7 +33,8 @@ export async function createEvent(req, res) {
         saved = await saved.populate('managerId', 'username email avatar');
         saved = await saved.populate('categories');
         
-        // Không cần xóa cache vì event mới có status='pending', chưa hiển thị
+        // Invalidate admin dashboard cache as it tracks pending events
+        await invalidateCache('dashboard:admin');
         
         res.status(201).json({success: true, event: saved});
     } catch (error) {

@@ -72,13 +72,48 @@ router.get('/manager', authMiddleware, managerMiddleware, apiLimiter, getManager
  *                 data:
  *                   type: object
  *                   properties:
- *                     totalUsers:
- *                       type: number
- *                     totalEvents:
- *                       type: number
- *                     totalRegistrations:
- *                       type: number
- *                     systemStats:
+ *                     userStatistics:
+ *                       type: object
+ *                       properties:
+ *                         growth:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               week:
+ *                                 type: number
+ *                               year:
+ *                                 type: number
+ *                               count:
+ *                                 type: number
+ *                     eventStatistics:
+ *                       type: object
+ *                       properties:
+ *                         byStatus:
+ *                           type: object
+ *                         byCategory:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               name:
+ *                                 type: string
+ *                               count:
+ *                                 type: number
+ *                         growth:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               week:
+ *                                 type: number
+ *                               year:
+ *                                 type: number
+ *                               count:
+ *                                 type: number
+ *                     registrationStatistics:
+ *                       type: object
+ *                     activityStatistics:
  *                       type: object
  *       401:
  *         description: Unauthorized

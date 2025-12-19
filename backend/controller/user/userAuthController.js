@@ -1,6 +1,7 @@
 import User from '../../models/userModel.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { invalidateCache } from '../../utils/cacheHelper.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const JWT_EXPIRES_IN = '24h';
@@ -62,6 +63,9 @@ export async function registerUser(req, res) {
         username || 'User'
       )}&background=random`,
     });
+
+    // Invalidate admin dashboard cache (user count updated)
+    await invalidateCache('dashboard:admin');
 
     const token = createToken(newUser._id);
 

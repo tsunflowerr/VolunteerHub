@@ -1,5 +1,5 @@
 import User from '../../models/userModel.js';
-import { getOrSetCache } from '../../utils/cacheHelper.js';
+import { invalidateCache } from '../../utils/cacheHelper.js';
 import bcrypt from 'bcrypt';
 export async function getAllUsersAndManagers(req, res) {
   const page = parseInt(req.query.page) || 1;
@@ -52,6 +52,10 @@ export async function toggleUserLockStatus(req, res) {
     }
     user.status = user.status === 'locked' ? 'active' : 'locked';
     await user.save();
+    
+    // Invalidate admin dashboard cache (user active/locked count updated)
+    await invalidateCache('dashboard:admin');
+    
     res
       .status(200)
       .json({ success: true, message: 'User lock status updated', user });
@@ -101,6 +105,9 @@ export async function createUser(req, res) {
     console.log(
       `[ADMIN] New user created by admin: ${email} (ID: ${newUser._id}, Role: ${role})`
     );
+
+    // Invalidate admin dashboard cache (user count updated)
+    await invalidateCache('dashboard:admin');
 
     res.status(201).json({
       success: true,

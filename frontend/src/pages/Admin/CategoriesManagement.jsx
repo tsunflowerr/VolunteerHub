@@ -5,6 +5,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
   useDeleteCategory,
+  useAdminDashboard,
 } from '../../hooks/useAdmin';
 import {
   CategorySearchFilter,
@@ -29,16 +30,30 @@ function CategoriesManagement() {
 
   // TanStack Query hooks
   const { data: categories = [], isLoading, isError, error } = useAdminCategories();
+  const { data: dashboardData } = useAdminDashboard();
   const createCategoryMutation = useCreateCategory();
   const updateCategoryMutation = useUpdateCategory();
   const deleteCategoryMutation = useDeleteCategory();
 
-  // Filter categories locally with useMemo
+  // Filter categories locally with useMemo and merge with dashboard stats
   const filteredCategories = useMemo(() => {
-    return categories.filter((cat) =>
-      cat.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [categories, searchTerm]);
+    // Create a map for quick lookup of event counts from dashboard stats
+    const eventCounts = {};
+    if (dashboardData?.data?.eventStatistics?.byCategory) {
+        dashboardData.data.eventStatistics.byCategory.forEach(stat => {
+            eventCounts[stat.name] = stat.count;
+        });
+    }
+
+    return categories
+      .map(cat => ({
+        ...cat,
+        eventCount: eventCounts[cat.name] || 0
+      }))
+      .filter((cat) =>
+        cat.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+  }, [categories, searchTerm, dashboardData]);
 
   // Pagination calculations with useMemo
   const { paginatedCategories, totalPages, startIndex, endIndex, totalItems } =

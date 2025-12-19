@@ -21,7 +21,6 @@ import ManagerEventDetail from './pages/Manager/ManagerEventDetail';
 import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
 
 // Admin imports
-import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import UsersManagement from './pages/Admin/UsersManagement';
 import CategoriesManagement from './pages/Admin/CategoriesManagement';
@@ -54,7 +53,10 @@ const App = () => {
           <Route index element={<Events />} />
           <Route path=":id" element={<EventDetail />} />
           <Route path=":id/discussion" element={<EventDiscussion />} />
-          <Route path=":id/discussion/posts/:postId" element={<EventDiscussion />} />
+          <Route
+            path=":id/discussion/posts/:postId"
+            element={<EventDiscussion />}
+          />
         </Route>
       </Route>
       <Route path="/manager" element={<ManagerLayout />}>
@@ -68,7 +70,6 @@ const App = () => {
       </Route>
 
       {/* Admin Routes */}
-      <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />

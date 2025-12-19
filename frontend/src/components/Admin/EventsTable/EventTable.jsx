@@ -16,6 +16,7 @@ function EventTable({
   onApprove,
   onReject,
   onDelete,
+  onPreview,
   actionLoading,
   emptyMessage = 'No events yet',
 }) {
@@ -74,7 +75,12 @@ function EventTable({
         </thead>
         <tbody>
           {events.map((event, index) => (
-            <tr key={event._id}>
+            <tr 
+              key={event._id} 
+              onClick={() => onPreview && onPreview(event)} 
+              className={onPreview ? styles.clickableRow : ''}
+              style={{ cursor: onPreview ? 'pointer' : 'default' }}
+            >
               <td>{startIndex + index + 1}</td>
               <td className={styles.eventTitle}>{event.title}</td>
               <td>{event.createdBy?.fullName || 'Unknown'}</td>
@@ -84,7 +90,7 @@ function EventTable({
               </td>
               <td>{renderStatus(event.status)}</td>
               <td>
-                <div className={styles.actionButtons}>
+                <div className={styles.actionButtons} onClick={(e) => e.stopPropagation()}>
                   {event.status === 'pending' && (
                     <>
                       <button
@@ -152,6 +158,7 @@ EventTable.propTypes = {
   onApprove: PropTypes.func.isRequired,
   onReject: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  onPreview: PropTypes.func,
   actionLoading: PropTypes.string,
   emptyMessage: PropTypes.string,
 };

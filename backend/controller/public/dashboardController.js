@@ -156,6 +156,7 @@ export async function getAdminDashboard(req, res) {
                 const now = new Date();
                 const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
                 const oneWeekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+                const twelveWeeksAgo = new Date(now - 12 * 7 * 24 * 60 * 60 * 1000); // ~3 months
 
                 const [
                     totalUsers,
@@ -166,7 +167,7 @@ export async function getAdminDashboard(req, res) {
                     newUsersThisWeek,
                     newUsersToday
                 ] = await Promise.all([
-                    User.countDocuments({ role: 'user' }),
+                    User.countDocuments({ role: { $in: ['user', 'manager'] } }),
                     User.countDocuments({ role: 'manager' }),
                     User.countDocuments({ role: 'admin' }),
                     User.countDocuments({ role: { $in: ['user', 'manager'] }, status: 'active' }),
@@ -179,6 +180,94 @@ export async function getAdminDashboard(req, res) {
                         createdAt: { $gte: oneDayAgo },
                         role: { $in: ['user', 'manager'] }
                     })
+                ]);
+
+                // Events by Category Aggregation
+                const eventsByCategory = await Event.aggregate([
+                    { $unwind: "$categories" },
+                    { 
+                        $group: { 
+                            _id: "$categories", 
+                            count: { $sum: 1 } 
+                        } 
+                    },
+                    { 
+                        $lookup: { 
+                            from: "categories", 
+                            localField: "_id", 
+                            foreignField: "_id", 
+                            as: "categoryInfo" 
+                        } 
+                    },
+                    { $unwind: "$categoryInfo" },
+                    { 
+                        $project: { 
+                            name: "$categoryInfo.name", 
+                            color: "$categoryInfo.color",
+                            count: 1,
+                            _id: 0
+                        } 
+                    },
+                    { $sort: { count: -1 } }
+                ]);
+
+                // Users per Week (Last 12 Weeks)
+                const usersPerWeek = await User.aggregate([
+                    { 
+                        $match: { 
+                            createdAt: { $gte: twelveWeeksAgo },
+                            role: { $in: ['user', 'manager'] }
+                        } 
+                    },
+                    { 
+                        $group: {
+                            _id: { 
+                                year: { $year: "$createdAt" }, 
+                                week: { $week: "$createdAt" } 
+                            },
+                            count: { $sum: 1 },
+                            date: { $min: "$createdAt" } // Get a representative date for the week
+                        }
+                    },
+                    { $sort: { "_id.year": 1, "_id.week": 1 } },
+                    {
+                        $project: {
+                            _id: 0,
+                            week: "$_id.week",
+                            year: "$_id.year",
+                            count: 1,
+                            date: 1
+                        }
+                    }
+                ]);
+
+                // Events per Week (Last 12 Weeks)
+                const eventsPerWeek = await Event.aggregate([
+                    { 
+                        $match: { 
+                            createdAt: { $gte: twelveWeeksAgo }
+                        } 
+                    },
+                    { 
+                        $group: {
+                            _id: { 
+                                year: { $year: "$createdAt" }, 
+                                week: { $week: "$createdAt" } 
+                            },
+                            count: { $sum: 1 },
+                            date: { $min: "$createdAt" }
+                        }
+                    },
+                    { $sort: { "_id.year": 1, "_id.week": 1 } },
+                    {
+                        $project: {
+                            _id: 0,
+                            week: "$_id.week",
+                            year: "$_id.year",
+                            count: 1,
+                            date: 1
+                        }
+                    }
                 ]);
 
                 const eventStats = await Event.aggregate([
@@ -271,7 +360,8 @@ export async function getAdminDashboard(req, res) {
                         },
                         admins: {
                             total: totalAdmins
-                        }
+                        },
+                        growth: usersPerWeek // Add growth data
                     },
 
                     eventStatistics: {
@@ -279,7 +369,9 @@ export async function getAdminDashboard(req, res) {
                         byTime: {
                             newThisWeek: newEventsThisWeek,
                             newToday: newEventsToday
-                        }
+                        },
+                        byCategory: eventsByCategory, // Add category breakdown
+                        growth: eventsPerWeek // Add growth data
                     },
                     registrationStatistics: {
                         byStatus: registrationStatsMap,

@@ -4,6 +4,7 @@ import {
   EventSearchFilter,
   EventTable,
 } from '../../components/Admin/EventsTable';
+import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 import { Pagination } from '../../components/common';
 import {
   useAdminPendingEvents,
@@ -29,13 +30,14 @@ function EventsManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [actionLoading, setActionLoading] = useState(null);
+  const [previewEvent, setPreviewEvent] = useState(null);
 
   // Map events data
   const events = useMemo(() => {
     if (!pendingEventsData?.events) return [];
 
     return pendingEventsData.events.map((event) => ({
-      _id: event._id,
+      ...event, // Keep original data for preview
       title: event.name,
       createdBy: event.managerId
         ? { fullName: event.managerId.username }
@@ -44,7 +46,6 @@ function EventsManagement() {
       maxParticipants: event.capacity,
       status: event.status,
       location: event.location || 'N/A',
-      category: event.categories?.[0]?.name || 'Uncategorized',
     }));
   }, [pendingEventsData]);
 
@@ -89,6 +90,10 @@ function EventsManagement() {
   const handleSearchChange = (value) => {
     setSearchTerm(value);
     setCurrentPage(1);
+  };
+
+  const handlePreview = (event) => {
+    setPreviewEvent(event);
   };
 
   const handleApprove = (eventId) => {
@@ -175,6 +180,7 @@ function EventsManagement() {
         onApprove={handleApprove}
         onReject={handleReject}
         onDelete={handleDelete}
+        onPreview={handlePreview}
         actionLoading={actionLoading}
         emptyMessage={emptyMessage}
       />
@@ -190,6 +196,13 @@ function EventsManagement() {
         onItemsPerPageChange={handleItemsPerPageChange}
         pageSizeOptions={[5, 10, 20, 50]}
       />
+
+      {previewEvent && (
+        <EventPreviewDialog
+          event={previewEvent}
+          onClose={() => setPreviewEvent(null)}
+        />
+      )}
     </div>
   );
 }

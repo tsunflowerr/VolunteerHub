@@ -10,15 +10,11 @@ export { default as ExportData } from './ExportData/ExportData';
 export { default as StatCard } from './StatCard/StatCard';
 export {
   default as DashboardCharts,
-  EventsChart,
-  UsersGrowthChart,
-  CategoryPieChart,
-  WeeklyBarChart,
+  EventStatusChart,
+  EventCategoryChart,
+  GrowthChart,
 } from './Charts/DashboardCharts';
 export {
   default as DashboardWidgets,
-  RecentActivities,
-  UpcomingEvents,
   QuickStats,
 } from './DashboardWidgets/DashboardWidgets';
-export { default as ProtectedRoute } from './ProtectedRoute';
