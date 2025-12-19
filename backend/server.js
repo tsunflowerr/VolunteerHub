@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
 import { initEventCronJobs } from './cron/eventCron.js';
+import { initNotificationCronJobs } from './cron/notificationCron.js';
 import webpush from 'web-push';
 import redisClient from './config/redis.js';
 import routes from './routes/index.js';
@@ -48,6 +49,7 @@ app.use(cookieParser());
 
 connectDB();
 initEventCronJobs();
+initNotificationCronJobs();
 
 webpush.setVapidDetails(
   'mailto:tot23032@gmail.com',

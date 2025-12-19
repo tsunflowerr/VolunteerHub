@@ -76,6 +76,7 @@ export async function addComment(req, res) {
                     type: 'comment',
                     content: `${req.user.username} commented on your post "${post.title}".`,
                     post: postId,
+                    event: eventId,
                 });
                 await newNotification.save();
                 try {
@@ -151,6 +152,7 @@ export async function replyComment(req, res) {
                     type: 'comment_reply',
                     content: `${req.user.username} replied to your comment.`,
                     post: postId,
+                    event: eventId,
                 });
                 await newNotification.save();
                 try {

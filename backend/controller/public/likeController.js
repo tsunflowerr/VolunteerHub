@@ -109,7 +109,7 @@ export async function likePost(req, res) {
         const post = await Post.findByIdAndUpdate(
             postId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, select: 'likesCount author'}
+            {new: true, select: 'likesCount author eventId'}
         );
         if(!post) {
             return res.status(404).json({success: false, message: 'Post not found'});
@@ -136,6 +136,7 @@ export async function likePost(req, res) {
                     type: 'like',
                     content: `${req.user.username} liked your post.`,
                     post: postId,
+                    event: post.eventId,
                 });
                 await newNotification.save();
                 
@@ -183,7 +184,7 @@ export async function likeComment(req, res) {
         const comment = await Comment.findByIdAndUpdate(
             commentId, 
             {$inc: {likesCount: 1}}, 
-            {new: true, select: 'likesCount author postId'}
+            {new: true, select: 'likesCount author postId eventId'}
         );
         if(!comment) {
             return res.status(404).json({success: false, message: 'Comment not found'});
@@ -210,6 +211,7 @@ export async function likeComment(req, res) {
                     type: 'like',
                     content: `${req.user.username} liked your comment.`,
                     post: comment.postId,
+                    event: comment.eventId,
                 });
                 await newNotification.save();
                 
