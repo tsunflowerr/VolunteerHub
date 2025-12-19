@@ -1,10 +1,16 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import useAuth from '../../hooks/useAuth';
 import styles from './CTA.module.css';
 
 const CTA = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
   const handleConnect = () => {
-    // TODO: Add navigation or modal logic
-    console.log("Let's Connect clicked");
+    if (!isAuthenticated) {
+      navigate('/register');
+    }
   };
 
   return (
@@ -14,7 +20,14 @@ const CTA = () => {
           <h2 className={styles.cta__title}>
             Learn why people trust VolunteerHub.
           </h2>
-          <button className={styles.cta__button} onClick={handleConnect}>
+          <button
+            className={styles.cta__button}
+            onClick={handleConnect}
+            style={{
+              cursor: isAuthenticated ? 'default' : 'pointer',
+              opacity: isAuthenticated ? 0.7 : 1,
+            }}
+          >
             Let's Connect
           </button>
         </div>

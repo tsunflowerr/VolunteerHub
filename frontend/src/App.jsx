@@ -1,7 +1,7 @@
 import React from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, Outlet } from 'react-router';
 import MainLayout from './layout/MainLayout/MainLayout';
 import ManagerLayout from './layout/ManagerLayout';
 import AdminLayout from './layout/AdminLayout';
@@ -19,6 +19,7 @@ import ManagerEvents from './pages/Manager/ManagerEvents';
 import ManagerEventForm from './pages/Manager/ManagerEventForm';
 import ManagerEventDetail from './pages/Manager/ManagerEventDetail';
 import ManagerRegistrations from './pages/Manager/ManagerRegistrations';
+import ErrorPage from './pages/ErrorPage/ErrorPage';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -26,6 +27,7 @@ import UsersManagement from './pages/Admin/UsersManagement';
 import CategoriesManagement from './pages/Admin/CategoriesManagement';
 import EventsManagement from './pages/Admin/EventsManagement';
 import { ExportData } from './components/Admin';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 const App = () => {
   AOS.init({
@@ -43,13 +45,34 @@ const App = () => {
       {/* Main Layout Routes */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
-        <Route path="profile" element={<UserProfile />} />
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
+            </ProtectedRoute>
+          }
+        />
         <Route path="profile/:id" element={<UserProfile />} />
-        <Route path="myevents" element={<MyEvents />} />
+        <Route
+          path="myevents"
+          element={
+            <ProtectedRoute>
+              <MyEvents />
+            </ProtectedRoute>
+          }
+        />
         <Route path="result" element={<SearchResult />} />
 
         {/* Events Routes */}
-        <Route path="events">
+        <Route
+          path="events"
+          element={
+            <ProtectedRoute>
+              <Outlet />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Events />} />
           <Route path=":id" element={<EventDetail />} />
           <Route path=":id/discussion" element={<EventDiscussion />} />
@@ -58,8 +81,19 @@ const App = () => {
             element={<EventDiscussion />}
           />
         </Route>
+        
+        {/* Catch-all route for 404 */}
+        <Route path="*" element={<ErrorPage />} />
       </Route>
-      <Route path="/manager" element={<ManagerLayout />}>
+      
+      <Route
+        path="/manager"
+        element={
+          <ProtectedRoute allowedRoles={['manager']}>
+            <ManagerLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ManagerDashboard />}></Route>
         <Route path="events" element={<ManagerEvents />}></Route>
@@ -70,7 +104,14 @@ const App = () => {
       </Route>
 
       {/* Admin Routes */}
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="events" element={<EventsManagement />} />
@@ -78,6 +119,9 @@ const App = () => {
         <Route path="categories" element={<CategoriesManagement />} />
         <Route path="export" element={<ExportData />} />
       </Route>
+      
+      {/* Fallback for routes outside of layouts */}
+      <Route path="*" element={<ErrorPage />} />
     </Routes>
   );
 };

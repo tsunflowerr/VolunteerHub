@@ -1,0 +1,100 @@
+.container {
+    min-height: 80vh; /* Occupy most of the screen but leave room for header/footer if present */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #f9fafb;
+    text-align: center;
+  }
+  
+  .content {
+    max-width: 500px;
+    width: 100%;
+    background: white;
+    padding: 3rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .iconWrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .code {
+    font-size: 5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #374151;
+  }
+  
+  .message {
+    font-size: 1.125rem;
+    color: #6b7280;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+  
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  
+  .buttonPrimary, .buttonSecondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  
+  .buttonPrimary {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+  }
+  
+  .buttonPrimary:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+  }
+  
+  .buttonSecondary {
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+  }
+  
+  .buttonSecondary:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+  }
+  
+  @media (max-width: 640px) {
+    .content {
+      padding: 2rem;
+    }
+    
+    .actions {
+      flex-direction: column;
+    }
+    
+    .buttonPrimary, .buttonSecondary {
+      width: 100%;
+      justify-content: center;
+    }
+  }

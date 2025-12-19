@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import * as Yup from 'yup';
 import useAuth from '../../hooks/useAuth.js';
@@ -44,6 +44,7 @@ const RegisterPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,7 +70,7 @@ const RegisterPage = () => {
 
       if (result.success) {
         setTimeout(() => {
-          navigate('/login');
+          navigate('/login', { state: { from: location.state?.from } });
         }, 1000);
       } else {
         setError(result.message);
@@ -240,7 +241,11 @@ const RegisterPage = () => {
 
       <div className={styles.authen__switchView}>
         Already Have An Account?{' '}
-        <Link to="/login" className={styles.authen__switchLink}>
+        <Link
+          to="/login"
+          state={{ from: location.state?.from }}
+          className={styles.authen__switchLink}
+        >
           Sign In.
         </Link>
       </div>
