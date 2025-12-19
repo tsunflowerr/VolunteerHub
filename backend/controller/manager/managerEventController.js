@@ -35,6 +35,7 @@ export async function createEvent(req, res) {
         
         // Invalidate admin dashboard cache as it tracks pending events
         await invalidateCache('dashboard:admin');
+        await invalidateCache(`dashboard:manager:${organizerId}`);
         
         res.status(201).json({success: true, event: saved});
     } catch (error) {
@@ -68,6 +69,7 @@ export async function updateEvent(req, res) {
         await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
         await invalidateCacheByPattern('search:events:*'); // Xóa cache tìm kiếm events
         await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
+        await invalidateCache(`dashboard:manager:${managerId}`); // Update manager dashboard stats
             
         res.status(200).json({success: true, event: updatedEvent});
     } catch (error) {
@@ -149,6 +151,7 @@ export async function deleteEvent(req, res) {
         await invalidateCacheByPattern('events:*');
         await invalidateCacheByPattern('search:events:*');
         await invalidateCacheByPattern(`event:detail:*`);
+        await invalidateCache(`dashboard:manager:${managerId}`); // Update manager dashboard stats
         
         res.status(200).json({
             success: true, 

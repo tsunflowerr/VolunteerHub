@@ -88,6 +88,7 @@ export async function updateRegistrationStatus(req, res) {
     await invalidateCacheByPattern('events:trending:*');
     await invalidateCache('events:upcoming');
     await invalidateCacheByPattern('events:category:*');
+    await invalidateCache(`dashboard:manager:${req.user._id}`); // Update manager dashboard stats
 
     // Use helper function to generate notification content
     const notificationContent = generateNotificationContent(

@@ -9,6 +9,7 @@ export const managerKeys = {
   volunteers: (eventId) => [...managerKeys.all, 'volunteers', eventId],
   registrations: () => [...managerKeys.all, 'registrations'],
   registrationList: (params) => [...managerKeys.registrations(), { ...params }],
+  dashboard: () => [...managerKeys.all, 'dashboard'],
 };
 
 export const useManagerEvents = (params = {}) => {
@@ -16,6 +17,14 @@ export const useManagerEvents = (params = {}) => {
     queryKey: managerKeys.events(),
     queryFn: () => managerApi.getMyEvents(params),
     staleTime: 1000 * 60,
+  });
+};
+
+export const useManagerDashboard = () => {
+  return useQuery({
+    queryKey: managerKeys.dashboard(),
+    queryFn: managerApi.getDashboard,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 

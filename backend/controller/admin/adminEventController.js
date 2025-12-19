@@ -118,85 +118,93 @@ export async function updateStatusEvent(req, res) {
     }
 
     // Xóa cache sau khi thay đổi status event
-    await invalidateCacheByPattern('events:*'); // Xóa tất cả danh sách events
+    await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
     await invalidateCacheByPattern('search:events:*'); // Xóa cache tìm kiếm events
-    await invalidateCacheByPattern(`event:detail:*`); // Xóa tất cả cache chi tiết events
-    await invalidateCache('dashboard:admin'); // Update admin dashboard stats
-
+    await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
+    await invalidateCache('dashboard:admin');          // Update admin dashboard stats
+    await invalidateCache(`dashboard:manager:${updatedEvent.managerId}`); // Update manager dashboard stats
+    
     res.status(200).json({ success: true, event: updatedEvent });
   } catch (error) {
-    console.error('Error updating event status:', error);
-    res
-      .status(500)
-      .json({ success: false, message: 'Failed to update event status' });
+    console.error("Error updating event status:", error);
+    res.status(500).json({ success: false, message: "Failed to update event status" });
   }
 }
 
 export async function deleteEvent(req, res) {
   const eventId = req.params.id;
-
+  
   try {
     // Admin can delete any event
     const event = await Event.findById(eventId);
     if (!event) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Event not found' });
+      return res.status(404).json({success: false, message: "Event not found"});
     }
-
+    
+    const managerId = event.managerId;
     const postIds = await Post.find({ eventId }).distinct('_id');
-    const postIdsStr = postIds.map((id) => id.toString());
-
+    const postIdsStr = postIds.map(id => id.toString());
+    
     // Get all comment IDs to delete their likes
-    const commentIds = await Comment.find({
-      $or: [{ eventId }, { postId: { $in: postIds } }],
-    }).distinct('_id');
-    const commentIdsStr = commentIds.map((id) => id.toString());
-
-    const [
-      deletedComments,
-      deletedLikes,
-      deletedRegistrations,
-      deletedNotifications,
-      updatedUsers,
-      deletedPosts,
-    ] = await Promise.all([
-      Comment.deleteMany({
-        $or: [{ eventId }, { postId: { $in: postIds } }],
-      }),
-
-      Like.deleteMany({
+    const commentIds = await Comment.find({ 
         $or: [
-          { likeableId: eventId.toString(), likeableType: 'event' },
-          { likeableId: { $in: postIdsStr }, likeableType: 'post' },
-          { likeableId: { $in: commentIdsStr }, likeableType: 'comment' },
-        ],
-      }),
-      Registration.deleteMany({ eventId }),
-
-      Notification.deleteMany({
-        $or: [{ event: eventId }, { post: { $in: postIds } }],
-      }),
-
-      User.updateMany(
-        { bookmarks: eventId },
-        { $pull: { bookmarks: eventId } }
-      ),
-
-      Post.deleteMany({ eventId }),
+            { eventId },
+            { postId: { $in: postIds } }
+        ]
+    }).distinct('_id');
+    const commentIdsStr = commentIds.map(id => id.toString());
+    
+    const [
+        deletedComments,
+        deletedLikes,
+        deletedRegistrations,
+        deletedNotifications,
+        updatedUsers,
+        deletedPosts
+    ] = await Promise.all([
+        Comment.deleteMany({ 
+            $or: [
+                { eventId },
+                { postId: { $in: postIds } }
+            ]
+        }),
+        
+        Like.deleteMany({
+            $or: [
+                { likeableId: eventId.toString(), likeableType: 'event' },
+                { likeableId: { $in: postIdsStr }, likeableType: 'post' },
+                { likeableId: { $in: commentIdsStr }, likeableType: 'comment' }
+            ]
+        }),
+        Registration.deleteMany({ eventId }),
+        
+        Notification.deleteMany({ 
+            $or: [
+                { event: eventId },
+                { post: { $in: postIds } }
+            ]
+        }),
+        
+        User.updateMany(
+            { bookmarks: eventId },
+            { $pull: { bookmarks: eventId } }
+        ),
+        
+        Post.deleteMany({ eventId })
     ]);
-
+    
     await Event.findByIdAndDelete(eventId);
-
+    
     // Xóa cache sau khi delete event
-    await invalidateCacheByPattern('events:*'); // Xóa tất cả danh sách events
+    await invalidateCacheByPattern('events:*');        // Xóa tất cả danh sách events
     await invalidateCacheByPattern('search:events:*'); // Xóa cache tìm kiếm events
-    await invalidateCacheByPattern(`event:detail:*`); // Xóa tất cả cache chi tiết events
-    await invalidateCache('dashboard:admin'); // Update admin dashboard stats
-
+    await invalidateCacheByPattern(`event:detail:*`);  // Xóa tất cả cache chi tiết events
+    await invalidateCache('dashboard:admin');          // Update admin dashboard stats
+    await invalidateCache(`dashboard:manager:${managerId}`); // Update manager dashboard stats
+    
     res.status(200).json({
-      success: true,
-      message: 'Event and all related data deleted successfully',
+        success: true, 
+        message: "Event and all related data deleted successfully",
       details: {
         comments: deletedComments.deletedCount,
         likes: deletedLikes.deletedCount,

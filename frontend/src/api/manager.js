@@ -43,4 +43,9 @@ export const managerApi = {
     );
     return response.data;
   },
+
+  getDashboard: async () => {
+    const response = await api.get('/dashboard/manager');
+    return response.data;
+  },
 };

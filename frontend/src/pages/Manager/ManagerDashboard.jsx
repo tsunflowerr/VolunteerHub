@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -25,66 +24,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import styles from './ManagerDashboard.module.css';
+import { useManagerDashboard } from '../../hooks/useManager';
 
 const ManagerDashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data: response, isLoading } = useManagerDashboard();
 
-  // Mock data - replace with actual API call
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setDashboardData({
-        totalEvents: 25,
-        totalRegistrations: 450,
-        pendingEvents: 3,
-        approvedEvents: 20,
-        completedEvents: 2,
-        cancelledEvents: 0,
-        recentEvents: [
-          {
-            _id: 'event1',
-            name: 'Beach Cleanup',
-            status: 'approved',
-            registrationsCount: 30,
-            startDate: '2025-11-20T08:00:00Z',
-          },
-          {
-            _id: 'event2',
-            name: 'Food Bank Sorting',
-            status: 'pending',
-            registrationsCount: 25,
-            startDate: '2025-11-25T09:00:00Z',
-          },
-          {
-            _id: 'event3',
-            name: 'Youth Tutoring Program',
-            status: 'approved',
-            registrationsCount: 15,
-            startDate: '2025-12-01T14:00:00Z',
-          },
-          {
-            _id: 'event4',
-            name: 'Community Garden',
-            status: 'completed',
-            registrationsCount: 40,
-            startDate: '2025-11-10T10:00:00Z',
-          },
-        ],
-        monthlyData: [
-          { month: 'Jan', events: 5, registrations: 80 },
-          { month: 'Feb', events: 8, registrations: 120 },
-          { month: 'Mar', events: 6, registrations: 95 },
-          { month: 'Apr', events: 10, registrations: 150 },
-          { month: 'May', events: 7, registrations: 110 },
-          { month: 'Jun', events: 12, registrations: 180 },
-        ],
-      });
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={styles.loading}>
         <div className={styles.spinner}></div>
@@ -93,45 +38,58 @@ const ManagerDashboard = () => {
     );
   }
 
+  const dashboardData = response?.data || {
+    eventStatistics: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      completed: 0,
+      cancelled: 0,
+    },
+    volunteerStatistics: { total: 0 },
+    recentEvents: [],
+    monthlyData: [],
+  };
+
   const statsCards = [
     {
       title: 'Total Events',
-      value: dashboardData.totalEvents,
+      value: dashboardData.eventStatistics?.total || 0,
       icon: Calendar,
       color: '#344f1f',
       bgColor: '#e8f5e9',
     },
     {
       title: 'Total Registrations',
-      value: dashboardData.totalRegistrations,
+      value: dashboardData.volunteerStatistics?.total || 0,
       icon: Users,
       color: '#f4991a',
       bgColor: '#fff3e0',
     },
     {
       title: 'Approved Events',
-      value: dashboardData.approvedEvents,
+      value: dashboardData.eventStatistics?.approved || 0,
       icon: CheckCircle,
       color: '#4caf50',
       bgColor: '#e8f5e9',
     },
     {
       title: 'Pending Events',
-      value: dashboardData.pendingEvents,
+      value: dashboardData.eventStatistics?.pending || 0,
       icon: Clock,
       color: '#ff9800',
       bgColor: '#fff3e0',
     },
     {
       title: 'Completed Events',
-      value: dashboardData.completedEvents,
+      value: dashboardData.eventStatistics?.completed || 0,
       icon: Activity,
       color: '#2196f3',
       bgColor: '#e3f2fd',
     },
     {
       title: 'Cancelled Events',
-      value: dashboardData.cancelledEvents,
+      value: dashboardData.eventStatistics?.cancelled || 0,
       icon: XCircle,
       color: '#f44336',
       bgColor: '#ffebee',
@@ -139,11 +97,27 @@ const ManagerDashboard = () => {
   ];
 
   const pieData = [
-    { name: 'Approved', value: dashboardData.approvedEvents, color: '#4caf50' },
-    { name: 'Pending', value: dashboardData.pendingEvents, color: '#ff9800' },
-    { name: 'Completed', value: dashboardData.completedEvents, color: '#2196f3' },
-    { name: 'Cancelled', value: dashboardData.cancelledEvents, color: '#f44336' },
-  ];
+    {
+      name: 'Approved',
+      value: dashboardData.eventStatistics?.approved || 0,
+      color: '#4caf50',
+    },
+    {
+      name: 'Pending',
+      value: dashboardData.eventStatistics?.pending || 0,
+      color: '#ff9800',
+    },
+    {
+      name: 'Completed',
+      value: dashboardData.eventStatistics?.completed || 0,
+      color: '#2196f3',
+    },
+    {
+      name: 'Cancelled',
+      value: dashboardData.eventStatistics?.cancelled || 0,
+      color: '#f44336',
+    },
+  ].filter((item) => item.value > 0);
 
   const container = {
     hidden: { opacity: 0 },
@@ -307,7 +281,7 @@ const ManagerDashboard = () => {
         >
           <h3 className={styles.sectionTitle}>Recent Events</h3>
           <div className={styles.eventsList}>
-            {dashboardData.recentEvents.map((event) => (
+            {dashboardData.recentEvents?.map((event) => (
               <div key={event._id} className={styles.eventItem}>
                 <div className={styles.eventInfo}>
                   <h4 className={styles.eventName}>{event.name}</h4>

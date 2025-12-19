@@ -34,14 +34,39 @@ const router = express.Router();
  *                 data:
  *                   type: object
  *                   properties:
- *                     totalEvents:
- *                       type: number
- *                     totalRegistrations:
- *                       type: number
- *                     pendingEvents:
+ *                     eventStatistics:
+ *                       type: object
+ *                     volunteerStatistics:
+ *                       type: object
+ *                     activityStatistics:
+ *                       type: object
+ *                     upcomingEventsCount:
  *                       type: number
  *                     recentEvents:
  *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           name:
+ *                             type: string
+ *                           status:
+ *                             type: string
+ *                           registrationsCount:
+ *                             type: number
+ *                           startDate:
+ *                             type: string
+ *                             format: date-time
+ *                     monthlyData:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           month:
+ *                             type: string
+ *                           events:
+ *                             type: number
+ *                           registrations:
+ *                             type: number
  *       401:
  *         description: Unauthorized
  *       403:

@@ -14,6 +14,7 @@ export async function getManagerDashboard(req, res) {
             CACHE_TTL.DASHBOARD,
             async () => {
                 const now = new Date();
+                const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
                 const eventIds = await Event.find({ managerId }).distinct('_id');
 
                 if (eventIds.length === 0) {
@@ -40,6 +41,8 @@ export async function getManagerDashboard(req, res) {
                             postsLast24h: 0
                         },
                         upcomingEventsCount: 0,
+                        recentEvents: [],
+                        monthlyData: [],
                         generatedAt: new Date()
                     };
                 }
@@ -116,6 +119,81 @@ export async function getManagerDashboard(req, res) {
                     startDate: { $gte: now }
                 });
 
+                // 5. Recent Events
+                const recentEvents = await Event.find({ managerId })
+                    .sort({ startDate: -1 })
+                    .limit(5)
+                    .select('name status registrationsCount startDate');
+
+                // 6. Monthly Data Aggregation
+                const monthlyEvents = await Event.aggregate([
+                    { 
+                        $match: { 
+                            managerId,
+                            createdAt: { $gte: sixMonthsAgo }
+                        } 
+                    },
+                    {
+                        $group: {
+                            _id: { 
+                                month: { $month: "$createdAt" }, 
+                                year: { $year: "$createdAt" } 
+                            },
+                            count: { $sum: 1 }
+                        }
+                    }
+                ]);
+
+                const monthlyRegistrations = await Registration.aggregate([
+                    { 
+                        $match: { 
+                            eventId: { $in: eventIds },
+                            createdAt: { $gte: sixMonthsAgo }
+                        } 
+                    },
+                    {
+                        $group: {
+                            _id: { 
+                                month: { $month: "$createdAt" }, 
+                                year: { $year: "$createdAt" } 
+                            },
+                            count: { $sum: 1 }
+                        }
+                    }
+                ]);
+
+                // Process monthly data
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const monthlyDataMap = new Map();
+
+                // Initialize last 6 months
+                for (let i = 0; i < 6; i++) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                    monthlyDataMap.set(key, {
+                        month: monthNames[d.getMonth()],
+                        events: 0,
+                        registrations: 0,
+                        sortKey: key
+                    });
+                }
+
+                monthlyEvents.forEach(item => {
+                    const key = `${item._id.year}-${item._id.month}`;
+                    if (monthlyDataMap.has(key)) {
+                        monthlyDataMap.get(key).events = item.count;
+                    }
+                });
+
+                monthlyRegistrations.forEach(item => {
+                    const key = `${item._id.year}-${item._id.month}`;
+                    if (monthlyDataMap.has(key)) {
+                        monthlyDataMap.get(key).registrations = item.count;
+                    }
+                });
+
+                const monthlyData = Array.from(monthlyDataMap.values());
+
                 return {
                     eventStatistics: eventStatsMap,
                     volunteerStatistics: volunteerStatsMap,
@@ -126,6 +204,8 @@ export async function getManagerDashboard(req, res) {
                         postsLast24h: postsLast24h
                     },
                     upcomingEventsCount,
+                    recentEvents,
+                    monthlyData,
                     generatedAt: new Date()
                 };
             }

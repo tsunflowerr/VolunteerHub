@@ -57,6 +57,9 @@ export async function registerEvent(req, res) {
         await invalidateCacheByPattern('events:trending:*');
         await invalidateCache('events:upcoming');
         await invalidateCacheByPattern('events:category:*');
+        if (event.managerId) {
+            await invalidateCache(`dashboard:manager:${event.managerId}`);
+        }
         
         // Generate notification content for volunteer (registration confirmation)
         const volunteerContent = generateNotificationContent(
@@ -183,6 +186,12 @@ export async function unregisterEvent(req, res) {
         await invalidateCacheByPattern('events:trending:*');
         await invalidateCache('events:upcoming');
         await invalidateCacheByPattern('events:category:*');
+        
+        // Invalidate manager dashboard cache
+        const eventFull = await Event.findById(eventId).select('managerId');
+        if (eventFull?.managerId) {
+            await invalidateCache(`dashboard:manager:${eventFull.managerId}`);
+        }
         
         res.status(200).json({ 
             success: true, 
