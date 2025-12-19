@@ -1,5 +1,4 @@
 services:
-  # MongoDB Service
   mongodb:
     image: mongo:latest
     container_name: volunteerhub-mongodb
@@ -15,7 +14,6 @@ services:
     networks:
       - volunteerhub-network
 
-  # Redis Service - Chỉ dùng cho cache
   redis:
     image: redis:latest
     container_name: volunteerhub-redis
@@ -27,17 +25,16 @@ services:
     networks:
       - volunteerhub-network
 
-  # Backend Node.js Service
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: volunteerhub-backend
     restart: always
     ports:
       - '4000:4000'
     env_file:
-      - .env
+      - ./backend/.env
     environment:
       - REDIS_URL=redis://redis:6379
       - MONGODB_URI=mongodb://admin:password123@mongodb:27017/volunteerhub?authSource=admin
@@ -45,17 +42,31 @@ services:
       - redis
       - mongodb
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/node_modules
     networks:
       - volunteerhub-network
 
-# Volumes
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: volunteerhub-frontend
+    restart: always
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:4000/api
+    networks:
+      - volunteerhub-network
+
 volumes:
   mongodb_data:
   redis_data:
 
-# Networks
 networks:
   volunteerhub-network:
     driver: bridge
