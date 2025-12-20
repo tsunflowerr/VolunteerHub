@@ -103,6 +103,47 @@ export async function invalidateCacheByPattern(pattern) {
 }
 
 /**
+ * Xóa toàn bộ cache liên quan đến một event cụ thể
+ * Được gọi khi có thay đổi về event (registration, likes, posts, etc.)
+ * @param {string} eventId - ID của event cần invalidate cache
+ * @param {string} managerId - ID của manager (optional) để invalidate dashboard
+ */
+export async function invalidateEventCaches(eventId, managerId = null) {
+    try {
+        console.log(`🔄 Invalidating all caches for event: ${eventId}`);
+        
+        // Invalidate tuần tự để tránh race condition
+        // 1. Event detail (không còn dùng nhưng clear để đảm bảo)
+        await invalidateCache(`event:detail:${eventId}`);
+        
+        // 2. All event lists (chứa registrationsCount)
+        await invalidateCacheByPattern('events:all:*');
+        
+        // 3. Trending events (dựa trên registrationsCount)
+        await invalidateCacheByPattern('events:trending:*');
+        
+        // 4. Upcoming events
+        await invalidateCacheByPattern('events:upcoming:*');
+        
+        // 5. Category-based lists
+        await invalidateCacheByPattern('events:category:*');
+        
+        // 6. Search results (có thể chứa event này)
+        await invalidateCacheByPattern('search:events:*');
+        
+        // 7. Manager dashboard nếu có
+        if (managerId) {
+            await invalidateCache(`dashboard:manager:${managerId}`);
+        }
+        
+        console.log(`✅ Successfully invalidated all caches for event: ${eventId}`);
+    } catch (error) {
+        console.error(`⚠️ Error invalidating event caches for ${eventId}:`, error.message);
+        throw error; // Re-throw để caller biết có lỗi
+    }
+}
+
+/**
  * Xóa toàn bộ cache (Cẩn thận khi dùng!)
  */
 export async function flushAllCache() {

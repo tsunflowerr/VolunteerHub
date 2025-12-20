@@ -4,7 +4,7 @@ import Comment from '../../models/commentModel.js';
 import Event from '../../models/eventModel.js';
 import mongoose from 'mongoose';
 import redisClient from '../../config/redis.js';
-import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { invalidateCache, invalidateCacheByPattern, invalidateEventCaches } from '../../utils/cacheHelper.js';
 import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 export async function likeEvent(req, res) {
@@ -26,9 +26,8 @@ export async function likeEvent(req, res) {
                 return res.status(404).json({success: false, message: 'Event not found'});
             }
             
-            // Invalidate caches when likesCount changes
-            await invalidateCache(`event:detail:${eventId}`);
-            await invalidateCacheByPattern('events:trending:*');
+            // Invalidate all event-related caches
+            await invalidateEventCaches(eventId, event.managerId);
             
             return res.status(200).json({success: true, action: 'unliked', totalLikes: event.likesCount});
         }
@@ -84,9 +83,8 @@ export async function likeEvent(req, res) {
             }
         }
         
-        // Invalidate caches when likesCount changes (affects trending score)
-        await invalidateCache(`event:detail:${eventId}`);
-        await invalidateCacheByPattern('events:trending:*');
+        // Invalidate all event-related caches
+        await invalidateEventCaches(eventId, event.managerId);
         
         return res.status(200).json({success: true, action: 'liked', totalLikes: event.likesCount});
     } catch (error) {

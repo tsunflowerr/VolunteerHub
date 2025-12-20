@@ -82,12 +82,12 @@ export async function getEventById(req, res) {
             console.error("Error checking Redis view cache:", redisError);
         }
         
-        // Cache event detail (KHÔNG cache view count logic)
-        const cacheKey = `event:detail:${eventId}`;
+        // ⚠️ NO CACHING for event detail - registrationsCount, likesCount, postsCount change frequently
+        // Always fetch fresh data from DB to ensure accuracy
         let event;
         
         if (shouldIncreaseView) {
-            // Nếu cần tăng view, không dùng cache và update DB
+            // First view: Increment viewCount and fetch updated event
             event = await Event.findByIdAndUpdate(
                 eventId, 
                 { $inc: { viewCount: 1 } },
@@ -97,17 +97,14 @@ export async function getEventById(req, res) {
             .populate('categories')
             .lean();
             
-            // Invalidate cache sau khi tăng view
-            await invalidateCache(cacheKey);
-            
-            // Set view tracking cache
+            // Set view tracking cache (to prevent multiple view increments)
             try {
                 await redisClient.setEx(viewCacheKey, 3600, '1');
             } catch (redisError) {
                 console.error("Error setting Redis view cache:", redisError);
             }
         } else {
-            // Đã view rồi → fetch trực tiếp từ DB (không cache vì registrationsCount thay đổi thường xuyên)
+            // Already viewed: Fetch from DB without incrementing viewCount
             event = await Event.findById(eventId)
                 .populate('managerId', 'username email avatar')
                 .populate('categories')

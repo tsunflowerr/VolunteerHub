@@ -4,7 +4,7 @@ import { createAndSendNotification, generateNotificationContent, generateNewRegi
 import { checkEventRequirements } from '../../utils/gamificationHelper.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
-import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { invalidateCache, invalidateCacheByPattern, invalidateEventCaches } from '../../utils/cacheHelper.js';
 
 const NOTIFICATION_CACHE_TTL = 300;
 
@@ -65,15 +65,8 @@ export async function registerEvent(req, res) {
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
 
-        // Invalidate caches - note: registrationsCount doesn't change here, only when approved
-        await invalidateCache(`event:detail:${eventId}`);
-        await invalidateCacheByPattern('events:all:*');
-        await invalidateCacheByPattern('events:trending:*');
-        await invalidateCacheByPattern('events:upcoming:*');
-        await invalidateCacheByPattern('events:category:*');
-        if (event.managerId) {
-            await invalidateCache(`dashboard:manager:${event.managerId}`);
-        }
+        // Invalidate all event-related caches
+        await invalidateEventCaches(eventId, event.managerId);
         
         // Generate notification content for volunteer (registration confirmation)
         const volunteerContent = generateNotificationContent(
@@ -194,19 +187,9 @@ export async function unregisterEvent(req, res) {
         
         await Registration.findByIdAndDelete(registration._id);
 
-        // Invalidate caches
-        await invalidateCache(`event:detail:${eventId}`);
-        await invalidateCacheByPattern('events:all:*');
-        await invalidateCacheByPattern('events:trending:*');
-        await invalidateCacheByPattern('events:upcoming:*');
-        await invalidateCacheByPattern('events:category:*');
-        await invalidateCacheByPattern('search:events:*');
-        
-        // Invalidate manager dashboard cache
+        // Invalidate all event-related caches
         const eventFull = await Event.findById(eventId).select('managerId');
-        if (eventFull?.managerId) {
-            await invalidateCache(`dashboard:manager:${eventFull.managerId}`);
-        }
+        await invalidateEventCaches(eventId, eventFull?.managerId);
         
         res.status(200).json({ 
             success: true, 

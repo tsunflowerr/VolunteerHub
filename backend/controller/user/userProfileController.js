@@ -9,7 +9,7 @@ import Like from '../../models/likeModel.js';
 import Notification from '../../models/notificationModel.js';
 import { UserProgress, PointHistory } from '../../models/levelModel.js';
 import { UserAchievement } from '../../models/achievementModel.js';
-import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { invalidateCache, invalidateCacheByPattern, invalidateEventCaches } from '../../utils/cacheHelper.js';
 
 // Helper function to format user data for frontend
 async function formatUserResponse(user) {
@@ -272,15 +272,17 @@ export async function deleteUser(req, res) {
     console.log(`✅ User ${userObjectId} deleted. Updated registrationsCount for ${registeredEventIds.length} events.`);
     console.log(`📋 Event IDs updated: ${registeredEventIds.map(id => id.toString()).join(', ')}`);
 
-    // Invalidate all event-related caches
-    await invalidateCacheByPattern('events:*');
-    await invalidateCacheByPattern('search:events:*');
-    
-    // Invalidate specific event detail caches for affected events
+    // Invalidate all caches for affected events
     if (registeredEventIds.length > 0) {
       for (const eventId of registeredEventIds) {
-        await invalidateCache(`event:detail:${eventId}`);
+        // Get event managerId for cache invalidation
+        const event = await Event.findById(eventId).select('managerId').lean();
+        await invalidateEventCaches(eventId, event?.managerId);
       }
+    } else {
+      // If no specific events, invalidate all event lists
+      await invalidateCacheByPattern('events:*');
+      await invalidateCacheByPattern('search:events:*');
     }
     
     // Invalidate leaderboard cache (user is removed from rankings)

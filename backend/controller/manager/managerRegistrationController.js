@@ -11,6 +11,7 @@ import redisClient from '../../config/redis.js';
 import {
   invalidateCache,
   invalidateCacheByPattern,
+  invalidateEventCaches,
 } from '../../utils/cacheHelper.js';
 
 export async function updateRegistrationStatus(req, res) {
@@ -121,14 +122,8 @@ export async function updateRegistrationStatus(req, res) {
       }
     }
 
-    // Invalidate event-related caches
-    await invalidateCache(`event:detail:${event._id}`);
-    await invalidateCacheByPattern('events:all:*');
-    await invalidateCacheByPattern('events:trending:*');
-    await invalidateCacheByPattern('events:upcoming:*');
-    await invalidateCacheByPattern('events:category:*');
-    await invalidateCacheByPattern('search:events:*'); // Invalidate search cache when registrationsCount changes
-    await invalidateCache(`dashboard:manager:${req.user._id}`); // Update manager dashboard stats
+    // Invalidate all event-related caches atomically
+    await invalidateEventCaches(event._id, req.user._id);
 
     // Use helper function to generate notification content
     const notificationContent = generateNotificationContent(
@@ -421,14 +416,8 @@ export async function deleteRegistration(req, res) {
 
     await Registration.findByIdAndDelete(registrationId);
 
-    // Invalidate caches
-    await invalidateCache(`event:detail:${event._id}`);
-    await invalidateCacheByPattern('events:all:*');
-    await invalidateCacheByPattern('events:trending:*');
-    await invalidateCacheByPattern('events:upcoming:*');
-    await invalidateCacheByPattern('events:category:*');
-    await invalidateCacheByPattern('search:events:*');
-    await invalidateCache(`dashboard:manager:${req.user._id}`);
+    // Invalidate all event-related caches
+    await invalidateEventCaches(event._id, req.user._id);
 
     res.status(200).json({
       success: true,
