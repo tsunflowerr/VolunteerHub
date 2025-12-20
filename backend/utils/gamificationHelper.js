@@ -35,14 +35,10 @@ export async function processEventCompletion(userId, eventId, options = {}) {
       newLevel: userProgress.currentLevel
     };
 
-    // 1. Add base points for completing the event
-    const basePoints = event.rewards?.pointsReward || 10;
-    const bonusPoints = event.rewards?.bonusPoints || 0;
-    const totalEventPoints = basePoints + bonusPoints;
-    
-    results.pointsEarned += totalEventPoints;
+    // No automatic points - manager will award points manually via achievements
+    // Points can be set in event.rewards.pointsReward as reference for managers
 
-    // 2. Update stats
+    // 1. Update stats (without awarding points)
     userProgress.stats.eventsCompleted += 1;
     userProgress.stats.hoursVolunteered += (event.rewards?.hoursCredit || 4);
 
@@ -85,38 +81,22 @@ export async function processEventCompletion(userId, eventId, options = {}) {
     const earnedAchievements = await checkAndAwardAchievements(userId, userProgress, event);
     results.achievementsEarned = earnedAchievements;
 
-    // Note: Points from automatic achievements are NOT added - only manual achievements from managers
-    // Automatic achievements are recognition only, no XP reward
+    // Note: Automatic achievements do NOT award points
+    // Only manual achievements awarded by managers after events will grant XP
 
-    // 5. Add total points to user progress
-    userProgress.totalPoints += results.pointsEarned;
-
-    // 6. Check for level up
+    // 5. Check for level up (from accumulated points from manual achievements)
     const newLevelInfo = await calculateLevel(userProgress.totalPoints);
     if (newLevelInfo.level > userProgress.currentLevel) {
       results.leveledUp = true;
       results.newLevel = newLevelInfo.level;
       results.newLevelInfo = newLevelInfo;
       userProgress.currentLevel = newLevelInfo.level;
-
-      // Award level up bonus points
-      const levelUpBonus = newLevelInfo.level * 10; // 10 points per level
-      userProgress.totalPoints += levelUpBonus;
-      results.pointsEarned += levelUpBonus;
-
-      // Record level up bonus in history
-      await PointHistory.create({
-        userId,
-        points: levelUpBonus,
-        type: 'level_bonus',
-        description: `Level up bonus for reaching level ${newLevelInfo.level} (${newLevelInfo.name})`
-      });
     }
 
-    // 7. Save user progress
+    // 6. Save user progress
     await userProgress.save();
 
-    // 8. Update user model with denormalized data
+    // 7. Update user model with denormalized data
     await User.findByIdAndUpdate(userId, {
       'gamification.currentLevel': userProgress.currentLevel,
       'gamification.totalPoints': userProgress.totalPoints,
@@ -126,16 +106,7 @@ export async function processEventCompletion(userId, eventId, options = {}) {
       })
     });
 
-    // 9. Record point history for event completion
-    await PointHistory.create({
-      userId,
-      points: totalEventPoints,
-      type: 'event_completed',
-      description: `Completed event: ${event.name}`,
-      relatedEvent: eventId
-    });
-
-    // 10. Send notifications
+    // 8. Send notifications (no point notification since points are awarded manually by manager)
     await sendGamificationNotifications(userId, results, event);
 
     return { success: true, results };
@@ -531,28 +502,63 @@ export async function awardManualAchievement(userId, achievementId, awardedBy, e
       timesAwarded: 1
     });
 
-    // Update achievement count only (no points for manual achievements)
+    // Award points from manual achievement and update user progress
+    let userProgress = await UserProgress.findOne({ userId });
+    if (!userProgress) {
+      userProgress = await UserProgress.create({ userId });
+    }
+
+    const pointsEarned = achievement.pointsReward || 0;
+    if (pointsEarned > 0) {
+      userProgress.totalPoints += pointsEarned;
+
+      // Check for level up
+      const newLevelInfo = await calculateLevel(userProgress.totalPoints);
+      if (newLevelInfo.level > userProgress.currentLevel) {
+        userProgress.currentLevel = newLevelInfo.level;
+      }
+
+      await userProgress.save();
+
+      // Record point history
+      await PointHistory.create({
+        userId,
+        points: pointsEarned,
+        type: 'achievement_earned',
+        description: `Earned achievement: ${achievement.name}`,
+        relatedAchievement: achievement._id,
+        relatedEvent: eventId
+      });
+    }
+
+    // Update user model with denormalized data
     await User.findByIdAndUpdate(userId, {
+      'gamification.currentLevel': userProgress.currentLevel,
+      'gamification.totalPoints': userProgress.totalPoints,
       $inc: { 'gamification.achievementCount': 1 }
     });
 
-    // Send notification
+    // Send notification (include points if any)
+    const notificationContent = pointsEarned > 0
+      ? `🏆 Bạn đã được trao thành tích "${achievement.name}" và nhận ${pointsEarned} điểm!`
+      : `🏆 Bạn đã được trao thành tích "${achievement.name}"!`;
+
     await createAndSendNotification(
       {
         recipient: userId,
         sender: awardedBy,
         type: 'achievement_earned',
-        content: `🏆 Bạn đã được trao thành tích "${achievement.name}"!`,
+        content: notificationContent,
         event: eventId
       },
       {
         title: 'Thành tích mới!',
-        body: `${achievement.icon} ${achievement.name}`,
+        body: `${achievement.icon} ${achievement.name}${pointsEarned > 0 ? ` (+${pointsEarned} XP)` : ''}`,
         icon: achievement.icon
       }
     );
 
-    return { success: true, achievement };
+    return { success: true, achievement, pointsEarned };
   } catch (error) {
     console.error('Error awarding manual achievement:', error);
     return { success: false, error: error.message };

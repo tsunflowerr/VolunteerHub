@@ -73,11 +73,8 @@ const EventSidebar = ({
 
   let currentUserState = 'none';
   if (myRegistration) {
-    if (myRegistration.status === 'confirmed') {
-      currentUserState = 'approved';
-    } else {
-      currentUserState = myRegistration.status;
-    }
+    // Use actual registration status for accurate permission checks
+    currentUserState = myRegistration.status;
   }
 
   const handleBookmark = () => {

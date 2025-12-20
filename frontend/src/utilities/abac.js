@@ -79,7 +79,8 @@ const ROLES = {
       bookmark: true,
       discussion: (user, event) =>
         (event.currentUserState === 'approved' ||
-          event.currentUserState === 'confirmed') &&
+          event.currentUserState === 'confirmed' ||
+          event.currentUserState === 'completed') &&
         (event.status === 'approved' || event.status === 'completed'),
     },
     dashboard: {

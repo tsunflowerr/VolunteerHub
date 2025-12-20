@@ -8,7 +8,10 @@ import {
   Calendar,
   Filter,
   Search,
+  RefreshCw,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import VerifiedBadge from '../../components/common/VerifiedBadge';
 import styles from './ManagerRegistrations.module.css';
 import {
   useManagerRegistrations,
@@ -17,7 +20,7 @@ import {
 
 const ManagerRegistrations = () => {
   // Fetch registrations
-  const { data: responseData, isLoading } = useManagerRegistrations({
+  const { data: responseData, isLoading, refetch, isFetching } = useManagerRegistrations({
     limit: 10,
   });
   const { mutate: updateStatus } = useUpdateRegistrationStatus();
@@ -89,6 +92,17 @@ const ManagerRegistrations = () => {
     updateStatus({ registrationId: regId, status: 'cancelled' });
   };
 
+  const handleRefresh = async () => {
+    toast.promise(
+      refetch(),
+      {
+        loading: 'Refreshing registrations...',
+        success: 'Registrations updated!',
+        error: 'Failed to refresh',
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <div className={styles.loadingContainer}>Loading registrations...</div>
@@ -109,6 +123,15 @@ const ManagerRegistrations = () => {
             Manage volunteer applications for your events
           </p>
         </div>
+        <button
+          className={styles.refreshBtn}
+          onClick={handleRefresh}
+          disabled={isFetching}
+          title="Refresh registrations"
+        >
+          <RefreshCw size={20} className={isFetching ? styles.spinning : ''} />
+          Refresh
+        </button>
       </motion.div>
 
       {/* Filters & Search */}
@@ -187,6 +210,7 @@ const ManagerRegistrations = () => {
                       <div>
                         <div className={styles.userName}>
                           {reg.userId?.username}
+                          <VerifiedBadge role={reg.userId?.role} size={14} />
                         </div>
                         <div className={styles.userEmail}>
                           <Mail size={14} />

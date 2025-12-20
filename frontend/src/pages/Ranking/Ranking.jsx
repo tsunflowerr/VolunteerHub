@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { gamificationApi } from '../../api/gamification';
 import { LevelBadge } from '../../components/Gamification';
+import VerifiedBadge from '../../components/common/VerifiedBadge';
 import { Trophy, Medal, Award, Star } from 'lucide-react';
 import styles from './Ranking.module.css';
 
@@ -60,7 +61,10 @@ const Ranking = () => {
             className={styles.ranking__avatar}
           />
           <div className={styles.ranking__userInfo}>
-            <h3 className={styles.ranking__username}>{entry.user.username}</h3>
+            <h3 className={styles.ranking__username}>
+              {entry.user.username}
+              <VerifiedBadge role={entry.user.role} size={14} />
+            </h3>
             <div className={styles.ranking__userLevel}>
               <LevelBadge level={entry.currentLevel} levelInfo={entry.levelInfo} size="small" />
             </div>
@@ -101,7 +105,10 @@ const Ranking = () => {
             className={styles.ranking__avatar}
           />
           <div className={styles.ranking__userInfo}>
-            <h3 className={styles.ranking__username}>{entry.user.username}</h3>
+            <h3 className={styles.ranking__username}>
+              {entry.user.username}
+              <VerifiedBadge role={entry.user.role} size={14} />
+            </h3>
             <div className={styles.ranking__userLevel}>
               <LevelBadge level={entry.currentLevel} levelInfo={entry.levelInfo} size="small" />
             </div>

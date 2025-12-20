@@ -8,6 +8,7 @@ const CreatePostModal = ({
   onSubmit,
   userAvatar,
   userName,
+  userRole,
   initialData,
 }) => {
   const [title, setTitle] = useState(initialData?.title || '');
@@ -103,7 +104,10 @@ const CreatePostModal = ({
         <div className={styles.userInfo}>
           <img src={userAvatar} alt={userName} className={styles.avatar} />
           <div className={styles.userDetails}>
-            <span className={styles.userName}>{userName}</span>
+            <span className={styles.userName}>
+              {userName}
+              {userRole && <VerifiedBadge role={userRole} size={16} />}
+            </span>
           </div>
         </div>
 

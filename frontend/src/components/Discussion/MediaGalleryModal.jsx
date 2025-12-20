@@ -104,7 +104,10 @@ const MediaGalleryModal = ({ eventId, filter, onFilterChange, onClose }) => {
                         src={item.author.avatar}
                         alt={item.author.username}
                       />
-                      <span>{item.author.username}</span>
+                      <span>
+                        {item.author.username}
+                        <VerifiedBadge role={item.author.role} size={12} />
+                      </span>
                     </div>
                   </div>
                 </motion.div>
@@ -170,7 +173,10 @@ const MediaGalleryModal = ({ eventId, filter, onFilterChange, onClose }) => {
                   src={filteredMedia[selectedIndex].author.avatar}
                   alt={filteredMedia[selectedIndex].author.username}
                 />
-                <span>{filteredMedia[selectedIndex].author.username}</span>
+                <span>
+                  {filteredMedia[selectedIndex].author.username}
+                  <VerifiedBadge role={filteredMedia[selectedIndex].author.role} size={14} />
+                </span>
               </div>
             </motion.div>
 

@@ -305,6 +305,13 @@
   gap: 0.75rem;
 }
 
+.avatarWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .createPostAvatar {
   width: 44px;
   height: 44px;

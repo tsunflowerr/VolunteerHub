@@ -29,6 +29,46 @@
   font-size: 1rem;
 }
 
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: var(--text-white-color);
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(52, 79, 31, 0.3);
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background-color: #2a3f19;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(52, 79, 31, 0.4);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .exportBtn {
   display: flex;
   align-items: center;

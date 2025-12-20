@@ -34,7 +34,10 @@ export const useManagerRegistrations = (params = {}) => {
   return useQuery({
     queryKey: managerKeys.registrationList(params),
     queryFn: () => managerApi.getAllRegistrations(params),
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 30, // 30 seconds - reduced for fresher data
+    refetchInterval: 1000 * 60, // Auto-refetch every 60 seconds for new registrations
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always fetch on component mount
   });
 };
 
@@ -43,6 +46,9 @@ export const useEventVolunteers = (eventId) => {
     queryKey: managerKeys.volunteers(eventId),
     queryFn: () => managerApi.getEventVolunteers(eventId),
     enabled: !!eventId,
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: 1000 * 60, // Auto-refetch every 60 seconds
+    refetchOnWindowFocus: true,
   });
 };
 

@@ -201,7 +201,7 @@ export async function getLeaderboard(req, res) {
     const leaderboard = await UserProgress.find()
       .sort({ [sortField]: -1 })
       .limit(limitNum)
-      .populate('userId', 'username avatar role')
+      .populate('userId', 'username avatar role gamification')
       .lean();
 
     // Lấy level info cho mỗi user
@@ -222,7 +222,10 @@ export async function getLeaderboard(req, res) {
       totalPoints: entry.totalPoints,
       currentLevel: entry.currentLevel,
       levelInfo: levelMap[entry.currentLevel],
-      stats: entry.stats
+      stats: {
+        ...entry.stats,
+        achievementCount: entry.userId?.gamification?.achievementCount || 0
+      }
     }));
 
     res.status(200).json({

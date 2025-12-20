@@ -275,6 +275,8 @@ export async function completeEventEarly(req, res) {
         event.updatedAt = Date.now();
         await event.save();
         
+        // Note: Registrations remain as 'confirmed' - manager must manually mark volunteers as completed
+        
         // Populate for response
         const updatedEvent = await Event.findById(eventId)
             .populate('managerId', 'username email avatar')

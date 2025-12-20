@@ -118,16 +118,21 @@ const EventDiscussion = () => {
     );
   }, [myRegistrations, id]);
 
+  const currentUserRegistration = useMemo(() => {
+    return myRegistrations?.data?.find(
+      (r) => (r.eventId._id || r.eventId) === id
+    );
+  }, [myRegistrations, id]);
+
   const canDiscuss = useMemo(() => {
     if (!eventDetails || !user) return false;
-    // Basic check: Admin, Manager, or Joined Volunteer
-    // You can replace this with checkPermission if needed, e.g.:
-    const currentUserState = isJoined ? 'approved' : 'none';
+    // Get actual registration status for accurate permission check
+    const currentUserState = currentUserRegistration?.status || 'none';
     return checkPermission(user, RESOURCES.EVENTS, ACTIONS.DISCUSSION, {
       ...eventDetails,
       currentUserState,
     });
-  }, [eventDetails, user, isJoined]);
+  }, [eventDetails, user, currentUserRegistration]);
 
   // Handlers
   const handleCreatePost = (newPost) => {
@@ -329,7 +334,10 @@ const EventDiscussion = () => {
               />
               <span className={styles.managerName}>
                 Organized by{' '}
-                <strong>{eventDetails.managerId?.username || 'Unknown'}</strong>
+                <strong>
+                  {eventDetails.managerId?.username || 'Unknown'}
+                  <VerifiedBadge role={eventDetails.managerId?.role} size={16} />
+                </strong>
               </span>
             </div>
           </motion.div>
@@ -412,14 +420,17 @@ const EventDiscussion = () => {
               transition={{ delay: 0.2 }}
             >
               <div className={styles.createPostInputWrapper}>
-                <img
-                  src={
-                    currentUser.avatar ||
-                    'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
-                  }
-                  alt="Your avatar"
-                  className={styles.createPostAvatar}
-                />
+                <div className={styles.avatarWrapper}>
+                  <img
+                    src={
+                      currentUser.avatar ||
+                      'https://api.dicebear.com/7.x/avataaars/svg?seed=User'
+                    }
+                    alt="Your avatar"
+                    className={styles.createPostAvatar}
+                  />
+                  <VerifiedBadge role={currentUser.role} size={14} />
+                </div>
                 <button
                   className={styles.createPostInput}
                   onClick={handleCreatePostClick}
@@ -593,6 +604,7 @@ const EventDiscussion = () => {
             onSubmit={handleCreatePost}
             userAvatar={currentUser.avatar}
             userName={currentUser.username || currentUser.fullName}
+            userRole={currentUser.role}
           />
         )}
       </AnimatePresence>
@@ -604,6 +616,7 @@ const EventDiscussion = () => {
             onSubmit={handleUpdatePost}
             userAvatar={currentUser.avatar}
             userName={currentUser.username || currentUser.fullName}
+            userRole={currentUser.role}
             initialData={editingPost}
           />
         )}
