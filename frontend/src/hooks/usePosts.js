@@ -23,6 +23,9 @@ export const useEventPosts = (eventId) => {
       return page < pages ? page + 1 : undefined;
     },
     enabled: !!eventId,
+    staleTime: 0, // Always consider data stale to get fresh posts
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 

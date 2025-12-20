@@ -1,3 +1,4 @@
+import VerifiedBadge from '../common/VerifiedBadge';
 import styles from './User.module.css';
 
 const User = ({ user, onAccessProfile }) => {
@@ -9,7 +10,10 @@ const User = ({ user, onAccessProfile }) => {
         alt={user.username}
       />
       <div className={styles['userInfo']}>
-        <h2 className={styles['username']}>{user.username}</h2>
+        <h2 className={styles['username']}>
+          {user.username}
+          <VerifiedBadge role={user.role} size={14} />
+        </h2>
         <p className={styles['bio']}>{user.bio}</p>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { MapPin, Users, Star, Lock } from 'lucide-react';
 import styles from './Event.module.css';
 import CategoryChip from '../common/Category/CategoryChip';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 export function Event({
   name,
@@ -112,6 +113,7 @@ export function Event({
             <div className={styles['event__host-info']}>
               <div className={styles['event__host-name']}>
                 {hostName || 'No host name'}
+                <VerifiedBadge role={managerId?.role} size={14} />
               </div>
               <div className={styles['event__host-type']}>Event Host</div>
             </div>

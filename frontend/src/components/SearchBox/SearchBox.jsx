@@ -30,8 +30,6 @@ const SearchBox = ({
   const sortOptions = [
     { value: 'relevance', label: 'Relevance' },
     { value: 'newest', label: 'Newest' },
-    { value: 'upcoming', label: 'Upcoming' },
-    { value: 'popular', label: 'Popular' },
     { value: 'trending', label: 'Trending' },
   ];
 

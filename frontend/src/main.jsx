@@ -30,6 +30,15 @@ if ('serviceWorker' in navigator) {
           'ServiceWorker registration successful with scope: ',
           registration.scope
         );
+        
+        // Check for push subscription status
+        registration.pushManager.getSubscription().then((subscription) => {
+          if (subscription) {
+            console.log('Push subscription exists:', subscription.endpoint);
+          } else {
+            console.log('No push subscription found - user needs to enable notifications');
+          }
+        });
       })
       .catch((err) => {
         console.log('ServiceWorker registration failed: ', err);
@@ -38,9 +47,11 @@ if ('serviceWorker' in navigator) {
 
   // Listen for messages from Service Worker (e.g., push notifications)
   navigator.serviceWorker.addEventListener('message', (event) => {
+    console.log('Received message from Service Worker:', event.data);
     if (event.data && event.data.type === 'PUSH_NOTIFICATION_RECEIVED') {
-      // Invalidate notification queries to refresh the notification bell
+      // Invalidate notification queries to refresh the notification bell immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      console.log('Invalidated notification queries due to push notification');
     }
   });
 }

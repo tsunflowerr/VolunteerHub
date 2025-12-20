@@ -368,7 +368,7 @@ const VolunteerListDialog = ({ event, volunteers, onClose, onMarkComplete }) => 
                                     <span className={styles.achievementName}>{achievement.name}</span>
                                     <span className={styles.achievementDesc}>{achievement.description}</span>
                                     <span className={`${styles.achievementRarity} ${styles[`rarity-${achievement.rarity}`]}`}>
-                                      {achievement.rarity} • +{achievement.pointsReward} XP
+                                      {achievement.rarity}
                                     </span>
                                   </div>
                                 </label>

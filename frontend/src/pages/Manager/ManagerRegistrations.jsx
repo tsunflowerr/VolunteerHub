@@ -8,7 +8,6 @@ import {
   Calendar,
   Filter,
   Search,
-  Download,
 } from 'lucide-react';
 import styles from './ManagerRegistrations.module.css';
 import {
@@ -90,11 +89,6 @@ const ManagerRegistrations = () => {
     updateStatus({ registrationId: regId, status: 'cancelled' });
   };
 
-  const handleExport = () => {
-    console.log('Exporting registrations data...');
-    // TODO: Implement export functionality
-  };
-
   if (isLoading) {
     return (
       <div className={styles.loadingContainer}>Loading registrations...</div>
@@ -115,10 +109,6 @@ const ManagerRegistrations = () => {
             Manage volunteer applications for your events
           </p>
         </div>
-        <button className={styles.exportBtn} onClick={handleExport}>
-          <Download size={20} />
-          Export Data
-        </button>
       </motion.div>
 
       {/* Filters & Search */}

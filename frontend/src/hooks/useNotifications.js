@@ -13,7 +13,9 @@ export const useNotifications = (params = {}) => {
     queryKey: notificationKeys.list(params),
     queryFn: () => notificationApi.getAll(params),
     keepPreviousData: true,
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
@@ -21,8 +23,10 @@ export const useUnreadNotificationsCount = () => {
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: notificationApi.getUnreadCount,
-    staleTime: 1000 * 60, // 1 minute
-    refetchInterval: 1000 * 60 * 2, // Refetch every 2 minutes
+    staleTime: 0, // Always fresh
+    refetchInterval: 1000 * 15, // Refetch every 15 seconds for near-realtime
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 

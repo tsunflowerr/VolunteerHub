@@ -38,9 +38,9 @@ export const eventSearchSchema = Joi.object({
             'any.only': 'Trạng thái không hợp lệ'
         }),
     
-    sort: Joi.string().valid('relevance', 'newest', 'upcoming', 'popular', 'trending').default('newest')
+    sort: Joi.string().valid('relevance', 'newest', 'trending').default('newest')
         .messages({
-            'any.only': 'Kiểu sắp xếp không hợp lệ. Chỉ chấp nhận: relevance, newest, upcoming, popular, trending'
+            'any.only': 'Kiểu sắp xếp không hợp lệ. Chỉ chấp nhận: relevance, newest, trending'
         }),
     
     page: Joi.number().integer().min(1).default(1)

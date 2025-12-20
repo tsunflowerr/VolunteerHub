@@ -31,6 +31,7 @@ import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingOverlay from '../../components/common/LoadingOverlay';
+import VerifiedBadge from '../../components/common/VerifiedBadge';
 import { 
   LevelBadge, 
   LevelProgress, 
@@ -176,7 +177,10 @@ const UserProfile = () => {
               alt={user.username}
               className={styles['profile__avatar']}
             />
-            <h1 className={styles['profile__name']}>{user.username}</h1>
+            <h1 className={styles['profile__name']}>
+              {user.username}
+              <VerifiedBadge role={user.role} size={18} />
+            </h1>
             <p className={styles['profile__role']}>
               {user.bio || 'No bio available'}
             </p>

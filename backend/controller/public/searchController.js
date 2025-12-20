@@ -78,13 +78,6 @@ export async function searchEvents(req, res) {
       case 'newest':
         sortOptions = { createdAt: -1 };
         break;
-      case 'upcoming':
-        filter.startDate = { $gte: new Date() };
-        sortOptions = { startDate: 1 };
-        break;
-      case 'popular':
-        sortOptions = { viewCount: -1, likesCount: -1 };
-        break;
       case 'trending':
         sortOptions = { registrationsCount: -1, likesCount: -1 };
         break;

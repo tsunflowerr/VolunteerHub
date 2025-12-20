@@ -9,17 +9,13 @@ const Ranking = () => {
   const [filterType, setFilterType] = useState('points'); // 'points', 'level', 'events', 'achievements'
   const [limit, setLimit] = useState(50);
 
-  // Fetch leaderboard data
+  // Fetch leaderboard data - always use 'points' type for base data when filtering by achievements
   const { data: leaderboardData, isLoading } = useQuery({
     queryKey: ['leaderboard', filterType, limit],
-    queryFn: () => gamificationApi.getLeaderboard({ type: filterType, limit }),
-  });
-
-  // Fetch all achievements for achievement-based ranking
-  const { data: achievementsData } = useQuery({
-    queryKey: ['achievements'],
-    queryFn: () => gamificationApi.getAllAchievements(),
-    enabled: filterType === 'achievements',
+    queryFn: () => gamificationApi.getLeaderboard({ 
+      type: filterType === 'achievements' ? 'points' : filterType, 
+      limit 
+    }),
   });
 
   const getRankIcon = (rank) => {
@@ -36,22 +32,14 @@ const Ranking = () => {
     return '';
   };
 
-  // Calculate achievement count for each user
-  const getUserAchievementCount = (userId) => {
-    if (!achievementsData?.data) return 0;
-    return achievementsData.data.userAchievements?.filter(
-      ua => ua.userId === userId && ua.isCompleted
-    ).length || 0;
-  };
-
   const renderLeaderboardByAchievements = () => {
     if (!leaderboardData?.data) return null;
 
-    // Sort by achievement count
+    // Sort by achievement count from user stats
     const sortedData = [...leaderboardData.data]
       .map(entry => ({
         ...entry,
-        achievementCount: getUserAchievementCount(entry.user._id)
+        achievementCount: entry.stats?.achievementCount || entry.user?.gamification?.achievementCount || 0
       }))
       .sort((a, b) => b.achievementCount - a.achievementCount)
       .map((entry, index) => ({ ...entry, rank: index + 1 }));
@@ -153,10 +141,10 @@ const Ranking = () => {
         <div className={styles.ranking__header}>
           <h1 className={styles.ranking__title}>
             <Trophy size={32} />
-            Bảng Xếp Hạng
+            Leaderboard
           </h1>
           <p className={styles.ranking__subtitle}>
-            Xem những người tình nguyện xuất sắc nhất
+            View the top volunteers
           </p>
         </div>
 
@@ -168,7 +156,7 @@ const Ranking = () => {
             onClick={() => setFilterType('points')}
           >
             <Star size={18} />
-            Theo Điểm
+            By Points
           </button>
           <button
             className={`${styles.ranking__filterBtn} ${
@@ -177,7 +165,7 @@ const Ranking = () => {
             onClick={() => setFilterType('level')}
           >
             <Trophy size={18} />
-            Theo Level
+            By Level
           </button>
           <button
             className={`${styles.ranking__filterBtn} ${
@@ -186,7 +174,7 @@ const Ranking = () => {
             onClick={() => setFilterType('achievements')}
           >
             <Award size={18} />
-            Theo Thành Tựu
+            By Achievements
           </button>
           <button
             className={`${styles.ranking__filterBtn} ${
@@ -195,12 +183,12 @@ const Ranking = () => {
             onClick={() => setFilterType('events')}
           >
             <Medal size={18} />
-            Theo Sự Kiện
+            By Events
           </button>
         </div>
 
         <div className={styles.ranking__limitSelector}>
-          <label>Hiển thị: </label>
+          <label>Show: </label>
           <select 
             value={limit} 
             onChange={(e) => setLimit(parseInt(e.target.value))}
@@ -216,7 +204,7 @@ const Ranking = () => {
         {isLoading ? (
           <div className={styles.ranking__loading}>
             <div className={styles.ranking__spinner}></div>
-            <p>Đang tải bảng xếp hạng...</p>
+            <p>Loading leaderboard...</p>
           </div>
         ) : (
           <div className={styles.ranking__list}>

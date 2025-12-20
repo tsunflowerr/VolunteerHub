@@ -170,8 +170,27 @@ export const useUpdateEventStatus = () => {
   return useMutation({
     mutationKey: adminKeys.mutations.updateEventStatus(),
     mutationFn: adminApi.updateEventStatus,
-    onSuccess: (data, { status, eventId }) => {
-      // Manually remove the event from the pending list cache for instant UI update
+    onMutate: async ({ eventId, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: adminKeys.events() });
+      await queryClient.cancelQueries({ queryKey: adminKeys.pendingEvents() });
+
+      // Snapshot the previous values
+      const previousEventsList = queryClient.getQueriesData({ queryKey: adminKeys.events() });
+      const previousPending = queryClient.getQueryData(adminKeys.pendingEvents());
+
+      // Optimistically update events list
+      queryClient.setQueriesData({ queryKey: adminKeys.events() }, (old) => {
+        if (!old || !old.events) return old;
+        return {
+          ...old,
+          events: old.events.map((event) =>
+            event._id === eventId ? { ...event, status } : event
+          ),
+        };
+      });
+
+      // Optimistically remove from pending list
       queryClient.setQueryData(adminKeys.pendingEvents(), (oldData) => {
         if (!oldData || !oldData.events) return oldData;
         return {
@@ -180,9 +199,23 @@ export const useUpdateEventStatus = () => {
         };
       });
 
-      // Invalidate pending events list (Admin UI) to ensure consistency
-      queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
-
+      return { previousEventsList, previousPending };
+    },
+    onError: (error, { eventId, status }, context) => {
+      // Rollback on error
+      if (context?.previousEventsList) {
+        context.previousEventsList.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousPending) {
+        queryClient.setQueryData(adminKeys.pendingEvents(), context.previousPending);
+      }
+      toast.error(
+        error.response?.data?.message || 'Failed to update event status'
+      );
+    },
+    onSuccess: (data, { status, eventId }) => {
       // Invalidate public event lists (Events page)
       queryClient.invalidateQueries({ queryKey: ['events'] });
 
@@ -199,10 +232,10 @@ export const useUpdateEventStatus = () => {
 
       toast.success(`Event ${status} successfully`);
     },
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message || 'Failed to update event status'
-      );
+    onSettled: () => {
+      // Always refetch after error or success to ensure consistency
+      queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.pendingEvents() });
     },
   });
 };

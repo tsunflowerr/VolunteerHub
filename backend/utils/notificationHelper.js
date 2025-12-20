@@ -113,26 +113,42 @@ export function generateNewRegistrationContent(username, eventName) {
 
 export async function createAndSendNotification(notificationData, pushPayload) {
     try {
-        await Notification.create(notificationData);
+        // Create notification in database first
+        const notification = await Notification.create(notificationData);
+        console.log(`Created notification ${notification._id} for user ${notificationData.recipient}`);
+        
         const recipientUser = await User.findById(notificationData.recipient).select('pushSubscription').lean();
 
         if (!recipientUser || !recipientUser.pushSubscription) {
-            console.log(`User ${notificationData.recipient} does not have a push subscription.`);
-            return;
+            console.log(`User ${notificationData.recipient} does not have a push subscription - notification saved to DB only.`);
+            return { notification, pushSent: false };
         }
 
         const subscription = recipientUser.pushSubscription;
+        
+        // Validate subscription object
+        if (!subscription.endpoint || !subscription.keys) {
+            console.error(`Invalid push subscription for user ${notificationData.recipient}:`, subscription);
+            return { notification, pushSent: false };
+        }
+        
         const payload = JSON.stringify(pushPayload);
+        console.log(`Sending push notification to ${subscription.endpoint.substring(0, 50)}...`);
 
         await webpush.sendNotification(subscription, payload);
-        console.log(`Successfully sent notification to user ${notificationData.recipient}.`);
+        console.log(`Successfully sent push notification to user ${notificationData.recipient}.`);
+        
+        return { notification, pushSent: true };
 
     } catch (error) {
-        if (error.statusCode === 410) { 
-            console.log(`Subscription for user ${notificationData.recipient} has expired. Removing from DB.`);
+        if (error.statusCode === 410 || error.statusCode === 404) { 
+            console.log(`Subscription for user ${notificationData.recipient} has expired or is invalid (${error.statusCode}). Removing from DB.`);
             await User.findByIdAndUpdate(notificationData.recipient, { $set: { pushSubscription: null } });
+        } else if (error.statusCode === 401) {
+            console.error(`VAPID authentication failed for user ${notificationData.recipient}. Check VAPID keys configuration.`);
         } else {
-            console.error(`Error sending notification to user ${notificationData.recipient}:`, error);
+            console.error(`Error sending push notification to user ${notificationData.recipient}:`, error.message || error);
         }
+        return { notification: notificationData, pushSent: false, error: error.message };
     }
 }

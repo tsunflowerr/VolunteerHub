@@ -81,14 +81,12 @@ export async function processEventCompletion(userId, eventId, options = {}) {
     }
     userProgress.lastEventDate = now;
 
-    // 4. Check and award automatic achievements
+    // 4. Check and award automatic achievements (only for event count and time-based achievements)
     const earnedAchievements = await checkAndAwardAchievements(userId, userProgress, event);
     results.achievementsEarned = earnedAchievements;
 
-    // Add points from achievements
-    for (const achievement of earnedAchievements) {
-      results.pointsEarned += achievement.pointsReward || 0;
-    }
+    // Note: Points from automatic achievements are NOT added - only manual achievements from managers
+    // Automatic achievements are recognition only, no XP reward
 
     // 5. Add total points to user progress
     userProgress.totalPoints += results.pointsEarned;
@@ -200,32 +198,38 @@ async function checkAndAwardAchievements(userId, userProgress, event) {
     }
 
     if (shouldAward) {
-      // Award the achievement
-      await UserAchievement.findOneAndUpdate(
-        { userId, achievementId: achievement._id },
-        {
-          userId,
-          achievementId: achievement._id,
-          eventId: event._id,
-          progress: achievement.criteria.threshold,
-          isCompleted: true,
-          completedAt: new Date()
-        },
-        { upsert: true, new: true }
-      );
+      // Check if user already has this achievement
+      const existing = await UserAchievement.findOne({ 
+        userId, 
+        achievementId: achievement._id, 
+        isCompleted: true 
+      });
+      
+      if (!existing) {
+        // Award the achievement
+        await UserAchievement.findOneAndUpdate(
+          { userId, achievementId: achievement._id },
+          {
+            userId,
+            achievementId: achievement._id,
+            eventId: event._id,
+            progress: achievement.criteria.threshold,
+            isCompleted: true,
+            completedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
 
-      // Record achievement points in history
-      if (achievement.pointsReward > 0) {
-        await PointHistory.create({
-          userId,
-          points: achievement.pointsReward,
-          type: 'achievement_earned',
-          description: `Earned achievement: ${achievement.name}`,
-          relatedAchievement: achievement._id
+        // Note: No points are awarded for automatic achievements
+        // Points are only awarded through manual manager achievements
+
+        // Update user's achievement count
+        await User.findByIdAndUpdate(userId, {
+          $inc: { 'gamification.achievementCount': 1 }
         });
-      }
 
-      earnedAchievements.push(achievement);
+        earnedAchievements.push(achievement);
+      }
     } else {
       // Update progress for in-progress achievements
       await UserAchievement.findOneAndUpdate(
@@ -527,43 +531,10 @@ export async function awardManualAchievement(userId, achievementId, awardedBy, e
       timesAwarded: 1
     });
 
-    // Add points
-    if (achievement.pointsReward > 0) {
-      let userProgress = await UserProgress.findOne({ userId });
-      if (!userProgress) {
-        userProgress = await UserProgress.create({ userId });
-      }
-
-      userProgress.totalPoints += achievement.pointsReward;
-      
-      // Check for level up
-      const newLevelInfo = await calculateLevel(userProgress.totalPoints);
-      if (newLevelInfo.level > userProgress.currentLevel) {
-        userProgress.currentLevel = newLevelInfo.level;
-      }
-
-      await userProgress.save();
-
-      // Update user model
-      await User.findByIdAndUpdate(userId, {
-        'gamification.currentLevel': userProgress.currentLevel,
-        'gamification.totalPoints': userProgress.totalPoints,
-        $inc: { 'gamification.achievementCount': 1 }
-      });
-
-      // Record history
-      await PointHistory.create({
-        userId,
-        points: achievement.pointsReward,
-        type: 'achievement_earned',
-        description: `Earned achievement: ${achievement.name}`,
-        relatedAchievement: achievementId
-      });
-    } else {
-      await User.findByIdAndUpdate(userId, {
-        $inc: { 'gamification.achievementCount': 1 }
-      });
-    }
+    // Update achievement count only (no points for manual achievements)
+    await User.findByIdAndUpdate(userId, {
+      $inc: { 'gamification.achievementCount': 1 }
+    });
 
     // Send notification
     await createAndSendNotification(

@@ -16,7 +16,8 @@ export const useEvents = (params = {}) => {
     queryKey: eventKeys.list(params),
     queryFn: () => eventApi.getAll(params),
     keepPreviousData: true, // Great for pagination
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 30 * 1000, // 30 seconds - reduced for fresher data
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -25,7 +26,8 @@ export const useTrendingEvents = (params = {}) => {
     queryKey: ['events', 'trending', params],
     queryFn: () => eventApi.getTrending(params),
     keepPreviousData: true,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -34,7 +36,8 @@ export const useEvent = (id) => {
     queryKey: eventKeys.detail(id),
     queryFn: () => eventApi.getById(id),
     enabled: !!id, // Only fetch if id exists
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -118,13 +121,12 @@ export const useRegisterEvent = () => {
     },
     onSuccess: (data, variables) => {
       toast.success('Successfully registered for event!');
-    },
-    onSettled: (data, error, eventId) => {
-      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
-      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
       // Invalidate notifications to show new notification immediately
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+    onSettled: (data, error, eventId) => {
+      // Only invalidate registration lists, not event details to avoid capacity flicker
+      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
     },
   });
 };
@@ -181,9 +183,8 @@ export const useUnregisterEvent = () => {
       toast.success('Successfully unregistered from event');
     },
     onSettled: (data, error, eventId) => {
+      // Only invalidate registration lists, not event details to avoid capacity flicker
       queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
-      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
     },
   });
 };
