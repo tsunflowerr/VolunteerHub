@@ -5,6 +5,7 @@ import Like from '../../models/likeModel.js';
 import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
+import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function createPost(req, res) {
     try {
@@ -69,6 +70,10 @@ export async function createPost(req, res) {
                 console.error('Redis error:', err);
             }
         }
+
+        // Invalidate caches when postsCount changes (affects trending score)
+        await invalidateCache(`event:detail:${eventId}`);
+        await invalidateCacheByPattern('events:trending:*');
 
         res.status(201).json({
             success: true,
@@ -311,6 +316,10 @@ export async function deletePost(req, res) {
                 $inc: { postsCount: -1 }
             })
         ]);
+
+        // Invalidate caches when postsCount changes (affects trending score)
+        await invalidateCache(`event:detail:${eventId}`);
+        await invalidateCacheByPattern('events:trending:*');
         
         res.status(200).json({ 
             success: true, 

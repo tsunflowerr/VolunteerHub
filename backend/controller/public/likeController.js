@@ -5,6 +5,7 @@ import Event from '../../models/eventModel.js';
 import mongoose from 'mongoose';
 import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
+import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 export async function likeEvent(req, res) {
     try {
@@ -24,6 +25,10 @@ export async function likeEvent(req, res) {
             if(!event) {
                 return res.status(404).json({success: false, message: 'Event not found'});
             }
+            
+            // Invalidate caches when likesCount changes
+            await invalidateCache(`event:detail:${eventId}`);
+            await invalidateCacheByPattern('events:trending:*');
             
             return res.status(200).json({success: true, action: 'unliked', totalLikes: event.likesCount});
         }
@@ -72,6 +77,10 @@ export async function likeEvent(req, res) {
                 }
             }
         }
+        
+        // Invalidate caches when likesCount changes (affects trending score)
+        await invalidateCache(`event:detail:${eventId}`);
+        await invalidateCacheByPattern('events:trending:*');
         
         return res.status(200).json({success: true, action: 'liked', totalLikes: event.likesCount});
     } catch (error) {

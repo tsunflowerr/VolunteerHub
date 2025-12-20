@@ -49,6 +49,11 @@ export const managerApi = {
     return response.data;
   },
 
+  deleteRegistration: async (registrationId) => {
+    const response = await api.delete(`/manager/registrations/${registrationId}`);
+    return response.data;
+  },
+
   getDashboard: async () => {
     const response = await api.get('/dashboard/manager');
     return response.data;

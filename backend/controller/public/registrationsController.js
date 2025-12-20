@@ -65,11 +65,11 @@ export async function registerEvent(req, res) {
         const newRegistration = new Registration({ userId: volunteerId, eventId });
         await newRegistration.save();
 
-        // Invalidate caches
+        // Invalidate caches - note: registrationsCount doesn't change here, only when approved
         await invalidateCache(`event:detail:${eventId}`);
         await invalidateCacheByPattern('events:all:*');
         await invalidateCacheByPattern('events:trending:*');
-        await invalidateCache('events:upcoming');
+        await invalidateCacheByPattern('events:upcoming:*');
         await invalidateCacheByPattern('events:category:*');
         if (event.managerId) {
             await invalidateCache(`dashboard:manager:${event.managerId}`);
@@ -198,8 +198,9 @@ export async function unregisterEvent(req, res) {
         await invalidateCache(`event:detail:${eventId}`);
         await invalidateCacheByPattern('events:all:*');
         await invalidateCacheByPattern('events:trending:*');
-        await invalidateCache('events:upcoming');
+        await invalidateCacheByPattern('events:upcoming:*');
         await invalidateCacheByPattern('events:category:*');
+        await invalidateCacheByPattern('search:events:*');
         
         // Invalidate manager dashboard cache
         const eventFull = await Event.findById(eventId).select('managerId');

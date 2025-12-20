@@ -165,9 +165,9 @@ const SearchBox = ({
       {showCategories && (
         <div className={styles['search-box__categories']}>
           {/* Individual categories */}
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <CategoryChip
-              key={category._id}
+              key={category._id || category.slug || index}
               category={category}
               onClick={() => handleCategoryClick(category.slug)}
               filled={isCategorySelected(category.slug)}

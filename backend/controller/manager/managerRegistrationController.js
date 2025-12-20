@@ -45,22 +45,34 @@ export async function updateRegistrationStatus(req, res) {
       });
     }
 
-    // Update registration status
+    // Update registration status validation
     if (status === 'completed') {
+      // Can only mark as completed if currently confirmed
       if (registration.status !== 'confirmed') {
         return res.status(400).json({
           success: false,
           message: `Cannot mark as completed. Volunteer must be confirmed first. Current: ${registration.status}`,
         });
       }
-    } else if (registration.status !== 'pending') {
-      return res.status(400).json({
-        success: false,
-        message: `Cannot update registration that is already ${registration.status}`,
-      });
+    } else if (status === 'cancelled') {
+      // Can cancel from any status except completed
+      if (registration.status === 'completed') {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot cancel a completed registration`,
+        });
+      }
+    } else if (status === 'confirmed' || status === 'rejected') {
+      // Can only confirm/reject from pending
+      if (registration.status !== 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot update registration that is already ${registration.status}`,
+        });
+      }
     }
 
-    // 🔹 Update registration
+    // 🔹 Update registration counts
     
     // If approving (confirming) the registration, check capacity and increment count
     if (status === 'confirmed') {
@@ -76,6 +88,16 @@ export async function updateRegistrationStatus(req, res) {
         await Event.findByIdAndUpdate(
             event._id,
             { $inc: { registrationsCount: 1 } }
+        );
+    }
+    
+    // If cancelling a confirmed/completed registration, decrement count
+    // Note: rejected can only happen from pending (see validation above), so no need to decrement
+    if (status === 'cancelled' && 
+        (registration.status === 'confirmed' || registration.status === 'completed')) {
+        await Event.findByIdAndUpdate(
+            event._id,
+            { $inc: { registrationsCount: -1 } }
         );
     }
 
@@ -103,8 +125,9 @@ export async function updateRegistrationStatus(req, res) {
     await invalidateCache(`event:detail:${event._id}`);
     await invalidateCacheByPattern('events:all:*');
     await invalidateCacheByPattern('events:trending:*');
-    await invalidateCache('events:upcoming');
+    await invalidateCacheByPattern('events:upcoming:*');
     await invalidateCacheByPattern('events:category:*');
+    await invalidateCacheByPattern('search:events:*'); // Invalidate search cache when registrationsCount changes
     await invalidateCache(`dashboard:manager:${req.user._id}`); // Update manager dashboard stats
 
     // Use helper function to generate notification content
@@ -349,6 +372,70 @@ export async function awardAchievementToVolunteer(req, res) {
     });
   } catch (error) {
     console.error('Error awarding achievement:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+/**
+ * Delete a registration (Manager only)
+ * Only allows deletion of cancelled, rejected, or completed registrations
+ */
+export async function deleteRegistration(req, res) {
+  try {
+    const { registrationId } = req.params;
+
+    const registration = await Registration.findById(registrationId).populate('eventId');
+
+    if (!registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found',
+      });
+    }
+
+    const event = registration.eventId;
+
+    // Authorization check
+    if (event.managerId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: This registration is not for your event',
+      });
+    }
+
+    // Only allow deletion of processed registrations (not pending)
+    if (registration.status === 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete pending registration. Please confirm or reject it first.',
+      });
+    }
+
+    // If deleting a confirmed/completed registration, decrement registrationsCount
+    if (['confirmed', 'completed'].includes(registration.status)) {
+      await Event.findByIdAndUpdate(
+        event._id,
+        { $inc: { registrationsCount: -1 } }
+      );
+    }
+
+    await Registration.findByIdAndDelete(registrationId);
+
+    // Invalidate caches
+    await invalidateCache(`event:detail:${event._id}`);
+    await invalidateCacheByPattern('events:all:*');
+    await invalidateCacheByPattern('events:trending:*');
+    await invalidateCacheByPattern('events:upcoming:*');
+    await invalidateCacheByPattern('events:category:*');
+    await invalidateCacheByPattern('search:events:*');
+    await invalidateCache(`dashboard:manager:${req.user._id}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Registration deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting registration:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }

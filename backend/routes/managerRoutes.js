@@ -2,7 +2,7 @@ import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { managerMiddleware } from '../middleware/managerMiddleware.js';
 import { createEvent, updateEvent, deleteEvent, getEventsByManager, getTotalConfirmedVolunteers, completeEventEarly } from '../controller/manager/managerEventController.js';
-import { updateRegistrationStatus, getVolunteersForEvent, getRegistrationsByStatus, awardAchievementToVolunteer, getAvailableAchievements } from '../controller/manager/managerRegistrationController.js';
+import { updateRegistrationStatus, getVolunteersForEvent, getRegistrationsByStatus, awardAchievementToVolunteer, getAvailableAchievements, deleteRegistration } from '../controller/manager/managerRegistrationController.js';
 import { createEventSchema, updateEventSchema, objectIdSchema, eventIdSchema } from '../validators/eventValidator.js';
 import { 
     getRegistrationDetailSchema, 
@@ -349,6 +349,34 @@ router.get('/stats/volunteers', getTotalConfirmedVolunteers);
  *         description: Registration not found
  */
 router.patch('/registrations/:registrationId/status', updateLimiter, validate(getRegistrationDetailSchema, 'params'), validate(updateRegistrationStatusSchema), updateRegistrationStatus);
+
+/**
+ * @swagger
+ * /api/manager/registrations/{registrationId}:
+ *   delete:
+ *     summary: Delete a registration (Manager only)
+ *     description: Delete a processed registration (cancelled, rejected, or completed). Cannot delete pending registrations.
+ *     tags: [Manager]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: registrationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Registration ID
+ *     responses:
+ *       200:
+ *         description: Registration deleted successfully
+ *       400:
+ *         description: Cannot delete pending registration
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Registration not found
+ */
+router.delete('/registrations/:registrationId', deleteLimiter, validate(getRegistrationDetailSchema, 'params'), deleteRegistration);
 
 /**
  * @swagger

@@ -150,8 +150,8 @@ export function Event({
 
         {category && category.length > 0 && (
           <div className={styles['event__categories']}>
-            {category.map((cat) => (
-              <CategoryChip key={cat._id} category={cat} filled={false} />
+            {category.map((cat, index) => (
+              <CategoryChip key={cat._id || cat.slug || index} category={cat} filled={false} />
             ))}
           </div>
         )}

@@ -8,9 +8,9 @@ const EventCategories = ({ categories }) => {
     <div className={styles['event-detail__section']}>
       <h3 className={styles['event-detail__section-title']}>CATEGORIES</h3>
       <div className={styles['event-detail__categories']}>
-        {categories.map((cat) => (
+        {categories.map((cat, index) => (
           <CategoryChip
-            key={cat._id}
+            key={cat._id || cat.slug || index}
             category={cat}
             filled={true}
             showDescription={true}

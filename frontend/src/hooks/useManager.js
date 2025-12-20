@@ -205,3 +205,22 @@ export const useCompleteEventEarly = () => {
     },
   });
 };
+
+export const useDeleteRegistration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['deleteRegistration'],
+    mutationFn: managerApi.deleteRegistration,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: managerKeys.registrations() });
+      queryClient.invalidateQueries({ queryKey: managerKeys.events() });
+      queryClient.invalidateQueries({ queryKey: managerKeys.dashboard() });
+      queryClient.invalidateQueries({ queryKey: eventKeys.all });
+      toast.success(data.message || 'Registration deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete registration');
+    },
+  });
+};

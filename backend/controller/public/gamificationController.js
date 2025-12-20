@@ -204,8 +204,11 @@ export async function getLeaderboard(req, res) {
       .populate('userId', 'username avatar role gamification')
       .lean();
 
+    // Filter out entries where user has been deleted (userId is null)
+    const validLeaderboard = leaderboard.filter(entry => entry.userId != null);
+
     // Lấy level info cho mỗi user
-    const levelIds = [...new Set(leaderboard.map(l => l.currentLevel))];
+    const levelIds = [...new Set(validLeaderboard.map(l => l.currentLevel))];
     const levels = await LevelDefinition.find({ 
       level: { $in: levelIds }, 
       isActive: true 
@@ -216,7 +219,7 @@ export async function getLeaderboard(req, res) {
       return acc;
     }, {});
 
-    const leaderboardWithLevels = leaderboard.map((entry, index) => ({
+    const leaderboardWithLevels = validLeaderboard.map((entry, index) => ({
       rank: index + 1,
       user: entry.userId,
       totalPoints: entry.totalPoints,

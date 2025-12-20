@@ -102,7 +102,7 @@ const PartnerSlider = ({
         <div ref={trackRef} className={styles['partner-slider__track']}>
           {tripleLogos.map((logo, index) => (
             <div
-              key={`${logo.id}-${index}`}
+              key={`partner-${index}-${logo.id || logo.name || ''}`}
               className={styles['partner-slider__item']}
             >
               <img

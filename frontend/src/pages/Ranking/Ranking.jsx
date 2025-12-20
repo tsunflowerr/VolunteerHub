@@ -36,8 +36,9 @@ const Ranking = () => {
   const renderLeaderboardByAchievements = () => {
     if (!leaderboardData?.data) return null;
 
-    // Sort by achievement count from user stats
+    // Filter out entries with null users (deleted users) and sort by achievement count
     const sortedData = [...leaderboardData.data]
+      .filter(entry => entry.user != null) // Filter out deleted users
       .map(entry => ({
         ...entry,
         achievementCount: entry.stats?.achievementCount || entry.user?.gamification?.achievementCount || 0
@@ -89,7 +90,10 @@ const Ranking = () => {
       return renderLeaderboardByAchievements();
     }
 
-    return leaderboardData.data.map((entry) => (
+    // Filter out entries with null users (deleted users)
+    const validEntries = leaderboardData.data.filter(entry => entry.user != null);
+
+    return validEntries.map((entry) => (
       <div
         key={entry.user._id}
         className={`${styles.ranking__item} ${getRankClass(entry.rank)}`}

@@ -7,6 +7,9 @@ import Registration from '../../models/registrationsModel.js';
 import Comment from '../../models/commentModel.js';
 import Like from '../../models/likeModel.js';
 import Notification from '../../models/notificationModel.js';
+import { UserProgress, PointHistory } from '../../models/levelModel.js';
+import { UserAchievement } from '../../models/achievementModel.js';
+import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 // Helper function to format user data for frontend
 async function formatUserResponse(user) {
@@ -188,6 +191,20 @@ export async function deleteUser(req, res) {
       id.toString()
     );
 
+    // IMPORTANT: Query registrations BEFORE deleting them
+    console.log(`🔍 Checking registrations for user ${userObjectId} BEFORE deletion...`);
+    
+    const userRegistrations = await Registration.find({ 
+      userId: userObjectId,
+      status: { $in: ['confirmed', 'completed'] } // Only these are counted in registrationsCount
+    }).select('eventId status').lean();
+
+    console.log(`📊 Found ${userRegistrations.length} registrations (confirmed/completed):`, 
+      userRegistrations.map(r => ({ eventId: r.eventId.toString(), status: r.status })));
+
+    const registeredEventIds = userRegistrations.map(r => r.eventId);
+
+    // Now delete all related data
     await Promise.all([
       Event.deleteMany({ managerId: userObjectId }),
 
@@ -236,6 +253,38 @@ export async function deleteUser(req, res) {
         { $pull: { bookmarks: userObjectId } }
       ),
     ]);
+
+    // Delete gamification data and update event counts
+    await Promise.all([
+      // Delete user progress (points, level)
+      UserProgress.deleteOne({ userId: userObjectId }),
+      // Delete point history
+      PointHistory.deleteMany({ userId: userObjectId }),
+      // Delete user achievements
+      UserAchievement.deleteMany({ userId: userObjectId }),
+      // Decrement registrationsCount for events the user was actually counted in
+      registeredEventIds.length > 0 ? Event.updateMany(
+        { _id: { $in: registeredEventIds } },
+        { $inc: { registrationsCount: -1 } }
+      ) : Promise.resolve(),
+    ]);
+
+    console.log(`✅ User ${userObjectId} deleted. Updated registrationsCount for ${registeredEventIds.length} events.`);
+    console.log(`📋 Event IDs updated: ${registeredEventIds.map(id => id.toString()).join(', ')}`);
+
+    // Invalidate all event-related caches
+    await invalidateCacheByPattern('events:*');
+    await invalidateCacheByPattern('search:events:*');
+    
+    // Invalidate specific event detail caches for affected events
+    if (registeredEventIds.length > 0) {
+      for (const eventId of registeredEventIds) {
+        await invalidateCache(`event:detail:${eventId}`);
+      }
+    }
+    
+    // Invalidate leaderboard cache (user is removed from rankings)
+    await invalidateCacheByPattern('leaderboard:*');
 
     await User.findByIdAndDelete(userObjectId);
 

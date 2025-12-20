@@ -258,8 +258,8 @@ const ManagerEventDetail = () => {
           {/* Categories */}
           {event.categories && event.categories.length > 0 && (
             <div className={styles.categories}>
-              {event.categories.map((cat) => (
-                <CategoryChip key={cat._id} category={cat} filled={false} />
+              {event.categories.map((cat, index) => (
+                <CategoryChip key={cat._id || cat.slug || index} category={cat} filled={false} />
               ))}
             </div>
           )}

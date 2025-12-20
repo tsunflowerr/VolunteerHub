@@ -319,9 +319,9 @@ export async function getUpcomingEvents(req, res) {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const cacheKey = 'events:upcoming';
+        const cacheKey = `events:upcoming:page:${page}:limit:${limit}`;
         
-        const events = await getOrSetCache(
+        const result = await getOrSetCache(
             cacheKey,
             CACHE_TTL.EVENTS_LIST,
             async () => {
@@ -342,19 +342,19 @@ export async function getUpcomingEvents(req, res) {
                         status: 'approved'
                     })
                 ]);
-                return [events, total];
+                return { events, total };
             }
         );
 
-        if(!events.events || events.events.length === 0) {
+        if(!result.events || result.events.length === 0) {
             return res.status(200).json({ success: true, message: "No upcoming events found", events: [] });
         }
         res.status(200).json({success: true, 
-            events: events.events,
+            events: result.events,
             pagination: {
-                total: events.total,
+                total: result.total,
                 currentPage: page,
-                totalPages: Math.ceil(events.total / limit),
+                totalPages: Math.ceil(result.total / limit),
                 pageSize: limit
             }
         });

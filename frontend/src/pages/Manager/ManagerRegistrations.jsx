@@ -9,13 +9,16 @@ import {
   Filter,
   Search,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import VerifiedBadge from '../../components/common/VerifiedBadge';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import styles from './ManagerRegistrations.module.css';
 import {
   useManagerRegistrations,
   useUpdateRegistrationStatus,
+  useDeleteRegistration,
 } from '../../hooks/useManager';
 
 const ManagerRegistrations = () => {
@@ -24,6 +27,7 @@ const ManagerRegistrations = () => {
     limit: 10,
   });
   const { mutate: updateStatus } = useUpdateRegistrationStatus();
+  const { mutate: deleteRegistration } = useDeleteRegistration();
 
   const registrations = useMemo(
     () => responseData?.registrations || [],
@@ -32,6 +36,7 @@ const ManagerRegistrations = () => {
 
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, registrationId: null });
 
   const filteredRegistrations = useMemo(() => {
     let filtered = [...registrations];
@@ -90,6 +95,21 @@ const ManagerRegistrations = () => {
 
   const handleReject = (regId) => {
     updateStatus({ registrationId: regId, status: 'cancelled' });
+  };
+
+  const handleDelete = (regId) => {
+    setDeleteDialog({ isOpen: true, registrationId: regId });
+  };
+
+  const confirmDelete = () => {
+    if (deleteDialog.registrationId) {
+      deleteRegistration(deleteDialog.registrationId);
+      setDeleteDialog({ isOpen: false, registrationId: null });
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialog({ isOpen: false, registrationId: null });
   };
 
   const handleRefresh = async () => {
@@ -278,13 +298,24 @@ const ManagerRegistrations = () => {
                         </>
                       )}
                       {reg.status !== 'pending' && (
-                        <span className={styles.noActions}>
-                          {reg.status === 'confirmed'
-                            ? '✓ Approved'
-                            : reg.status === 'cancelled'
-                            ? '✗ Rejected'
-                            : reg.status}
-                        </span>
+                        <div className={styles.processedActions}>
+                          <span className={styles.noActions}>
+                            {reg.status === 'confirmed'
+                              ? '✓ Approved'
+                              : reg.status === 'cancelled'
+                              ? '✗ Rejected'
+                              : reg.status}
+                          </span>
+                          <motion.button
+                            className={`${styles.actionBtn} ${styles.delete}`}
+                            onClick={() => handleDelete(reg._id)}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            title="Delete Registration"
+                          >
+                            <Trash2 size={16} />
+                          </motion.button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -302,6 +333,18 @@ const ManagerRegistrations = () => {
           </AnimatePresence>
         </div>
       </motion.div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onConfirm={confirmDelete}
+        onClose={cancelDelete}
+        title="Delete Registration"
+        message="Are you sure you want to delete this registration? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };
