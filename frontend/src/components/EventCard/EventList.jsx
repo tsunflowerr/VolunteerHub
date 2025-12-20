@@ -38,6 +38,8 @@ const EventList = ({ events }) => {
               name={event.name}
               description={event.description}
               startDate={event.startDate}
+              endDate={event.endDate}
+              status={event.status}
               location={event.location}
               thumbnail={event.thumbnail}
               managerId={event.managerId}

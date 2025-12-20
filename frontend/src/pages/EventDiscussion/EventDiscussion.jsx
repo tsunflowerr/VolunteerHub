@@ -23,6 +23,7 @@ import PostDetailModal from '../../components/Discussion/PostDetailModal';
 import MediaGalleryModal from '../../components/Discussion/MediaGalleryModal';
 import ReportModal from '../../components/common/ReportModal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import VerifiedBadge from '../../components/common/VerifiedBadge';
 import styles from './EventDiscussion.module.css';
 
 // Hooks

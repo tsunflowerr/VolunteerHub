@@ -31,6 +31,7 @@ const SearchBox = ({
     { value: 'relevance', label: 'Relevance' },
     { value: 'newest', label: 'Newest' },
     { value: 'trending', label: 'Trending' },
+    { value: 'upcoming', label: 'Upcoming' },
   ];
 
   const handleInputChange = (e) => {

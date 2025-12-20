@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import { format, parseISO, isValid } from 'date-fns';
-import { MapPin, Users, Star, Lock } from 'lucide-react';
+import { format, parseISO, isValid, isPast, isFuture, isWithinInterval } from 'date-fns';
+import { MapPin, Users, Star, Lock, Calendar, CheckCircle, Clock } from 'lucide-react';
 import styles from './Event.module.css';
 import CategoryChip from '../common/Category/CategoryChip';
 import VerifiedBadge from '../common/VerifiedBadge';
@@ -9,6 +9,8 @@ export function Event({
   name,
   description,
   startDate,
+  endDate,
+  status,
   location,
   thumbnail,
   managerId,
@@ -35,6 +37,53 @@ export function Event({
   };
 
   const dateInfo = formatDate(startDate);
+
+  // Determine event status badge
+  const getEventStatusBadge = () => {
+    const now = new Date();
+    const start = typeof startDate === 'string' ? parseISO(startDate) : startDate;
+    const end = endDate ? (typeof endDate === 'string' ? parseISO(endDate) : endDate) : null;
+
+    // Completed status takes precedence
+    if (status === 'completed') {
+      return {
+        label: 'Completed',
+        className: styles['event__status-badge--completed'],
+        icon: <CheckCircle size={14} />
+      };
+    }
+
+    // Check if event is currently ongoing
+    if (end && isWithinInterval(now, { start, end })) {
+      return {
+        label: 'Ongoing',
+        className: styles['event__status-badge--ongoing'],
+        icon: <Clock size={14} />
+      };
+    }
+
+    // Check if event is upcoming
+    if (isFuture(start)) {
+      return {
+        label: 'Upcoming',
+        className: styles['event__status-badge--upcoming'],
+        icon: <Calendar size={14} />
+      };
+    }
+
+    // Event has passed but not marked as completed
+    if (end && isPast(end)) {
+      return {
+        label: 'Ended',
+        className: styles['event__status-badge--completed'],
+        icon: <CheckCircle size={14} />
+      };
+    }
+
+    return null;
+  };
+
+  const statusBadge = getEventStatusBadge();
 
   // Extract manager info
   const hostName = managerId?.username || 'Unknown';
@@ -67,6 +116,14 @@ export function Event({
         {hasRequirements && (
           <div className={styles['event__req-badge']}>
             <Lock size={12} />
+          </div>
+        )}
+
+        {/* Status Badge */}
+        {statusBadge && (
+          <div className={`${styles['event__status-badge']} ${statusBadge.className}`}>
+            {statusBadge.icon}
+            <span>{statusBadge.label}</span>
           </div>
         )}
       </div>
@@ -137,6 +194,8 @@ Event.propTypes = {
   description: PropTypes.string,
   startDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string])
     .isRequired,
+  endDate: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string]),
+  status: PropTypes.string,
   location: PropTypes.string.isRequired,
   thumbnail: PropTypes.string.isRequired,
   managerId: PropTypes.shape({
@@ -167,6 +226,8 @@ Event.propTypes = {
 
 Event.defaultProps = {
   description: '',
+  endDate: null,
+  status: 'approved',
   managerId: null,
   registrationsCount: 0,
   category: [],

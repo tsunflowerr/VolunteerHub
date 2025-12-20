@@ -213,7 +213,7 @@ const EventSidebar = ({
           </>
         ) : (
           <>
-            {currentUserState === 'none' && permissions.canRegister && (
+            {currentUserState === 'none' && permissions.canRegister && event.status !== 'completed' && (
               <>
                 {isEventFull ? (
                   <div className={styles['event-detail__sidebar-status']}>
