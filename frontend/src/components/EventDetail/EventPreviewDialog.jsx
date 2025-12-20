@@ -4,31 +4,67 @@ import EventHero from './EventHero';
 import EventContent from './EventContent';
 import EventSidebar from './EventSidebar';
 import { useCategories } from '../../hooks/useCategories';
+import { useAllAchievements } from '../../hooks/useGamification';
 import React, { useMemo } from 'react';
 import styles from './EventPreviewDialog.module.css';
 
 const EventPreviewDialog = ({ event, onClose }) => {
   const { categories } = useCategories();
+  const { data: achievementsData } = useAllAchievements();
+  const allAchievements = achievementsData?.data || [];
 
   // Transform category IDs to full category objects for preview
   const transformedEvent = useMemo(() => {
-    if (!event.category || !categories.length) return event;
+    if (!event) return event;
 
-    // Check if categories are already objects (from API) or just IDs (from form)
-    const isIdArray =
-      event.category.length > 0 && typeof event.category[0] === 'string';
+    let transformed = { ...event };
 
-    if (!isIdArray) return event;
+    // Transform categories
+    if (event.category && categories.length > 0) {
+      // Check if categories are already objects (from API) or just IDs (from form)
+      const isIdArray =
+        event.category.length > 0 && typeof event.category[0] === 'string';
 
-    const categoryObjects = event.category
-      .map((catId) => categories.find((c) => c._id === catId))
-      .filter(Boolean);
+      if (isIdArray) {
+        const categoryObjects = event.category
+          .map((catId) => categories.find((c) => c._id === catId))
+          .filter(Boolean);
+        transformed.categories = categoryObjects;
+      }
+    }
 
-    return {
-      ...event,
-      categories: categoryObjects, // Use 'categories' (plural) for EventContent
-    };
-  }, [event, categories]);
+    // Transform rewards from form format to API format
+    if (event.pointsReward !== undefined || event.hoursCredit !== undefined) {
+      transformed.rewards = {
+        pointsReward: event.pointsReward || 0,
+        hoursCredit: event.hoursCredit || 0,
+        bonusPoints: event.bonusPoints || 0,
+        bonusReason: event.bonusReason || '',
+      };
+    }
+
+    // Transform requirements from form format to API format
+    if (event.hasRequirements !== undefined) {
+      transformed.requirements = {
+        hasRequirements: event.hasRequirements,
+        minLevel: event.minLevel || 1,
+        minPoints: event.minPoints || 0,
+        minEventsCompleted: event.minEventsCompleted || 0,
+        requirementDescription: event.requirementDescription || '',
+        requiredAchievements: event.requiredAchievements || [],
+      };
+
+      // Transform required achievement IDs to objects for display
+      if (event.requiredAchievements && event.requiredAchievements.length > 0 && allAchievements.length > 0) {
+        const achievementObjects = event.requiredAchievements
+          .map((achId) => allAchievements.find((a) => a._id === achId))
+          .filter(Boolean);
+        transformed.requirements.requiredAchievementObjects = achievementObjects;
+      }
+    }
+
+    return transformed;
+  }, [event, categories, allAchievements]);
   return (
     <AnimatePresence>
       <div className={styles.overlay} onClick={onClose}>

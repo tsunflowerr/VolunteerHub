@@ -47,7 +47,7 @@ const NavBar = ({ showNavButtons = true }) => {
       <div className={styles.navbar__container}>
         {/* Logo */}
         <div className={styles.navbar__leftItems}>
-          <div className={styles.navbar__logo}>
+          <div className={styles.navbar__logo} onClick={() => navigate('/')}>
             <img src="/logo.png" className={styles.navbar_logoIcon} />
             <span className={styles.navbar__logoText}>
               <span className={styles.navbar__logoTextBlue}>olunteer</span>
@@ -109,6 +109,14 @@ const NavBar = ({ showNavButtons = true }) => {
               onClick={() => navigate('/events')}
             >
               Events
+            </button>
+            <button
+              className={`${styles.navbar__navLink} ${
+                isActive('/ranking') ? styles['navbar__navLink--active'] : ''
+              }`}
+              onClick={() => navigate('/ranking')}
+            >
+              Ranking
             </button>
             <button
               className={`${styles.navbar__navLink} ${

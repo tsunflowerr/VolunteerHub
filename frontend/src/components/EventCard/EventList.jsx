@@ -43,6 +43,8 @@ const EventList = ({ events }) => {
               managerId={event.managerId}
               registrationsCount={event.registrationsCount}
               category={event.categories}
+              rewards={event.rewards}
+              requirements={event.requirements}
               onLearnMore={() => handleEventClick(event._id)}
             />
           </motion.div>

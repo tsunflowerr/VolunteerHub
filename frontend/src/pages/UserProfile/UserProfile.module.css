@@ -355,3 +355,80 @@
     font-size: 1rem;
   }
 }
+
+/* Gamification Section */
+.profile__gamification {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.profile__gamification .profile__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile__level-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.profile__level-progress {
+  margin-top: 1rem;
+}
+
+.profile__ranking {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: var(--bg-light-color);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+}
+
+.profile__gamification-loading,
+.profile__gamification-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary-color);
+  font-size: 0.875rem;
+}
+
+.profile__gamification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile__gamification-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary-color);
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* Achievements Section */
+.profile__achievements {
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.profile__achievements .profile__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.profile__achievements-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary-color);
+  font-size: 0.875rem;
+}

@@ -31,11 +31,39 @@ export const useMarkNotificationAsRead = () => {
 
   return useMutation({
     mutationFn: notificationApi.markAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    onMutate: async (notificationId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      // Snapshot previous values
+      const previousData = queryClient.getQueriesData({ queryKey: notificationKeys.all });
+
+      // Optimistically update
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old) => {
+        if (!old) return old;
+        if (old.notifications) {
+          return {
+            ...old,
+            notifications: old.notifications.map((n) =>
+              n._id === notificationId ? { ...n, isRead: true } : n
+            ),
+            unreadCount: Math.max(0, (old.unreadCount || 0) - 1),
+          };
+        }
+        return old;
+      });
+
+      return { previousData };
     },
-    onError: (error) => {
+    onError: (error, notificationId, context) => {
+      // Rollback on error
+      context?.previousData?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
       toast.error(error.response?.data?.message || 'Failed to mark notification as read');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 };
@@ -45,12 +73,35 @@ export const useMarkAllNotificationsAsRead = () => {
 
   return useMutation({
     mutationFn: notificationApi.markAllAsRead,
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      const previousData = queryClient.getQueriesData({ queryKey: notificationKeys.all });
+
+      // Optimistically mark all as read
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old) => {
+        if (!old) return old;
+        if (old.notifications) {
+          return {
+            ...old,
+            notifications: old.notifications.map((n) => ({ ...n, isRead: true })),
+            unreadCount: 0,
+          };
+        }
+        return old;
+      });
+
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      context?.previousData?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(error.response?.data?.message || 'Failed to mark all as read');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       toast.success('All notifications marked as read');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to mark all as read');
     },
   });
 };
@@ -60,12 +111,38 @@ export const useDeleteNotification = () => {
 
   return useMutation({
     mutationFn: notificationApi.delete,
-    onSuccess: () => {
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      const previousData = queryClient.getQueriesData({ queryKey: notificationKeys.all });
+
+      // Optimistically remove the notification
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old) => {
+        if (!old) return old;
+        if (old.notifications) {
+          const notificationToDelete = old.notifications.find((n) => n._id === notificationId);
+          return {
+            ...old,
+            notifications: old.notifications.filter((n) => n._id !== notificationId),
+            unreadCount: notificationToDelete && !notificationToDelete.isRead 
+              ? Math.max(0, (old.unreadCount || 0) - 1) 
+              : old.unreadCount,
+          };
+        }
+        return old;
+      });
+
+      return { previousData };
+    },
+    onError: (error, notificationId, context) => {
+      context?.previousData?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(error.response?.data?.message || 'Failed to delete notification');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       toast.success('Notification deleted');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete notification');
     },
   });
 };
@@ -75,12 +152,32 @@ export const useDeleteAllNotifications = () => {
 
   return useMutation({
     mutationFn: notificationApi.deleteAll,
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.all });
+
+      const previousData = queryClient.getQueriesData({ queryKey: notificationKeys.all });
+
+      // Optimistically clear all notifications
+      queryClient.setQueriesData({ queryKey: notificationKeys.all }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          notifications: [],
+          unreadCount: 0,
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      context?.previousData?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(error.response?.data?.message || 'Failed to delete all notifications');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       toast.success('All notifications deleted');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete all notifications');
     },
   });
 };

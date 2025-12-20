@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Users,
@@ -20,6 +21,8 @@ import PostCard from '../../components/Discussion/PostCard';
 import CreatePostModal from '../../components/Discussion/CreatePostModal';
 import PostDetailModal from '../../components/Discussion/PostDetailModal';
 import MediaGalleryModal from '../../components/Discussion/MediaGalleryModal';
+import ReportModal from '../../components/common/ReportModal';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import styles from './EventDiscussion.module.css';
 
 // Hooks
@@ -49,6 +52,33 @@ const EventDiscussion = () => {
   const [editingPost, setEditingPost] = useState(null); // New state for editing
   const [showMediaGallery, setShowMediaGallery] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all');
+  const [reportData, setReportData] = useState(null); // { type: 'post' | 'comment', targetId, targetTitle }
+  const [deletePostId, setDeletePostId] = useState(null);
+
+  // Handlers for reporting
+  const handleReportPost = (post) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setReportData({
+      type: 'post',
+      targetId: post._id,
+      targetTitle: post.title || post.content?.substring(0, 50),
+    });
+  };
+
+  const handleReportComment = (comment) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setReportData({
+      type: 'comment',
+      targetId: comment._id,
+      targetTitle: comment.content?.substring(0, 50),
+    });
+  };
 
   // Queries
   const { data: eventData, isLoading: isEventLoading } = useEvent(id);
@@ -174,8 +204,24 @@ const EventDiscussion = () => {
   };
 
   const handleDeletePost = (postId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
-    deletePostMutation.mutate({ eventId: id, postId });
+    setDeletePostId(postId);
+  };
+
+  const confirmDeletePost = () => {
+    if (deletePostId) {
+      deletePostMutation.mutate(
+        { eventId: id, postId: deletePostId },
+        {
+          onSuccess: () => {
+            toast.success('Post deleted successfully');
+          },
+          onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to delete post');
+          },
+        }
+      );
+    }
+    setDeletePostId(null);
   };
 
   const handleCreatePostClick = () => {
@@ -427,6 +473,7 @@ const EventDiscussion = () => {
                       onDelete={handleDeletePost}
                       onEdit={() => handleEditClick(post)}
                       onClick={() => navigate(`/events/${id}/discussion/posts/${post._id}`)}
+                      onReport={() => handleReportPost(post)}
                       delay={index * 0.1}
                       user={user}
                     />
@@ -571,6 +618,8 @@ const EventDiscussion = () => {
             eventId={id}
             event={eventDetails} // Pass eventDetails object for ABAC
             currentUser={user}
+            onReportPost={handleReportPost}
+            onReportComment={handleReportComment}
           />
         )}
       </AnimatePresence>
@@ -585,6 +634,27 @@ const EventDiscussion = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={!!reportData}
+        onClose={() => setReportData(null)}
+        type={reportData?.type}
+        targetId={reportData?.targetId}
+        targetTitle={reportData?.targetTitle}
+      />
+
+      {/* Delete Post Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deletePostId}
+        onClose={() => setDeletePostId(null)}
+        onConfirm={confirmDeletePost}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deletePostMutation.isPending}
+      />
     </div>
   );
 };

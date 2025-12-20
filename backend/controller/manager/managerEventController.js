@@ -239,3 +239,58 @@ export async function getTotalConfirmedVolunteers(req, res) {
         });
     }
 }
+
+/**
+ * Mark an event as completed early
+ * This allows managers to complete events before the scheduled end date
+ */
+export async function completeEventEarly(req, res) {
+    const eventId = req.params.id;
+    const managerId = req.user._id;
+    
+    try {
+        // Check if event exists and belongs to manager
+        const event = await Event.findById(eventId);
+        if (!event) {
+            return res.status(404).json({success: false, message: "Event not found"});
+        }
+        
+        // Check ownership
+        if (event.managerId.toString() !== managerId.toString()) {
+            return res.status(403).json({success: false, message: "Unauthorized to complete this event"});
+        }
+        
+        // Only approved events can be completed early
+        if (event.status !== 'approved') {
+            return res.status(400).json({
+                success: false, 
+                message: `Cannot complete event. Current status: ${event.status}. Only approved events can be completed.`
+            });
+        }
+        
+        // Update event status to completed
+        event.status = 'completed';
+        event.updatedAt = Date.now();
+        await event.save();
+        
+        // Populate for response
+        const updatedEvent = await Event.findById(eventId)
+            .populate('managerId', 'username email avatar')
+            .populate('categories');
+        
+        // Invalidate caches
+        await invalidateCacheByPattern('events:*');
+        await invalidateCacheByPattern('search:events:*');
+        await invalidateCacheByPattern(`event:detail:*`);
+        await invalidateCache(`dashboard:manager:${managerId}`);
+        
+        res.status(200).json({
+            success: true, 
+            message: "Event completed successfully. You can now mark volunteers as completed.",
+            event: updatedEvent
+        });
+    } catch (error) {
+        console.error("Error completing event early:", error);
+        res.status(500).json({success: false, message: "Failed to complete event"});
+    }
+}

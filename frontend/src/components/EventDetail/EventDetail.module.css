@@ -419,6 +419,178 @@ h2.event-detail__section-subtitle {
   text-transform: capitalize;
 }
 
+/* Rewards Section */
+.event-detail__rewards {
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.event-detail__rewards-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary-color);
+  margin-bottom: 1rem;
+}
+
+.event-detail__rewards-title svg {
+  color: #f59e0b;
+}
+
+.event-detail__rewards-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.event-detail__reward-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: white;
+  padding: 0.875rem 1.25rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  flex: 1 1 auto;
+  min-width: 180px;
+  max-width: 280px;
+}
+
+.event-detail__reward-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  flex-shrink: 0;
+}
+
+.event-detail__reward-icon svg {
+  color: #d97706;
+  width: 20px;
+  height: 20px;
+}
+
+.event-detail__reward-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-detail__reward-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary-color);
+}
+
+.event-detail__reward-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+}
+
+/* Requirements Section */
+.event-detail__requirements {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.event-detail__requirements-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary-color);
+  margin-bottom: 1rem;
+}
+
+.event-detail__requirements-title svg {
+  color: #3b82f6;
+}
+
+.event-detail__requirements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-detail__requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary-color);
+}
+
+.event-detail__requirement-item svg {
+  color: #3b82f6;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.event-detail__requirement-item span {
+  color: var(--text-primary-color);
+  font-weight: 600;
+}
+
+/* Eligibility Section in Sidebar */
+.event-detail__sidebar-eligibility {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(220, 38, 38, 0.08));
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.event-detail__sidebar-eligibility-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 0.5rem;
+}
+
+.event-detail__sidebar-eligibility-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+  margin-bottom: 0.75rem;
+}
+
+.event-detail__sidebar-eligibility-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.event-detail__sidebar-eligibility-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.event-detail__sidebar-eligibility-list li svg {
+  flex-shrink: 0;
+}
+
 /* Image Grid */
 .event-detail__image-grid {
   display: grid;
@@ -700,5 +872,53 @@ h2.event-detail__section-subtitle {
   .event-detail__image-item {
     padding-bottom: 100%; /* Square aspect ratio on small screens */
     border-radius: 0.5rem;
+  }
+
+  /* Rewards & Requirements responsive */
+  .event-detail__rewards,
+  .event-detail__requirements {
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+
+  .event-detail__rewards-title,
+  .event-detail__requirements-title {
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+
+  .event-detail__rewards-list {
+    flex-direction: column;
+  }
+
+  .event-detail__reward-item {
+    min-width: unset;
+    padding: 0.75rem 1rem;
+  }
+
+  .event-detail__reward-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .event-detail__reward-value {
+    font-size: 1.125rem;
+  }
+
+  .event-detail__requirement-item {
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .event-detail__sidebar-eligibility {
+    padding: 0.875rem;
+  }
+
+  .event-detail__sidebar-eligibility-header {
+    font-size: 0.9rem;
+  }
+
+  .event-detail__sidebar-eligibility-list li {
+    font-size: 0.8rem;
   }
 }

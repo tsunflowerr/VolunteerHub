@@ -6,6 +6,11 @@ export {
   CategoryTable,
   CategoryModal,
 } from './CategoriesTable';
+export {
+  ReportSearchFilter,
+  ReportTable,
+  ReportDetailModal,
+} from './ReportsTable';
 export { default as ExportData } from './ExportData/ExportData';
 export { default as StatCard } from './StatCard/StatCard';
 export {

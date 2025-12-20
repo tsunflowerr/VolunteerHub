@@ -171,41 +171,91 @@ export async function replyComment(req, res) {
     }
 }
 
+// Helper function to recursively populate nested replies
+async function populateNestedReplies(comments, maxDepth = 5, currentDepth = 0) {
+    if (currentDepth >= maxDepth || !comments || comments.length === 0) {
+        return comments;
+    }
+
+    for (let comment of comments) {
+        if (comment.replies && comment.replies.length > 0) {
+            // Populate author for each reply
+            for (let i = 0; i < comment.replies.length; i++) {
+                const reply = comment.replies[i];
+                // Find nested replies for this reply
+                const nestedReplies = await Comment.find({ parentComment: reply._id })
+                    .sort({ createdAt: 1 })
+                    .populate('author', 'username email avatar role')
+                    .lean();
+                
+                comment.replies[i].replies = nestedReplies;
+                
+                // Recursively populate deeper levels
+                if (nestedReplies.length > 0) {
+                    await populateNestedReplies([comment.replies[i]], maxDepth, currentDepth + 1);
+                }
+            }
+        }
+    }
+    return comments;
+}
+
+// Helper function to collect all comment IDs recursively
+function collectAllCommentIds(comments, ids = []) {
+    for (const comment of comments) {
+        ids.push(comment._id);
+        if (comment.replies && comment.replies.length > 0) {
+            collectAllCommentIds(comment.replies, ids);
+        }
+    }
+    return ids;
+}
+
+// Helper function to mark isLiked recursively
+function markIsLikedRecursively(comments, likedCommentIds) {
+    for (const comment of comments) {
+        comment.isLiked = likedCommentIds.has(comment._id.toString());
+        if (comment.replies && comment.replies.length > 0) {
+            markIsLikedRecursively(comment.replies, likedCommentIds);
+        }
+    }
+}
+
 export async function getCommentsByPost(req, res) {
     try {
         const { postId } = req.params;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
+        const maxDepth = parseInt(req.query.maxDepth) || 5; // Allow client to specify max depth
         
         const total = await Comment.countDocuments({ postId, parentComment: null });
         
-        const comments = await Comment.find({ 
+        // Fetch top-level comments with first level of replies
+        let comments = await Comment.find({ 
             postId, 
             parentComment: null 
         })
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate('author', 'username email avatar')
+        .populate('author', 'username email avatar role')
         .populate({
             path: 'replies',
             options: { sort: { createdAt: 1 } },
             populate: {
                 path: 'author',
-                select: 'username email avatar'
+                select: 'username email avatar role'
             }
         })
-        .lean(); // Use lean for easier modification
+        .lean();
 
-        if (req.user) {
-            const commentIds = [];
-            comments.forEach(c => {
-                commentIds.push(c._id);
-                if (c.replies) {
-                    c.replies.forEach(r => commentIds.push(r._id));
-                }
-            });
+        // Recursively populate nested replies (beyond first level)
+        await populateNestedReplies(comments, maxDepth, 1);
 
+        // Collect all comment IDs for like checking
+        const commentIds = collectAllCommentIds(comments);
+
+        if (req.user && commentIds.length > 0) {
             const likes = await Like.find({
                 userId: req.user._id,
                 likeableId: { $in: commentIds },
@@ -213,22 +263,12 @@ export async function getCommentsByPost(req, res) {
             }).select('likeableId').lean();
 
             const likedCommentIds = new Set(likes.map(l => l.likeableId.toString()));
-
-            comments.forEach(c => {
-                c.isLiked = likedCommentIds.has(c._id.toString());
-                if (c.replies) {
-                    c.replies.forEach(r => {
-                        r.isLiked = likedCommentIds.has(r._id.toString());
-                    });
-                }
-            });
+            
+            // Mark isLiked recursively for all comments
+            markIsLikedRecursively(comments, likedCommentIds);
         } else {
-             comments.forEach(c => {
-                c.isLiked = false;
-                if (c.replies) {
-                    c.replies.forEach(r => r.isLiked = false);
-                }
-            });
+            // Mark all as not liked recursively
+            markIsLikedRecursively(comments, new Set());
         }
         
         res.status(200).json({

@@ -11,7 +11,19 @@ self.addEventListener('push', function (event) {
     };
 
     event.waitUntil(
-      self.registration.showNotification(data.title || 'VolunteerHub', options)
+      Promise.all([
+        // Show the notification
+        self.registration.showNotification(data.title || 'VolunteerHub', options),
+        // Notify all open clients to refresh notifications
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'PUSH_NOTIFICATION_RECEIVED',
+              payload: data,
+            });
+          });
+        }),
+      ])
     );
   }
 });

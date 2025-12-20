@@ -48,6 +48,16 @@ export const usePushNotifications = () => {
 
     setLoading(true);
     try {
+      // Request permission first
+      const permissionResult = await Notification.requestPermission();
+      
+      if (permissionResult !== 'granted') {
+        toast.error('Notification permission denied');
+        setPermission(permissionResult);
+        setLoading(false);
+        return;
+      }
+
       const registration = await navigator.serviceWorker.ready;
 
       const subscription = await registration.pushManager.subscribe({

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api/admin';
+import { notificationKeys } from './useNotifications';
 import toast from 'react-hot-toast';
 
 // ============================================
@@ -14,10 +15,18 @@ export const adminKeys = {
 
   // Events
   events: () => [...adminKeys.all, 'events'],
+  eventsList: (filters) => [...adminKeys.events(), 'list', { ...filters }],
+  eventDetail: (id) => [...adminKeys.events(), 'detail', id],
   pendingEvents: () => [...adminKeys.events(), 'pending'],
 
   // Categories
   categories: () => [...adminKeys.all, 'categories'],
+
+  // Reports
+  reports: () => [...adminKeys.all, 'reports'],
+  reportsList: (filters) => [...adminKeys.reports(), 'list', { ...filters }],
+  reportDetail: (id) => [...adminKeys.reports(), 'detail', id],
+  reportStats: () => [...adminKeys.reports(), 'stats'],
 
   // Dashboard
   dashboard: () => [...adminKeys.all, 'dashboard'],
@@ -27,9 +36,13 @@ export const adminKeys = {
     toggleLockUser: () => [...adminKeys.users(), 'toggle-lock'],
     createUser: () => [...adminKeys.users(), 'create'],
     updateEventStatus: () => [...adminKeys.events(), 'update-status'],
+    updateEvent: () => [...adminKeys.events(), 'update'],
     deleteEvent: () => [...adminKeys.events(), 'delete'],
+    deleteComment: () => [...adminKeys.all, 'comments', 'delete'],
     createCategory: () => [...adminKeys.categories(), 'create'],
     updateCategory: () => [...adminKeys.categories(), 'update'],
+    reviewReport: () => [...adminKeys.reports(), 'review'],
+    deleteReport: () => [...adminKeys.reports(), 'delete'],
     exportUsers: () => [...adminKeys.users(), 'export'],
     exportEvents: () => [...adminKeys.events(), 'export'],
   },
@@ -180,6 +193,9 @@ export const useUpdateEventStatus = () => {
 
       // Invalidate dashboard stats as approval counts change
       queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
+
+      // Invalidate notifications so the manager sees event status notification
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
 
       toast.success(`Event ${status} successfully`);
     },
@@ -358,6 +374,162 @@ export const useExportEvents = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to export events');
+    },
+  });
+};
+
+// ============================================
+// Events Management Hooks (Full CRUD)
+// ============================================
+
+/**
+ * Fetch all events for admin management
+ * @param {Object} params - Filter params (search, status, page, limit)
+ */
+export const useAdminAllEvents = (params = {}) => {
+  return useQuery({
+    queryKey: adminKeys.eventsList(params),
+    queryFn: () => adminApi.getAllEvents(params),
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+/**
+ * Fetch single event by ID for admin
+ */
+export const useAdminEventDetail = (eventId) => {
+  return useQuery({
+    queryKey: adminKeys.eventDetail(eventId),
+    queryFn: () => adminApi.getEventById(eventId),
+    enabled: !!eventId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+/**
+ * Update event (admin)
+ */
+export const useAdminUpdateEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: adminKeys.mutations.updateEvent(),
+    mutationFn: adminApi.updateEvent,
+    onSuccess: (data, { eventId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.events() });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      if (eventId) {
+        queryClient.invalidateQueries({ queryKey: adminKeys.eventDetail(eventId) });
+        queryClient.invalidateQueries({ queryKey: ['events', 'detail', eventId] });
+      }
+      toast.success('Event updated successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update event');
+    },
+  });
+};
+
+/**
+ * Delete comment (admin)
+ */
+export const useAdminDeleteComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: adminKeys.mutations.deleteComment(),
+    mutationFn: adminApi.deleteComment,
+    onSuccess: () => {
+      // Invalidate comments in events and posts
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
+      toast.success('Comment deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete comment');
+    },
+  });
+};
+
+// ============================================
+// Reports Hooks
+// ============================================
+
+/**
+ * Fetch all reports for admin
+ * @param {Object} params - Filter params (status, type, page, limit)
+ */
+export const useAdminReports = (params = {}) => {
+  return useQuery({
+    queryKey: adminKeys.reportsList(params),
+    queryFn: () => adminApi.getReports(params),
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+/**
+ * Fetch single report by ID
+ */
+export const useAdminReportDetail = (reportId) => {
+  return useQuery({
+    queryKey: adminKeys.reportDetail(reportId),
+    queryFn: () => adminApi.getReportById(reportId),
+    enabled: !!reportId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+/**
+ * Fetch report statistics
+ */
+export const useAdminReportStats = () => {
+  return useQuery({
+    queryKey: adminKeys.reportStats(),
+    queryFn: adminApi.getReportStats,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+/**
+ * Review/resolve a report
+ */
+export const useReviewReport = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: adminKeys.mutations.reviewReport(),
+    mutationFn: adminApi.reviewReport,
+    onSuccess: (data, { reportId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.reports() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.reportStats() });
+      if (reportId) {
+        queryClient.invalidateQueries({ queryKey: adminKeys.reportDetail(reportId) });
+      }
+      toast.success('Report reviewed successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to review report');
+    },
+  });
+};
+
+/**
+ * Delete a report
+ */
+export const useDeleteReport = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: adminKeys.mutations.deleteReport(),
+    mutationFn: adminApi.deleteReport,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.reports() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.reportStats() });
+      toast.success('Report deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete report');
     },
   });
 };

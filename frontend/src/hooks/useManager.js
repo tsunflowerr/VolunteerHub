@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { managerApi } from '../api/manager';
 import { eventKeys } from './useEvents'; // Reuse keys if possible, or define separate manager keys
+import { notificationKeys } from './useNotifications';
 import toast from 'react-hot-toast';
 
 export const managerKeys = {
@@ -51,12 +52,51 @@ export const useUpdateRegistrationStatus = () => {
   return useMutation({
     mutationKey: ['updateRegistrationStatus'],
     mutationFn: managerApi.updateStatus,
-    onSuccess: (data, variables) => {
-      // Invalidate manager registrations list (UI for ManagerRegistrations)
-      queryClient.invalidateQueries({
-        queryKey: managerKeys.registrations(),
+    onMutate: async (variables) => {
+      const { registrationId, status } = variables;
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: managerKeys.registrations() });
+
+      // Snapshot previous data
+      const previousData = queryClient.getQueriesData({ queryKey: managerKeys.registrations() });
+
+      // Optimistically update the registration status
+      queryClient.setQueriesData({ queryKey: managerKeys.registrations() }, (old) => {
+        if (!old) return old;
+        
+        // Handle different response structures
+        if (old.registrations) {
+          return {
+            ...old,
+            registrations: old.registrations.map((reg) =>
+              reg._id === registrationId ? { ...reg, status } : reg
+            ),
+          };
+        }
+        if (old.data) {
+          return {
+            ...old,
+            data: old.data.map((reg) =>
+              reg._id === registrationId ? { ...reg, status } : reg
+            ),
+          };
+        }
+        return old;
       });
 
+      return { previousData };
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      context?.previousData?.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(
+        error.response?.data?.message || 'Failed to update volunteer status'
+      );
+    },
+    onSuccess: (data, variables) => {
       // Invalidate specific volunteer list and event details
       if (data?.registration?.eventId) {
         // Handle both populated object and direct ID
@@ -74,10 +114,13 @@ export const useUpdateRegistrationStatus = () => {
 
       toast.success('Volunteer status updated successfully');
     },
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message || 'Failed to update volunteer status'
-      );
+    onSettled: () => {
+      // Invalidate manager registrations list (UI for ManagerRegistrations)
+      queryClient.invalidateQueries({
+        queryKey: managerKeys.registrations(),
+      });
+      // Invalidate notifications so the volunteer sees status update notification
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 };
@@ -129,6 +172,24 @@ export const useDeleteEvent = () => {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to delete event');
+    },
+  });
+};
+
+export const useCompleteEventEarly = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['completeEventEarly'],
+    mutationFn: managerApi.completeEventEarly,
+    onSuccess: (data, eventId) => {
+      queryClient.invalidateQueries({ queryKey: eventKeys.all });
+      queryClient.invalidateQueries({ queryKey: managerKeys.events() });
+      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      toast.success(data.message || 'Event completed successfully! You can now mark volunteers as completed.');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to complete event');
     },
   });
 };

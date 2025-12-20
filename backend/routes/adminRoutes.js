@@ -8,8 +8,12 @@ import {
 } from '../controller/admin/adminCategoryController.js';
 import {
   getPendingEvents,
+  getAllEvents,
+  getEventById,
   updateStatusEvent,
+  updateEvent,
   deleteEvent,
+  deleteComment,
 } from '../controller/admin/adminEventController.js';
 import {
   exportUsersData,
@@ -20,15 +24,47 @@ import {
   toggleUserLockStatus,
   createUser,
 } from '../controller/admin/adminUserController.js';
+import {
+  getReports,
+  getReportById,
+  reviewReport,
+  getReportStats,
+  deleteReport,
+} from '../controller/admin/adminReportController.js';
+import {
+  createAchievement,
+  updateAchievement,
+  deleteAchievement,
+  getAllAchievementsAdmin,
+  awardAchievementToUser,
+  createLevel,
+  updateLevel,
+  deleteLevel,
+  getAllLevelsAdmin,
+  adjustUserPoints,
+  getGamificationStats,
+  seedDefaultLevels,
+  seedDefaultAchievements
+} from '../controller/admin/adminGamificationController.js';
 import { categorySchema } from '../validators/categoryValidator.js';
 import {
   objectIdSchema,
   updateEventStatusSchema,
+  adminUpdateEventSchema,
 } from '../validators/eventValidator.js';
 import {
   userIdSchema,
   adminCreateUserSchema,
 } from '../validators/userValidator.js';
+import { reviewReportSchema } from '../validators/reportValidator.js';
+import {
+  createAchievementSchema,
+  updateAchievementSchema,
+  awardAchievementSchema,
+  createLevelSchema,
+  updateLevelSchema,
+  adjustPointsSchema
+} from '../validators/gamificationValidator.js';
 import { validate } from '../middleware/validate.js';
 import {
   createLimiter,
@@ -36,6 +72,7 @@ import {
   updateLimiter,
   deleteLimiter,
 } from '../middleware/rateLimiter.js';
+import { uploadMultiple } from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -483,6 +520,278 @@ router.patch(
   updateLimiter,
   validate(userIdSchema, 'params'),
   toggleUserLockStatus
+);
+
+// ====== Extended Event Management Routes ======
+
+/**
+ * @swagger
+ * /api/admin/events:
+ *   get:
+ *     summary: Get all events with filters (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ */
+router.get('/events', getAllEvents);
+
+/**
+ * @swagger
+ * /api/admin/events/{id}:
+ *   get:
+ *     summary: Get event by ID (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/events/:id', validate(objectIdSchema, 'params'), getEventById);
+
+/**
+ * @swagger
+ * /api/admin/events/{id}:
+ *   put:
+ *     summary: Update event (Admin only)
+ *     tags: [Admin]
+ */
+router.put(
+  '/events/:id',
+  updateLimiter,
+  uploadMultiple,
+  validate(objectIdSchema, 'params'),
+  updateEvent
+);
+
+/**
+ * @swagger
+ * /api/admin/comments/{commentId}:
+ *   delete:
+ *     summary: Delete any comment (Admin only)
+ *     tags: [Admin]
+ */
+router.delete(
+  '/comments/:commentId',
+  deleteLimiter,
+  deleteComment
+);
+
+// ====== Report Management Routes ======
+
+/**
+ * @swagger
+ * /api/admin/reports:
+ *   get:
+ *     summary: Get all reports (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/reports', getReports);
+
+/**
+ * @swagger
+ * /api/admin/reports/stats:
+ *   get:
+ *     summary: Get report statistics (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/reports/stats', getReportStats);
+
+/**
+ * @swagger
+ * /api/admin/reports/{id}:
+ *   get:
+ *     summary: Get report by ID (Admin only)
+ *     tags: [Admin]
+ */
+router.get('/reports/:id', validate(objectIdSchema, 'params'), getReportById);
+
+/**
+ * @swagger
+ * /api/admin/reports/{id}/review:
+ *   patch:
+ *     summary: Review a report (Admin only)
+ *     tags: [Admin]
+ */
+router.patch(
+  '/reports/:id/review',
+  updateLimiter,
+  validate(objectIdSchema, 'params'),
+  validate(reviewReportSchema),
+  reviewReport
+);
+
+/**
+ * @swagger
+ * /api/admin/reports/{id}:
+ *   delete:
+ *     summary: Delete a report (Admin only)
+ *     tags: [Admin]
+ */
+router.delete(
+  '/reports/:id',
+  deleteLimiter,
+  validate(objectIdSchema, 'params'),
+  deleteReport
+);
+
+// ====== Gamification Routes ======
+
+/**
+ * @swagger
+ * /api/admin/gamification/stats:
+ *   get:
+ *     summary: Get gamification statistics (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.get('/gamification/stats', getGamificationStats);
+
+/**
+ * @swagger
+ * /api/admin/gamification/seed/levels:
+ *   post:
+ *     summary: Seed default levels (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post('/gamification/seed/levels', seedDefaultLevels);
+
+/**
+ * @swagger
+ * /api/admin/gamification/seed/achievements:
+ *   post:
+ *     summary: Seed default achievements (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post('/gamification/seed/achievements', seedDefaultAchievements);
+
+// Achievement Management
+/**
+ * @swagger
+ * /api/admin/achievements:
+ *   get:
+ *     summary: Get all achievements with stats (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.get('/achievements', getAllAchievementsAdmin);
+
+/**
+ * @swagger
+ * /api/admin/achievements:
+ *   post:
+ *     summary: Create a new achievement (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post(
+  '/achievements',
+  createLimiter,
+  validate(createAchievementSchema),
+  createAchievement
+);
+
+/**
+ * @swagger
+ * /api/admin/achievements/{id}:
+ *   put:
+ *     summary: Update an achievement (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.put(
+  '/achievements/:id',
+  updateLimiter,
+  validate(objectIdSchema, 'params'),
+  validate(updateAchievementSchema),
+  updateAchievement
+);
+
+/**
+ * @swagger
+ * /api/admin/achievements/{id}:
+ *   delete:
+ *     summary: Delete an achievement (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.delete(
+  '/achievements/:id',
+  deleteLimiter,
+  validate(objectIdSchema, 'params'),
+  deleteAchievement
+);
+
+/**
+ * @swagger
+ * /api/admin/achievements/award:
+ *   post:
+ *     summary: Award an achievement to a user (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post(
+  '/achievements/award',
+  createLimiter,
+  validate(awardAchievementSchema),
+  awardAchievementToUser
+);
+
+// Level Management
+/**
+ * @swagger
+ * /api/admin/levels:
+ *   get:
+ *     summary: Get all levels with stats (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.get('/levels', getAllLevelsAdmin);
+
+/**
+ * @swagger
+ * /api/admin/levels:
+ *   post:
+ *     summary: Create a new level (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post(
+  '/levels',
+  createLimiter,
+  validate(createLevelSchema),
+  createLevel
+);
+
+/**
+ * @swagger
+ * /api/admin/levels/{id}:
+ *   put:
+ *     summary: Update a level (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.put(
+  '/levels/:id',
+  updateLimiter,
+  validate(objectIdSchema, 'params'),
+  validate(updateLevelSchema),
+  updateLevel
+);
+
+/**
+ * @swagger
+ * /api/admin/levels/{id}:
+ *   delete:
+ *     summary: Delete a level (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.delete(
+  '/levels/:id',
+  deleteLimiter,
+  validate(objectIdSchema, 'params'),
+  deleteLevel
+);
+
+/**
+ * @swagger
+ * /api/admin/points/adjust:
+ *   post:
+ *     summary: Adjust user points (Admin only)
+ *     tags: [Admin - Gamification]
+ */
+router.post(
+  '/points/adjust',
+  updateLimiter,
+  validate(adjustPointsSchema),
+  adjustUserPoints
 );
 
 export default router;

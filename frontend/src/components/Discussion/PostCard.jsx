@@ -1,4 +1,5 @@
 import { useState, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Heart,
@@ -12,6 +13,7 @@ import {
 import styles from './PostCard.module.css';
 import { formatDistanceToNow } from 'date-fns';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 //using date fns to format time ago
 const formatTimeAgo = (dateString) => {
@@ -20,7 +22,8 @@ const formatTimeAgo = (dateString) => {
 };
 
 const PostCard = memo(
-  ({ post, onLike, onComment, onDelete, onEdit, onClick, delay = 0, user }) => {
+  ({ post, onLike, onComment, onDelete, onEdit, onReport, onClick, delay = 0, user }) => {
+    const navigate = useNavigate();
     const [showMenu, setShowMenu] = useState(false);
     const [imageIndex, setImageIndex] = useState(0);
 
@@ -53,14 +56,26 @@ const PostCard = memo(
 
     const handleEdit = (e) => {
       e.stopPropagation();
-
       onEdit(post);
+      setShowMenu(false);
+    };
+
+    const handleReport = (e) => {
+      e.stopPropagation();
+      onReport?.(post);
       setShowMenu(false);
     };
 
     const handleMenuToggle = (e) => {
       e.stopPropagation();
       setShowMenu(!showMenu);
+    };
+
+    const handleAvatarClick = (e) => {
+      e.stopPropagation();
+      if (post.author?._id) {
+        navigate(`/profile/${post.author._id}`);
+      }
     };
 
     // Render images grid
@@ -127,9 +142,14 @@ const PostCard = memo(
             src={post.author.avatar}
             alt={post.author.username}
             className={styles.avatar}
+            onClick={handleAvatarClick}
+            style={{ cursor: 'pointer' }}
           />
           <div className={styles.authorInfo}>
-            <span className={styles.authorName}>{post.author.username}</span>
+            <span className={styles.authorName} onClick={handleAvatarClick} style={{ cursor: 'pointer' }}>
+              {post.author.username}
+              <VerifiedBadge role={post.author.role} size={14} />
+            </span>
             <div className={styles.postMeta}>
               <span className={styles.time}>
                 {formatTimeAgo(post.createdAt)}
@@ -165,10 +185,12 @@ const PostCard = memo(
                     Delete Post
                   </button>
                 )}
-                <button className={styles.menuItem}>
-                  <Flag size={16} />
-                  Report
-                </button>
+                {user && post.author?._id !== (user._id || user.id) && (
+                  <button className={styles.menuItem} onClick={handleReport}>
+                    <Flag size={16} />
+                    Report
+                  </button>
+                )}
               </motion.div>
             )}
           </div>

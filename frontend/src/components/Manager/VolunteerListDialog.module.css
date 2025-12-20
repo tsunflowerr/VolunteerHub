@@ -418,6 +418,194 @@
   background: var(--color-gray-500);
 }
 
+/* Volunteer Wrapper */
+.volunteerWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Award Achievement Button */
+.awardBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.awardBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Achievement Panel */
+.achievementPanel {
+  background-color: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 0 0 0.75rem 0.75rem;
+  padding: 1rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.achievementPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #fcd34d;
+}
+
+.achievementList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.achievementOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: white;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.achievementOption:hover {
+  border-color: #f59e0b;
+}
+
+.achievementSelected {
+  border-color: #f59e0b;
+  background-color: #fffbeb;
+}
+
+.achievementOption input[type="checkbox"] {
+  margin-top: 0.25rem;
+  accent-color: #f59e0b;
+  width: 18px;
+  height: 18px;
+}
+
+.achievementIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.achievementInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.achievementName {
+  font-weight: 600;
+  color: var(--text-primary-color);
+  font-size: 0.9rem;
+}
+
+.achievementDesc {
+  font-size: 0.8rem;
+  color: var(--text-secondary-color);
+}
+
+.achievementRarity {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  width: fit-content;
+  margin-top: 0.25rem;
+}
+
+.rarity-common {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.rarity-uncommon {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.rarity-rare {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.rarity-epic {
+  background-color: #ede9fe;
+  color: #5b21b6;
+}
+
+.rarity-legendary {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.achievementPanelActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #fcd34d;
+}
+
+.cancelAwardBtn {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  color: var(--text-secondary-color);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.cancelAwardBtn:hover {
+  background-color: var(--color-gray-100);
+}
+
+.confirmAwardBtn {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.confirmAwardBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.confirmAwardBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dialog {

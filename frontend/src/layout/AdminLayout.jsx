@@ -11,6 +11,8 @@ import {
   ChevronRight,
   Home,
   Shield,
+  Flag,
+  Trophy,
 } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 
@@ -32,6 +34,8 @@ const AdminLayout = () => {
     { id: 'events', icon: Calendar, label: 'Events', path: '/admin/events' },
     { id: 'users', icon: Users, label: 'Users', path: '/admin/users' },
     { id: 'categories', icon: FolderOpen, label: 'Categories', path: '/admin/categories' },
+    { id: 'gamification', icon: Trophy, label: 'Gamification', path: '/admin/gamification' },
+    { id: 'reports', icon: Flag, label: 'Reports', path: '/admin/reports' },
     { id: 'export', icon: Download, label: 'Export', path: '/admin/export' },
   ];
 

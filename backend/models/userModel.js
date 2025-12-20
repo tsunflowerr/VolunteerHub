@@ -31,6 +31,18 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     status: { type: String, enum: ['active', 'locked'], default: 'active' },
+    // Gamification fields - references to UserProgress for detailed info
+    // These are denormalized for quick access
+    gamification: {
+      currentLevel: { type: Number, default: 1, min: 1 },
+      totalPoints: { type: Number, default: 0, min: 0 },
+      achievementCount: { type: Number, default: 0, min: 0 },
+      // Featured achievements to display on profile (max 5)
+      featuredAchievements: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'achievementDefinition' 
+      }]
+    }
   },
   {
     timestamps: true,

@@ -83,6 +83,7 @@
 .authorInfo {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .authorName {
@@ -97,6 +98,25 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   color: var(--color-gray-500);
+}
+
+.reportPostBtn {
+  background: none;
+  border: none;
+  color: var(--color-gray-400);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.reportPostBtn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 /* Post Content */

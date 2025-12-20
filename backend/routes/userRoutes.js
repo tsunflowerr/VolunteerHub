@@ -17,9 +17,15 @@ import {
   deletePushSubscription,
 } from '../controller/user/userProfileController.js';
 import {
+  createReport,
+  getMyReports,
+} from '../controller/public/reportController.js';
+import { createReportSchema } from '../validators/reportValidator.js';
+import {
   passwordResetLimiter,
   updateLimiter,
   deleteLimiter,
+  createLimiter,
 } from '../middleware/rateLimiter.js';
 import upload from '../middleware/uploadMiddleware.js';
 import { pushSubscriptionSchema } from '../validators/userValidator.js';
@@ -352,5 +358,25 @@ router.delete('/push-subscription', deletePushSubscription);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/:id', validate(objectIdSchema, 'params'), getUserById);
+
+// ====== Report Routes ======
+
+/**
+ * @swagger
+ * /api/users/reports:
+ *   post:
+ *     summary: Submit a report for inappropriate content
+ *     tags: [Users]
+ */
+router.post('/reports', createLimiter, validate(createReportSchema), createReport);
+
+/**
+ * @swagger
+ * /api/users/reports:
+ *   get:
+ *     summary: Get user's own reports
+ *     tags: [Users]
+ */
+router.get('/reports', getMyReports);
 
 export default router;

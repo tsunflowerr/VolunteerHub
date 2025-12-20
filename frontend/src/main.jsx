@@ -35,6 +35,14 @@ if ('serviceWorker' in navigator) {
         console.log('ServiceWorker registration failed: ', err);
       });
   });
+
+  // Listen for messages from Service Worker (e.g., push notifications)
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'PUSH_NOTIFICATION_RECEIVED') {
+      // Invalidate notification queries to refresh the notification bell
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
 }
 
 createRoot(document.getElementById('root')).render(

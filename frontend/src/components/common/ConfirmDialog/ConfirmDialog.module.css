@@ -1,0 +1,159 @@
+@import '../../../styles/global.css';
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1rem;
+}
+
+.dialog {
+  position: relative;
+  background-color: var(--text-white-color);
+  border-radius: 1rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.closeBtn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-gray-100);
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+.iconWrapper.warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.iconWrapper.danger {
+  background-color: #ffebee;
+  color: #f44336;
+}
+
+.iconWrapper.info {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.iconWrapper.success {
+  background-color: #e8f5e9;
+  color: #4caf50;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-black-color);
+  margin: 0 0 0.5rem 0;
+}
+
+.message {
+  font-size: 0.938rem;
+  color: var(--color-gray-600);
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.cancelBtn,
+.confirmBtn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.938rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.cancelBtn {
+  background-color: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background-color: var(--color-gray-300);
+}
+
+.confirmBtn {
+  color: var(--text-white-color);
+}
+
+.confirmBtn.warning {
+  background-color: #f59e0b;
+}
+
+.confirmBtn.warning:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.confirmBtn.danger {
+  background-color: #f44336;
+}
+
+.confirmBtn.danger:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.confirmBtn.info {
+  background-color: var(--primary-color);
+}
+
+.confirmBtn.info:hover:not(:disabled) {
+  background-color: #2a3f19;
+}
+
+.confirmBtn.success {
+  background-color: #4caf50;
+}
+
+.confirmBtn.success:hover:not(:disabled) {
+  background-color: #388e3c;
+}
+
+.cancelBtn:disabled,
+.confirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

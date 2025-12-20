@@ -1,14 +1,15 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { managerMiddleware } from '../middleware/managerMiddleware.js';
-import { createEvent, updateEvent, deleteEvent, getEventsByManager, getTotalConfirmedVolunteers } from '../controller/manager/managerEventController.js';
-import { updateRegistrationStatus, getVolunteersForEvent, getRegistrationsByStatus } from '../controller/manager/managerRegistrationController.js';
+import { createEvent, updateEvent, deleteEvent, getEventsByManager, getTotalConfirmedVolunteers, completeEventEarly } from '../controller/manager/managerEventController.js';
+import { updateRegistrationStatus, getVolunteersForEvent, getRegistrationsByStatus, awardAchievementToVolunteer, getAvailableAchievements } from '../controller/manager/managerRegistrationController.js';
 import { createAndUpdateEventSchema, objectIdSchema, eventIdSchema } from '../validators/eventValidator.js';
 import { 
     getRegistrationDetailSchema, 
     updateRegistrationStatusSchema, 
     getRegistrationsByStatusSchema 
 } from '../validators/registrationValidator.js';
+import { awardAchievementSchema } from '../validators/gamificationValidator.js';
 import { validate } from '../middleware/validate.js';
 import { createLimiter, updateLimiter, deleteLimiter } from '../middleware/rateLimiter.js';
 import upload from '../middleware/uploadMiddleware.js';
@@ -192,6 +193,32 @@ router.delete('/events/:id', deleteLimiter, validate(objectIdSchema, 'params'), 
 
 /**
  * @swagger
+ * /api/manager/events/{id}/complete:
+ *   patch:
+ *     summary: Mark an event as completed early (Manager only)
+ *     tags: [Manager]
+ *     security:
+ *       - cookieAuth: []
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Event ID
+ *     responses:
+ *       200:
+ *         description: Event completed successfully
+ *       403:
+ *         description: Not authorized to complete this event
+ *       404:
+ *         description: Event not found
+ */
+router.patch('/events/:id/complete', updateLimiter, validate(objectIdSchema, 'params'), completeEventEarly);
+
+/**
+ * @swagger
  * /api/manager/stats/volunteers:
  *   get:
  *     summary: Get total confirmed volunteers for manager's events
@@ -307,5 +334,30 @@ router.patch('/registrations/:registrationId/status', updateLimiter, validate(ge
  *                   type: object
  */
 router.get('/registrations', validate(getRegistrationsByStatusSchema, 'query'), getRegistrationsByStatus); 
+
+// ====== Achievement Routes ======
+
+/**
+ * @swagger
+ * /api/manager/achievements:
+ *   get:
+ *     summary: Get available achievements that manager can award
+ *     tags: [Manager]
+ */
+router.get('/achievements', getAvailableAchievements);
+
+/**
+ * @swagger
+ * /api/manager/achievements/award:
+ *   post:
+ *     summary: Award an achievement to a volunteer
+ *     tags: [Manager]
+ */
+router.post(
+  '/achievements/award',
+  createLimiter,
+  validate(awardAchievementSchema),
+  awardAchievementToVolunteer
+);
 
 export default router;

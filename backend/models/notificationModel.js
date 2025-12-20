@@ -11,7 +11,10 @@ const notificationSchema = new mongoose.Schema({
             "comment_reply",            
             "new_post",                  
             "event_status_update",       
-            "registration_status_update" 
+            "registration_status_update",
+            "achievement_earned",        // Khi user nhận được achievement
+            "level_up",                  // Khi user lên level mới
+            "points_earned"              // Khi user nhận được points
         ],
         required: true
     },

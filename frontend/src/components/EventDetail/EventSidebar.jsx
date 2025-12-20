@@ -7,8 +7,11 @@ import {
   X,
   MessageSquare,
   Settings,
+  Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import styles from './EventDetail.module.css';
 import { useToggleBookmark } from '../../hooks/useUser';
 import useAuth from '../../hooks/useAuth';
@@ -17,6 +20,7 @@ import {
   useUnregisterEvent,
   useMyRegistrations,
 } from '../../hooks/useEvents';
+import { useEventEligibility } from '../../hooks/useGamification';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
 
 const EventSidebar = ({
@@ -29,17 +33,26 @@ const EventSidebar = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Only use bookmark hook when we have a valid event ID (not in preview mode)
+  const eventId = event?._id;
   const {
     isBookmarked,
     toggleBookmark,
     isLoading: isBookmarkLoading,
-  } = useToggleBookmark(event._id);
+  } = useToggleBookmark(previewMode ? null : eventId);
 
   const {
     data: registrationsData,
     isLoading: isLoadingRegistrations,
     refetch: refetchRegistrations,
   } = useMyRegistrations({ limit: 100 });
+
+  // Check eligibility for events with requirements
+  const hasRequirements = event.requirements?.hasRequirements;
+  const { data: eligibilityData, isLoading: isCheckingEligibility } = useEventEligibility(
+    user && hasRequirements ? event._id : null
+  );
 
   const { mutate: register, isPending: isRegistering } = useRegisterEvent();
   const { mutate: unregister, isPending: isUnregistering } = useUnregisterEvent(
@@ -70,7 +83,7 @@ const EventSidebar = ({
 
   const handleRegister = () => {
     if (previewMode) {
-      alert('Preview mode - Registration not available');
+      toast('Preview mode - Registration not available', { icon: 'ℹ️' });
       return;
     }
     if (!user) {
@@ -132,7 +145,37 @@ const EventSidebar = ({
     isBookmarkLoading ||
     isLoadingRegistrations ||
     isRegistering ||
-    isUnregistering;
+    isUnregistering ||
+    isCheckingEligibility;
+
+  // Check if user is eligible for event with requirements
+  const isEligible = !hasRequirements || eligibilityData?.data?.eligible;
+  
+  // Build list of unmet requirements for display
+  const getUnmetRequirements = () => {
+    if (!eligibilityData?.data?.requirements) return [];
+    const reqs = eligibilityData.data.requirements;
+    const unmet = [];
+    
+    if (reqs.level && !reqs.level.passed) {
+      unmet.push(`Level ${reqs.level.required} required (You: Level ${reqs.level.current})`);
+    }
+    if (reqs.points && !reqs.points.passed) {
+      unmet.push(`${reqs.points.required} XP required (You: ${reqs.points.current} XP)`);
+    }
+    if (reqs.eventsCompleted && !reqs.eventsCompleted.passed) {
+      unmet.push(`${reqs.eventsCompleted.required} events completed required (You: ${reqs.eventsCompleted.current})`);
+    }
+    if (reqs.achievements && !reqs.achievements.passed) {
+      reqs.achievements.missing.forEach(a => {
+        unmet.push(`Achievement "${a.name}" required`);
+      });
+    }
+    
+    return unmet;
+  };
+  
+  const eligibilityReasons = getUnmetRequirements();
 
   return (
     <aside className={styles['event-detail__sidebar']}>
@@ -179,6 +222,27 @@ const EventSidebar = ({
                       <X size={16} />
                     </span>
                     <p>This event is unavailable right now.</p>
+                  </div>
+                ) : !isEligible && hasRequirements ? (
+                  // User doesn't meet requirements
+                  <div className={styles['event-detail__sidebar-eligibility']}>
+                    <div className={styles['event-detail__sidebar-eligibility-header']}>
+                      <Lock size={20} />
+                      <span>Requirements Not Met</span>
+                    </div>
+                    <p className={styles['event-detail__sidebar-eligibility-text']}>
+                      You don't meet the requirements to register for this event.
+                    </p>
+                    {eligibilityReasons.length > 0 && (
+                      <ul className={styles['event-detail__sidebar-eligibility-list']}>
+                        {eligibilityReasons.map((reason, index) => (
+                          <li key={index}>
+                            <AlertTriangle size={14} />
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 ) : (
                   <>

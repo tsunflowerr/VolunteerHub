@@ -23,6 +23,16 @@ export const adminApi = {
     return response.data;
   },
 
+  getAllEvents: async (params = {}) => {
+    const response = await api.get('/admin/events', { params });
+    return response.data;
+  },
+
+  getEventById: async (eventId) => {
+    const response = await api.get(`/admin/events/${eventId}`);
+    return response.data;
+  },
+
   updateEventStatus: async ({ eventId, status }) => {
     const response = await api.patch(`/admin/events/${eventId}/status`, {
       status,
@@ -30,8 +40,23 @@ export const adminApi = {
     return response.data;
   },
 
+  updateEvent: async ({ eventId, data }) => {
+    const response = await api.put(`/admin/events/${eventId}`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   deleteEvent: async (eventId) => {
     const response = await api.delete(`/admin/events/${eventId}`);
+    return response.data;
+  },
+
+  // Comments
+  deleteComment: async (commentId) => {
+    const response = await api.delete(`/admin/comments/${commentId}`);
     return response.data;
   },
 
@@ -53,6 +78,32 @@ export const adminApi = {
 
   deleteCategory: async (id) => {
     const response = await api.delete(`/admin/categories/${id}`);
+    return response.data;
+  },
+
+  // Reports
+  getReports: async (params = {}) => {
+    const response = await api.get('/admin/reports', { params });
+    return response.data;
+  },
+
+  getReportById: async (reportId) => {
+    const response = await api.get(`/admin/reports/${reportId}`);
+    return response.data;
+  },
+
+  getReportStats: async () => {
+    const response = await api.get('/admin/reports/stats');
+    return response.data;
+  },
+
+  reviewReport: async ({ reportId, data }) => {
+    const response = await api.patch(`/admin/reports/${reportId}/review`, data);
+    return response.data;
+  },
+
+  deleteReport: async (reportId) => {
+    const response = await api.delete(`/admin/reports/${reportId}`);
     return response.data;
   },
 

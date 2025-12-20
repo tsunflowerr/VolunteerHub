@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import * as yup from 'yup';
 import {
   Calendar,
@@ -17,6 +18,7 @@ import {
   ImagePicker,
   FormActions,
 } from '../../components/Form';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import styles from './EventForm.module.css';
 import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 
@@ -102,6 +104,7 @@ const EventForm = () => {
 
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [errors, setErrors] = useState({});
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -292,13 +295,12 @@ const EventForm = () => {
 
   // Handle cancel
   const handleCancel = () => {
-    if (
-      window.confirm(
-        'Are you sure you want to cancel? All changes will be lost.'
-      )
-    ) {
-      navigate(-1);
-    }
+    setShowCancelDialog(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelDialog(false);
+    navigate(-1);
   };
 
   return (
@@ -496,6 +498,17 @@ const EventForm = () => {
           </div>
         </form>
       </div>
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showCancelDialog}
+        onClose={() => setShowCancelDialog(false)}
+        onConfirm={confirmCancel}
+        title="Discard Changes"
+        message="Are you sure you want to cancel? All changes will be lost."
+        confirmText="Discard"
+        variant="warning"
+      />
     </div>
   );
 };

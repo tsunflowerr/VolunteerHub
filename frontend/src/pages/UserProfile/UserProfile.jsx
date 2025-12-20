@@ -12,6 +12,7 @@ import {
   useEventsByManager,
   useUserRegistrations,
 } from '../../hooks/useEvents';
+import { useUserGamificationProfile } from '../../hooks/useGamification';
 import {
   MapPin,
   Mail,
@@ -20,13 +21,21 @@ import {
   Edit2,
   Trash2,
   Lock,
+  Trophy,
+  Star,
 } from 'lucide-react';
 import EventList from '../../components/EventCard/EventList';
 import { Pagination } from '@mui/material';
 import styles from './UserProfile.module.css';
 import UserInfoDialog from '../../components/UserInfo/UserInfoDialog.jsx';
 import ChangePasswordDialog from '../../components/UserInfo/ChangePasswordDialog.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingOverlay from '../../components/common/LoadingOverlay';
+import { 
+  LevelBadge, 
+  LevelProgress, 
+  AchievementsGrid
+} from '../../components/Gamification';
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -36,6 +45,7 @@ const UserProfile = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const eventsPerPage = 9;
 
   const { data: user, isLoading: loading, isError } = useUserProfile(id);
@@ -82,6 +92,12 @@ const UserProfile = () => {
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
 
+  // Fetch gamification data - only for regular users (not managers/admins)
+  const isRegularUser = user?.role === 'user';
+  const gamificationUserId = isRegularUser ? (id || userId) : null;
+  const { data: gamificationData, isLoading: isGamificationLoading } = 
+    useUserGamificationProfile(gamificationUserId);
+
   const isOwnProfile =
     !id ||
     (currentUser &&
@@ -105,20 +121,19 @@ const UserProfile = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (
-      window.confirm(
-        'Are you sure you want to delete your account? This action cannot be undone.'
-      )
-    ) {
-      try {
-        await deleteAccount.mutateAsync();
-        await logout(); // Ensure local state is cleared
-        navigate('/');
-      } catch (error) {
-        console.error(error);
-      }
+  const handleDeleteAccount = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    try {
+      await deleteAccount.mutateAsync();
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error(error);
     }
+    setShowDeleteDialog(false);
   };
 
   if (loading) {
@@ -186,6 +201,73 @@ const UserProfile = () => {
               <div className={styles['profile__stat-label']}>Hosts</div>
             </div>
           </div>
+
+          {/* Gamification Section - Only for regular users */}
+          {user?.role === 'user' && (
+            <div className={styles['profile__gamification']}>
+              <h2 className={styles['profile__section-title']}>
+                <Trophy size={18} /> RANK & LEVEL
+              </h2>
+              
+              {isGamificationLoading ? (
+                <div className={styles['profile__gamification-loading']}>
+                  Loading gamification data...
+                </div>
+              ) : gamificationData?.data ? (
+                <>
+                  <div className={styles['profile__level-progress']}>
+                    <LevelProgress
+                      currentLevel={gamificationData.data.progress?.currentLevel || 1}
+                      currentLevelInfo={gamificationData.data.progress?.currentLevelInfo}
+                      nextLevelInfo={gamificationData.data.progress?.nextLevelInfo}
+                      totalPoints={gamificationData.data.progress?.totalPoints || 0}
+                      progressPercent={gamificationData.data.progress?.progressToNextLevel || 0}
+                      pointsToNextLevel={gamificationData.data.progress?.pointsToNextLevel || 0}
+                    />
+                  </div>
+
+                  {gamificationData.data.ranking && (
+                    <div className={styles['profile__ranking']}>
+                      <Star size={16} />
+                      <span>Rank #{gamificationData.data.ranking}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className={styles['profile__gamification-empty']}>
+                  <LevelBadge level={1} levelInfo={{ name: 'Newbie', icon: '🌱', color: '#9E9E9E' }} />
+                  <LevelProgress
+                    currentLevel={1}
+                    currentLevelInfo={{ name: 'Newbie', icon: '🌱', color: '#9E9E9E', pointsRequired: 0 }}
+                    nextLevelInfo={{ name: 'Beginner', icon: '⭐', color: '#4CAF50', pointsRequired: 100 }}
+                    totalPoints={0}
+                    progressPercent={0}
+                    pointsToNextLevel={100}
+                  />
+                  <p className={styles['profile__gamification-hint']}>Complete events and level up!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Achievements Section - Only for regular users */}
+          {user?.role === 'user' && (
+            <div className={styles['profile__achievements']}>
+              <h2 className={styles['profile__section-title']}>
+                <Trophy size={18} /> ACHIEVEMENTS ({gamificationData?.data?.achievements?.totalCount || 0})
+              </h2>
+              {gamificationData?.data?.achievements?.completed?.length > 0 ? (
+                <AchievementsGrid 
+                  achievements={gamificationData.data.achievements.completed.slice(0, 6).map(ua => ua.achievementId)}
+                  userAchievements={gamificationData.data.achievements.completed}
+                />
+              ) : (
+                <p className={styles['profile__achievements-empty']}>
+                  No achievements yet. Complete events to earn achievements!
+                </p>
+              )}
+            </div>
+          )}
 
           {/* About Section */}
           <div className={styles['profile__about']}>
@@ -296,12 +378,18 @@ const UserProfile = () => {
         <main className={styles['profile__main']}>
           <div className={styles['profile__header']}>
             <h2 className={styles['profile__main-title']}>
-              {isManager ? "Hosted Events" : "Contributed Events"}
+              {isManager 
+                ? (isOwnProfile ? "Your Hosted Events" : `${user.username}'s Hosted Events`)
+                : (isOwnProfile ? "Your Contributed Events" : `${user.username}'s Contributed Events`)}
             </h2>
             <p className={styles['profile__main-subtitle']}>
               {isManager 
-                ? "Events you are organizing and managing" 
-                : "Events you've participated in and made an impact"}
+                ? (isOwnProfile 
+                    ? "Events you are organizing and managing" 
+                    : `Events that ${user.username} is organizing and managing`)
+                : (isOwnProfile
+                    ? "Events you've participated in and made an impact"
+                    : `Events that ${user.username} has participated in`)}
             </p>
           </div>
 
@@ -328,8 +416,12 @@ const UserProfile = () => {
               <Calendar size={80} className={styles['profile__empty-icon']} />
               <p className={styles['profile__empty-text']}>
                 {isManager 
-                  ? "You haven't hosted any events yet." 
-                  : "You haven't contributed to any events yet."}
+                  ? (isOwnProfile 
+                      ? "You haven't hosted any events yet." 
+                      : `${user.username} hasn't hosted any events yet.`)
+                  : (isOwnProfile
+                      ? "You haven't contributed to any events yet."
+                      : `${user.username} hasn't contributed to any events yet.`)}
               </p>
             </div>
           )}
@@ -344,6 +436,18 @@ const UserProfile = () => {
           }
         />
       )}
+      
+      {/* Delete Account Confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDeleteAccount}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed."
+        confirmText="Delete Account"
+        variant="danger"
+        isLoading={deleteAccount.isPending}
+      />
     </div>
   );
 };

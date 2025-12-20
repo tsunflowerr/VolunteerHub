@@ -82,38 +82,69 @@ export const useToggleBookmark = (eventId) => {
   const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
 
-  const isBookmarked = user?.bookmarks?.includes(eventId);
+  const isBookmarked = eventId ? user?.bookmarks?.includes(eventId) : false;
 
   const mutation = useMutation({
     mutationFn: () => {
+      // Guard against undefined eventId
+      if (!eventId) {
+        return Promise.reject(new Error('Event ID is required'));
+      }
       if (isBookmarked) {
         return eventApi.removeBookmark(eventId);
       } else {
         return eventApi.addBookmark(eventId);
       }
     },
-    onSuccess: () => {
-      // Manually update AuthContext state
+    onMutate: async () => {
+      // Don't run if no eventId
+      if (!eventId) return {};
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['bookmarks'] });
+
+      // Snapshot previous bookmarks
+      const previousBookmarks = user?.bookmarks || [];
+
+      // Optimistically update bookmarks in AuthContext
       if (user) {
         const updatedBookmarks = isBookmarked
-          ? user.bookmarks.filter((id) => id !== eventId)
-          : [...(user.bookmarks || []), eventId];
+          ? previousBookmarks.filter((id) => id !== eventId)
+          : [...previousBookmarks, eventId];
         updateUser({ bookmarks: updatedBookmarks });
       }
 
+      return { previousBookmarks };
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousBookmarks && user) {
+        updateUser({ bookmarks: context.previousBookmarks });
+      }
+      toast.error(error.response?.data?.message || 'Failed to update bookmark');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
+    },
+    onSuccess: () => {
       toast.success(
         isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks'
       );
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update bookmark');
-    },
   });
+
+  // Provide a safe toggleBookmark function that prevents calls without eventId
+  const toggleBookmark = () => {
+    if (!eventId) {
+      console.warn('Cannot toggle bookmark: Event ID is missing');
+      return;
+    }
+    mutation.mutate();
+  };
 
   return {
     isBookmarked,
-    toggleBookmark: mutation.mutate,
+    toggleBookmark,
     isLoading: mutation.isPending,
   };
 };

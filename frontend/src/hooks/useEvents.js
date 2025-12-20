@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventApi } from '../api/events';
 import toast from 'react-hot-toast';
+import { notificationKeys } from './useNotifications';
 
 export const eventKeys = {
   all: ['events'],
@@ -73,14 +74,48 @@ export const useRegisterEvent = () => {
   return useMutation({
     mutationKey: registrationKeys.mutations.register(),
     mutationFn: (eventId) => eventApi.register(eventId),
+    onMutate: async (eventId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: registrationKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: eventKeys.detail(eventId) });
+
+      // Snapshot previous values
+      const previousRegistrations = queryClient.getQueryData(registrationKeys.lists());
+      const previousEvent = queryClient.getQueryData(eventKeys.detail(eventId));
+
+      // Optimistically update event registrations count
+      queryClient.setQueryData(eventKeys.detail(eventId), (old) => {
+        if (!old || !old.event) return old;
+        return {
+          ...old,
+          event: {
+            ...old.event,
+            registrationsCount: (old.event.registrationsCount || 0) + 1,
+          },
+        };
+      });
+
+      return { previousRegistrations, previousEvent, eventId };
+    },
+    onError: (error, eventId, context) => {
+      // Rollback on error
+      if (context?.previousRegistrations) {
+        queryClient.setQueryData(registrationKeys.lists(), context.previousRegistrations);
+      }
+      if (context?.previousEvent) {
+        queryClient.setQueryData(eventKeys.detail(eventId), context.previousEvent);
+      }
+      toast.error(error.response?.data?.message || 'Failed to register for event');
+    },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(variables) });
-      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
       toast.success('Successfully registered for event!');
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to register for event');
+    onSettled: (data, error, eventId) => {
+      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
+      // Invalidate notifications to show new notification immediately
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 };
@@ -91,14 +126,55 @@ export const useUnregisterEvent = () => {
   return useMutation({
     mutationKey: registrationKeys.mutations.unregister(),
     mutationFn: (eventId) => eventApi.unregister(eventId),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: eventKeys.detail(variables) });
-      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
+    onMutate: async (eventId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: registrationKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: eventKeys.detail(eventId) });
+
+      // Snapshot previous values
+      const previousRegistrations = queryClient.getQueryData(registrationKeys.lists());
+      const previousEvent = queryClient.getQueryData(eventKeys.detail(eventId));
+
+      // Optimistically update event registrations count
+      queryClient.setQueryData(eventKeys.detail(eventId), (old) => {
+        if (!old || !old.event) return old;
+        return {
+          ...old,
+          event: {
+            ...old.event,
+            registrationsCount: Math.max(0, (old.event.registrationsCount || 0) - 1),
+          },
+        };
+      });
+
+      // Optimistically remove from registrations list
+      queryClient.setQueriesData({ queryKey: registrationKeys.lists() }, (old) => {
+        if (!old || !old.data) return old;
+        return {
+          ...old,
+          data: old.data.filter((r) => (r.eventId._id || r.eventId) !== eventId),
+        };
+      });
+
+      return { previousRegistrations, previousEvent, eventId };
+    },
+    onError: (error, eventId, context) => {
+      // Rollback on error
+      if (context?.previousRegistrations) {
+        queryClient.setQueryData(registrationKeys.lists(), context.previousRegistrations);
+      }
+      if (context?.previousEvent) {
+        queryClient.setQueryData(eventKeys.detail(eventId), context.previousEvent);
+      }
+      toast.error(error.response?.data?.message || 'Failed to unregister from event');
+    },
+    onSuccess: () => {
       toast.success('Successfully unregistered from event');
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to unregister from event');
+    onSettled: (data, error, eventId) => {
+      queryClient.invalidateQueries({ queryKey: registrationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      queryClient.invalidateQueries({ queryKey: eventKeys.lists() });
     },
   });
 };

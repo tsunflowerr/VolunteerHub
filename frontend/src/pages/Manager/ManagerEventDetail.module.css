@@ -133,6 +133,25 @@
   color: var(--text-white-color);
 }
 
+.completeBtn {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: var(--text-white-color);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.completeBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #43a047 0%, #1b5e20 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.completeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Hero */
 .hero {
   position: relative;

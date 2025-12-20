@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
   X,
   Heart,
@@ -12,6 +13,7 @@ import {
   Globe,
   Trash2,
   Edit2,
+  Flag,
 } from 'lucide-react';
 import styles from './PostDetailModal.module.css';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,8 +27,10 @@ import {
   useLikeComment,
 } from '../../hooks/useComment';
 import { usePost, useLikePost } from '../../hooks/usePosts';
+import ConfirmDialog from '../common/ConfirmDialog';
 
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
+import VerifiedBadge from '../common/VerifiedBadge';
 
 const formatTimeAgo = (dateString) => {
   if (!dateString) return '';
@@ -45,10 +49,13 @@ const CommentItem = ({
   onLike,
   onUpdate,
   onDelete,
+  onReport,
   currentUser,
   event, // Receive event for ABAC
   depth = 0,
+  maxDepth = 5, // Allow deeper nesting
 }) => {
+  const navigate = useNavigate();
   const [showReplies, setShowReplies] = useState(
     depth === 0 && comment.replies?.length > 0
   );
@@ -56,6 +63,7 @@ const CommentItem = ({
   const [editText, setEditText] = useState(comment.content);
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Safe check for author (in case user is deleted)
   const author = comment.author || {
@@ -78,11 +86,18 @@ const CommentItem = ({
     { comment, event }
   );
 
-  const handleSubmitReply = () => {
-    if (!replyText.trim()) return;
-    onReply(comment._id, replyText);
-    setReplyText('');
-    setIsReplying(false);
+  const handleSubmitReply = async () => {
+    if (!replyText.trim() || isSubmittingReply) return;
+    setIsSubmittingReply(true);
+    try {
+      await onReply(comment._id, replyText);
+      setReplyText('');
+      setIsReplying(false);
+      // Auto-expand replies after adding new one
+      setShowReplies(true);
+    } finally {
+      setIsSubmittingReply(false);
+    }
   };
 
   const handleUpdate = () => {
@@ -94,20 +109,34 @@ const CommentItem = ({
     setIsEditing(false);
   };
 
+  const handleAvatarClick = () => {
+    if (author._id && author._id !== 'deleted') {
+      navigate(`/profile/${author._id}`);
+    }
+  };
+
+  // Determine if this user can report the comment
+  const canReport = currentUser && author._id !== (currentUser._id || currentUser.id) && author._id !== 'deleted';
+
   return (
     <div
       className={styles.commentItem}
-      style={{ marginLeft: depth > 0 ? '44px' : 0 }}
+      style={{ marginLeft: depth > 0 ? Math.min(depth * 32, 96) + 'px' : 0 }}
     >
       <img
         src={author.avatar}
         alt={author.username}
         className={styles.commentAvatar}
+        onClick={handleAvatarClick}
+        style={{ cursor: author._id !== 'deleted' ? 'pointer' : 'default' }}
       />
       <div className={styles.commentContent}>
         <div className={styles.commentBubble}>
           <div className={styles.commentHeader}>
-            <span className={styles.commentAuthor}>{author.username}</span>
+            <span className={styles.commentAuthor} onClick={handleAvatarClick} style={{ cursor: author._id !== 'deleted' ? 'pointer' : 'default' }}>
+              {author.username}
+              <VerifiedBadge role={author.role} size={14} />
+            </span>
             {!isEditing && (
               <div className={styles.commentMenu}>
                 {canEdit && (
@@ -126,6 +155,15 @@ const CommentItem = ({
                     title="Delete"
                   >
                     <Trash2 size={14} />
+                  </button>
+                )}
+                {canReport && (
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => onReport?.(comment)}
+                    title="Report"
+                  >
+                    <Flag size={14} />
                   </button>
                 )}
               </div>
@@ -170,7 +208,7 @@ const CommentItem = ({
           >
             Like
           </button>
-          {depth === 0 && (
+          {depth < maxDepth && (
             <button
               className={styles.commentAction}
               onClick={() => setIsReplying(!isReplying)}
@@ -196,13 +234,17 @@ const CommentItem = ({
           >
             <input
               type="text"
-              placeholder={`Reply to ${comment.author.username}...`}
+              placeholder={`Reply to ${author.username}...`}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmitReply()}
+              disabled={isSubmittingReply}
             />
-            <button onClick={handleSubmitReply} disabled={!replyText.trim()}>
-              <Send size={16} />
+            <button 
+              onClick={handleSubmitReply} 
+              disabled={!replyText.trim() || isSubmittingReply}
+            >
+              {isSubmittingReply ? '...' : <Send size={16} />}
             </button>
           </motion.div>
         )}
@@ -237,9 +279,11 @@ const CommentItem = ({
                     onLike={onLike}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
+                    onReport={onReport}
                     currentUser={currentUser}
                     event={event}
-                    depth={1}
+                    depth={depth + 1}
+                    maxDepth={maxDepth}
                   />
                 ))}
               </>
@@ -257,10 +301,13 @@ const PostDetailModal = ({
   eventId, // Can also be got from params, but prop is fine
   currentUser,
   event,
+  onReportPost,
+  onReportComment,
 }) => {
   const { postId } = useParams();
   const [newComment, setNewComment] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [deleteCommentId, setDeleteCommentId] = useState(null);
   const commentInputRef = useRef(null);
 
   // Use postId from URL
@@ -322,9 +369,24 @@ const PostDetailModal = ({
   };
 
   const handleDeleteComment = (commentId) => {
-    if (window.confirm('Are you sure you want to delete this comment?')) {
-      deleteCommentMutation.mutate({ eventId, postId, commentId });
+    setDeleteCommentId(commentId);
+  };
+
+  const confirmDeleteComment = () => {
+    if (deleteCommentId) {
+      deleteCommentMutation.mutate(
+        { eventId, postId, commentId: deleteCommentId },
+        {
+          onSuccess: () => {
+            toast.success('Comment deleted successfully');
+          },
+          onError: (error) => {
+            toast.error(error.response?.data?.message || 'Failed to delete comment');
+          },
+        }
+      );
     }
+    setDeleteCommentId(null);
   };
 
   return (
@@ -354,13 +416,28 @@ const PostDetailModal = ({
               src={post.author.avatar}
               alt={post.author.username}
               className={styles.authorAvatar}
+              onClick={() => post.author._id && navigate(`/profile/${post.author._id}`)}
+              style={{ cursor: 'pointer' }}
             />
             <div className={styles.authorInfo}>
-              <span className={styles.authorName}>{post.author.username}</span>
+              <span className={styles.authorName} onClick={() => post.author._id && navigate(`/profile/${post.author._id}`)} style={{ cursor: 'pointer' }}>
+                {post.author.username}
+                <VerifiedBadge role={post.author.role} size={16} />
+              </span>
               <div className={styles.postMeta}>
                 <span>{formatTimeAgo(post.createdAt)}</span>
               </div>
             </div>
+            {/* Report Post Button */}
+            {currentUser && post.author._id !== (currentUser._id || currentUser.id) && (
+              <button
+                className={styles.reportPostBtn}
+                onClick={() => onReportPost?.(post)}
+                title="Report post"
+              >
+                <Flag size={16} />
+              </button>
+            )}
           </div>
 
           {/* Post Content */}
@@ -445,6 +522,7 @@ const PostDetailModal = ({
                   onLike={handleLikeComment}
                   onUpdate={handleUpdateComment}
                   onDelete={handleDeleteComment}
+                  onReport={onReportComment}
                   currentUser={currentUser}
                   event={event}
                 />
@@ -487,6 +565,18 @@ const PostDetailModal = ({
           </div>
         </div>
       </motion.div>
+
+      {/* Delete Comment Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteCommentId}
+        onClose={() => setDeleteCommentId(null)}
+        onConfirm={confirmDeleteComment}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment?"
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteCommentMutation.isPending}
+      />
     </motion.div>
   );
 };

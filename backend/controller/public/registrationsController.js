@@ -1,6 +1,7 @@
 import Registration from "../../models/registrationsModel.js";
 import Event from "../../models/eventModel.js";
 import { createAndSendNotification, generateNotificationContent, generateNewRegistrationContent } from '../../utils/notificationHelper.js';
+import { checkEventRequirements } from '../../utils/gamificationHelper.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
@@ -13,7 +14,8 @@ export async function registerEvent(req, res) {
         const volunteerId = req.user._id;
 
         const event = await Event.findById(eventId)
-            .select('name managerId capacity status startDate registrationsCount');
+            .select('name managerId capacity status startDate registrationsCount requirements')
+            .populate('requirements.requiredAchievements', 'name icon');
         
         if (!event) {
             return res.status(404).json({ success: false, message: "Event not found" });
@@ -31,6 +33,18 @@ export async function registerEvent(req, res) {
                 success: false, 
                 message: "Cannot register for an event that has already started" 
             });
+        }
+
+        // Check event requirements if they exist
+        if (event.requirements?.hasRequirements) {
+            const eligibility = await checkEventRequirements(volunteerId, eventId);
+            if (!eligibility.eligible) {
+                return res.status(403).json({
+                    success: false,
+                    message: "You do not meet the requirements for this event",
+                    requirements: eligibility.requirements
+                });
+            }
         }
         
         const existingRegistration = await Registration.findOne({ 

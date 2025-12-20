@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { format, parseISO, isValid } from 'date-fns';
-import { MapPin, Users } from 'lucide-react';
+import { MapPin, Users, Star, Lock } from 'lucide-react';
 import styles from './Event.module.css';
 import CategoryChip from '../common/Category/CategoryChip';
 
@@ -13,6 +13,8 @@ export function Event({
   managerId,
   registrationsCount = 0,
   category,
+  rewards,
+  requirements,
   onLearnMore,
 }) {
   //   const [isHovered, setIsHovered] = useState(false);
@@ -37,6 +39,10 @@ export function Event({
   const hostName = managerId?.username || 'Unknown';
   const hostAvatar = managerId?.avatar || null;
 
+  // Calculate total XP reward
+  const totalXP = (rewards?.pointsReward || 0) + (rewards?.bonusPoints || 0);
+  const hasRequirements = requirements?.hasRequirements;
+
   return (
     <div
       className={styles['event']}
@@ -55,6 +61,13 @@ export function Event({
           <div className={styles['event__date-day']}>{dateInfo.day}</div>
           <div className={styles['event__date-month']}>{dateInfo.month}</div>
         </div>
+
+        {/* Requirements Badge */}
+        {hasRequirements && (
+          <div className={styles['event__req-badge']}>
+            <Lock size={12} />
+          </div>
+        )}
       </div>
 
       {/* Content Section */}
@@ -137,6 +150,16 @@ Event.propTypes = {
       slug: PropTypes.string,
     })
   ),
+  rewards: PropTypes.shape({
+    pointsReward: PropTypes.number,
+    bonusPoints: PropTypes.number,
+    hoursCredit: PropTypes.number,
+  }),
+  requirements: PropTypes.shape({
+    hasRequirements: PropTypes.bool,
+    minLevel: PropTypes.number,
+    minPoints: PropTypes.number,
+  }),
   onLearnMore: PropTypes.func,
 };
 
@@ -145,6 +168,8 @@ Event.defaultProps = {
   managerId: null,
   registrationsCount: 0,
   category: [],
+  rewards: null,
+  requirements: null,
   onLearnMore: () => {},
 };
 

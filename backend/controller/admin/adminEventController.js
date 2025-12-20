@@ -6,6 +6,7 @@ import Registration from '../../models/registrationsModel.js';
 import Notification from '../../models/notificationModel.js';
 import User from '../../models/userModel.js';
 import redisClient from '../../config/redis.js';
+import cloudinary from '../../config/cloudinary.js';
 import {
   createAndSendNotification,
   generateNotificationContent,
@@ -14,6 +15,70 @@ import {
   invalidateCacheByPattern,
   invalidateCache,
 } from '../../utils/cacheHelper.js';
+
+// Get all events with pagination and filters
+export async function getAllEvents(req, res) {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const status = req.query.status;
+  const search = req.query.search;
+
+  try {
+    const filter = {};
+    if (status) filter.status = status;
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [events, total] = await Promise.all([
+      Event.find(filter)
+        .populate('managerId', 'username email avatar')
+        .populate('categories', 'name slug color description')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Event.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      events,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+        limit,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch events' });
+  }
+}
+
+// Get event by ID
+export async function getEventById(req, res) {
+  try {
+    const event = await Event.findById(req.params.id)
+      .populate('managerId', 'username email avatar')
+      .populate('categories', 'name slug color description')
+      .lean();
+
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    res.status(200).json({ success: true, event });
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch event' });
+  }
+}
 
 export async function getPendingEvents(req, res) {
   const page = parseInt(req.query.page) || 1;
@@ -217,5 +282,124 @@ export async function deleteEvent(req, res) {
   } catch (error) {
     console.error('Error deleting event:', error);
     res.status(500).json({ success: false, message: 'Failed to delete event' });
+  }
+}
+
+// Update event (Admin can edit any event)
+export async function updateEvent(req, res) {
+  const eventId = req.params.id;
+
+  try {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    const updateData = { ...req.body };
+
+    // Handle thumbnail upload
+    if (req.files?.thumbnail?.[0]) {
+      // Delete old thumbnail from cloudinary if exists
+      if (event.thumbnail) {
+        const publicId = event.thumbnail.split('/').pop().split('.')[0];
+        try {
+          await cloudinary.uploader.destroy(`events/${publicId}`);
+        } catch (err) {
+          console.error('Error deleting old thumbnail:', err);
+        }
+      }
+      updateData.thumbnail = req.files.thumbnail[0].path;
+    }
+
+    // Handle images upload
+    if (req.files?.images?.length > 0) {
+      // Delete old images from cloudinary
+      if (event.images?.length > 0) {
+        for (const imgUrl of event.images) {
+          const publicId = imgUrl.split('/').pop().split('.')[0];
+          try {
+            await cloudinary.uploader.destroy(`events/${publicId}`);
+          } catch (err) {
+            console.error('Error deleting old image:', err);
+          }
+        }
+      }
+      updateData.images = req.files.images.map((file) => file.path);
+    }
+
+    // Handle categories
+    if (updateData.categories && typeof updateData.categories === 'string') {
+      try {
+        updateData.categories = JSON.parse(updateData.categories);
+      } catch {
+        updateData.categories = [updateData.categories];
+      }
+    }
+
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, updateData, {
+      new: true,
+      runValidators: true,
+    })
+      .populate('managerId', 'username email avatar')
+      .populate('categories', 'name slug color description');
+
+    // Invalidate cache
+    await invalidateCacheByPattern('events:*');
+    await invalidateCacheByPattern('search:events:*');
+    await invalidateCacheByPattern(`event:detail:*`);
+
+    res.status(200).json({
+      success: true,
+      message: 'Event updated successfully',
+      event: updatedEvent,
+    });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ success: false, message: 'Failed to update event' });
+  }
+}
+
+// Admin delete any comment
+export async function deleteComment(req, res) {
+  try {
+    const { commentId } = req.params;
+
+    const comment = await Comment.findById(commentId).select('author postId eventId parentComment');
+    if (!comment) {
+      return res.status(404).json({ success: false, message: 'Comment not found' });
+    }
+
+    // Find all child comments (nested replies)
+    const childComments = await Comment.find({ parentComment: commentId }).select('_id');
+    const allCommentIds = [commentId, ...childComments.map((c) => c._id)];
+    const totalDeleteCount = allCommentIds.length;
+
+    // Delete likes, notifications, and comments
+    await Promise.all([
+      Like.deleteMany({
+        likeableId: { $in: allCommentIds.map((id) => id.toString()) },
+        likeableType: 'comment',
+      }),
+      Notification.deleteMany({
+        $or: allCommentIds.map((id) => ({ content: { $regex: id.toString() } })),
+      }),
+      Comment.deleteMany({
+        $or: [{ _id: commentId }, { parentComment: commentId }],
+      }),
+    ]);
+
+    // Update post comment count
+    await Post.findByIdAndUpdate(comment.postId, {
+      $inc: { commentsCount: -totalDeleteCount },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Comment deleted successfully',
+      deletedCount: totalDeleteCount,
+    });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete comment' });
   }
 }

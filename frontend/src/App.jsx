@@ -14,6 +14,7 @@ import UserProfile from './pages/UserProfile/UserProfile';
 import EventDetail from './pages/EventDetail/EventDetail';
 import EventDiscussion from './pages/EventDiscussion/EventDiscussion';
 import SearchResult from './pages/SearchResult/SearchResult';
+import Ranking from './pages/Ranking/Ranking';
 import ManagerDashboard from './pages/Manager/ManagerDashboard';
 import ManagerEvents from './pages/Manager/ManagerEvents';
 import ManagerEventForm from './pages/Manager/ManagerEventForm';
@@ -26,6 +27,8 @@ import AdminDashboard from './pages/Admin/AdminDashboard';
 import UsersManagement from './pages/Admin/UsersManagement';
 import CategoriesManagement from './pages/Admin/CategoriesManagement';
 import EventsManagement from './pages/Admin/EventsManagement';
+import ReportsManagement from './pages/Admin/ReportsManagement';
+import GamificationManagement from './pages/Admin/GamificationManagement';
 import { ExportData } from './components/Admin';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
@@ -54,6 +57,7 @@ const App = () => {
           }
         />
         <Route path="profile/:id" element={<UserProfile />} />
+        <Route path="ranking" element={<Ranking />} />
         <Route
           path="myevents"
           element={
@@ -117,6 +121,8 @@ const App = () => {
         <Route path="events" element={<EventsManagement />} />
         <Route path="users" element={<UsersManagement />} />
         <Route path="categories" element={<CategoriesManagement />} />
+        <Route path="gamification" element={<GamificationManagement />} />
+        <Route path="reports" element={<ReportsManagement />} />
         <Route path="export" element={<ExportData />} />
       </Route>
       

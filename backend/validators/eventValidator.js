@@ -56,6 +56,22 @@ export const createAndUpdateEventSchema = Joi.object(
             'date.base': `"endDate" should be a type of 'date'`,
             'date.greater': `"endDate" must be greater than startDate`,
         }),
+        // Gamification - Rewards
+        rewards: Joi.object({
+            pointsReward: Joi.number().integer().min(0).default(10),
+            hoursCredit: Joi.number().min(0).default(0),
+            bonusPoints: Joi.number().integer().min(0).default(0),
+            bonusReason: Joi.string().max(200).allow('').optional(),
+        }).optional(),
+        // Gamification - Requirements
+        requirements: Joi.object({
+            hasRequirements: Joi.boolean().default(false),
+            minLevel: Joi.number().integer().min(1).default(1),
+            minPoints: Joi.number().integer().min(0).default(0),
+            requiredAchievements: Joi.array().items(Joi.string().hex().length(24)).default([]),
+            minEventsCompleted: Joi.number().integer().min(0).default(0),
+            requirementDescription: Joi.string().max(500).allow('').optional(),
+        }).optional(),
     }
 );
 
@@ -134,4 +150,74 @@ export const updateEventStatusSchema = Joi.object({
             'any.only': `"status" must be one of: approved, rejected, cancelled, completed`,
             'any.required': `"status" is required`,
         }),
+})
+
+// ====== Validation cho Admin Update Event (Body) ======
+export const adminUpdateEventSchema = Joi.object({
+    name: Joi.string().min(3).max(100).optional().messages({
+        'string.base': `"name" should be a type of 'text'`,
+        'string.min': `"name" should have a minimum length of {#limit}`,
+        'string.max': `"name" should have a maximum length of {#limit}`,
+    }),
+    description: Joi.string().min(10).max(1000).optional().messages({
+        'string.base': `"description" should be a type of 'text'`,
+        'string.min': `"description" should have a minimum length of {#limit}`,
+        'string.max': `"description" should have a maximum length of {#limit}`,
+    }),
+    categories: Joi.array().items(Joi.string().hex().length(24)).min(1).single().optional().messages({
+        'array.base': `"categories" should be an array`,
+        'array.min': `"categories" must contain at least 1 category`,
+        'string.hex': `"categories" items must be valid ObjectIds`,
+    }),
+    activities: Joi.string().max(2000).optional().allow('').messages({
+        'string.base': `"activities" should be a type of 'text'`,
+        'string.max': `"activities" should have a maximum length of {#limit}`,
+    }),
+    prepare: Joi.string().max(1000).optional().allow('').messages({
+        'string.base': `"prepare" should be a type of 'text'`,
+        'string.max': `"prepare" should have a maximum length of {#limit}`,
+    }),
+    location: Joi.string().min(5).max(200).optional().messages({
+        'string.base': `"location" should be a type of 'text'`,
+        'string.min': `"location" should have a minimum length of {#limit}`,
+        'string.max': `"location" should have a maximum length of {#limit}`,
+    }),
+    thumbnail: Joi.string().uri().optional().messages({
+        'string.base': `"thumbnail" should be a type of 'text'`,
+        'string.uri': `"thumbnail" must be a valid URI`,
+    }),
+    images: Joi.array().items(Joi.string().uri()).optional().messages({
+        'array.base': `"images" should be an array`,
+    }),
+    capacity: Joi.number().integer().min(1).optional().messages({
+        'number.base': `"capacity" should be a type of 'number'`,
+        'number.integer': `"capacity" must be an integer`,
+        'number.min': `"capacity" should be at least {#limit}`,
+    }),
+    startDate: Joi.date().optional().messages({
+        'date.base': `"startDate" should be a type of 'date'`,
+    }),
+    endDate: Joi.date().optional().messages({
+        'date.base': `"endDate" should be a type of 'date'`,
+    }),
+    status: Joi.string().valid('pending', 'approved', 'rejected', 'cancelled', 'completed').optional().messages({
+        'string.base': `"status" should be a type of 'text'`,
+        'any.only': `"status" must be one of: pending, approved, rejected, cancelled, completed`,
+    }),
+    // Gamification - Rewards
+    rewards: Joi.object({
+        pointsReward: Joi.number().integer().min(0).default(10),
+        hoursCredit: Joi.number().min(0).default(0),
+        bonusPoints: Joi.number().integer().min(0).default(0),
+        bonusReason: Joi.string().max(200).allow('').optional(),
+    }).optional(),
+    // Gamification - Requirements
+    requirements: Joi.object({
+        hasRequirements: Joi.boolean().default(false),
+        minLevel: Joi.number().integer().min(1).default(1),
+        minPoints: Joi.number().integer().min(0).default(0),
+        requiredAchievements: Joi.array().items(Joi.string().hex().length(24)).default([]),
+        minEventsCompleted: Joi.number().integer().min(0).default(0),
+        requirementDescription: Joi.string().max(500).allow('').optional(),
+    }).optional(),
 })

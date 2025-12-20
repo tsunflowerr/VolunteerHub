@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   MoreVertical,
   Edit,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useManagerEvents, useDeleteEvent } from '../../hooks/useManager';
 import { Event } from '../../components/EventCard/Event';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import styles from './ManagerEvents.module.css';
 
 const ManagerEvents = () => {
@@ -22,6 +24,7 @@ const ManagerEvents = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [deleteEventId, setDeleteEventId] = useState(null);
 
   const events = useMemo(() => data?.events || [], [data]);
 
@@ -91,13 +94,25 @@ const ManagerEvents = () => {
         navigate(`/manager/events/edit/${eventId}`);
         break;
       case 'delete':
-        if (window.confirm('Are you sure you want to delete this event?')) {
-          deleteMutation.mutate(eventId);
-        }
+        setDeleteEventId(eventId);
         break;
       default:
         break;
     }
+  };
+
+  const confirmDelete = () => {
+    if (deleteEventId) {
+      deleteMutation.mutate(deleteEventId, {
+        onSuccess: () => {
+          toast.success('Event deleted successfully');
+        },
+        onError: (error) => {
+          toast.error(error.response?.data?.message || 'Failed to delete event');
+        },
+      });
+    }
+    setDeleteEventId(null);
   };
 
   const toggleMenu = (eventId) => {
@@ -275,6 +290,18 @@ const ManagerEvents = () => {
           onClick={() => setOpenMenuId(null)}
         ></div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteEventId}
+        onClose={() => setDeleteEventId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

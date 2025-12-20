@@ -6,6 +6,7 @@ import {
   createAndSendNotification,
   generateNotificationContent,
 } from '../../utils/notificationHelper.js';
+import { processEventCompletion, awardManualAchievement } from '../../utils/gamificationHelper.js';
 import redisClient from '../../config/redis.js';
 import {
   invalidateCache,
@@ -81,6 +82,22 @@ export async function updateRegistrationStatus(req, res) {
     registration.status = status;
     registration.reviewedAt = new Date();
     await registration.save();
+
+    // Process gamification rewards when marking as completed
+    if (status === 'completed') {
+      try {
+        const gamificationResult = await processEventCompletion(
+          registration.userId,
+          event._id
+        );
+        if (gamificationResult.success) {
+          console.log(`Gamification processed for user ${registration.userId}:`, gamificationResult.results);
+        }
+      } catch (gamificationError) {
+        console.error('Error processing gamification:', gamificationError);
+        // Don't fail the request if gamification fails
+      }
+    }
 
     // Invalidate event-related caches
     await invalidateCache(`event:detail:${event._id}`);
@@ -243,7 +260,7 @@ export async function getRegistrationsByStatus(req, res) {
           'eventId',
           'name category location capacity status startDate endDate registrationsCount'
         )
-        .populate('userId', 'username email avatar')
+        .populate('userId', 'username email avatar gamification')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(Number(limit))
@@ -263,6 +280,75 @@ export async function getRegistrationsByStatus(req, res) {
     });
   } catch (error) {
     console.error('Error fetching registrations by status:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+/**
+ * Get available achievements that manager can award (manual achievements)
+ */
+export async function getAvailableAchievements(req, res) {
+  try {
+    const { AchievementDefinition } = await import('../../models/achievementModel.js');
+    
+    // Get manual achievements that managers can award
+    const achievements = await AchievementDefinition.find({
+      isActive: true,
+      'criteria.type': 'manual'
+    })
+      .sort({ displayOrder: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: achievements
+    });
+  } catch (error) {
+    console.error('Error getting available achievements:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+/**
+ * Award an achievement to a volunteer
+ */
+export async function awardAchievementToVolunteer(req, res) {
+  try {
+    const { achievementId, userId, reason, eventId } = req.body;
+    const managerId = req.user._id;
+
+    // Verify the event belongs to this manager (if eventId provided)
+    if (eventId) {
+      const event = await Event.findById(eventId);
+      if (!event) {
+        return res.status(404).json({ success: false, message: 'Event not found' });
+      }
+      if (event.managerId.toString() !== managerId.toString()) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'You can only award achievements for your own events' 
+        });
+      }
+    }
+
+    // Use the gamification helper to award the achievement
+    const result = await awardManualAchievement(userId, achievementId, managerId, eventId, reason);
+
+    if (!result.success) {
+      return res.status(400).json({ success: false, message: result.error });
+    }
+
+    // Invalidate user's gamification cache
+    await invalidateCacheByPattern(`gamification:profile:${userId}`);
+    await invalidateCacheByPattern(`user:${userId}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Achievement "${result.achievement.name}" awarded successfully`,
+      data: result.achievement
+    });
+  } catch (error) {
+    console.error('Error awarding achievement:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }

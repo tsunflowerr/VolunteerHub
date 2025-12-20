@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { postApi } from '../api/posts';
+import { notificationKeys } from './useNotifications';
 import toast from 'react-hot-toast';
 
 export const postKeys = {
@@ -78,13 +79,40 @@ export const useDeletePost = () => {
 
   return useMutation({
     mutationFn: postApi.deletePost,
-    onSuccess: (data, variables) => {
+    onMutate: async (variables) => {
+      const { eventId, postId } = variables;
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: postKeys.byEvent(eventId) });
+
+      // Snapshot previous value
+      const previousPosts = queryClient.getQueryData(postKeys.byEvent(eventId));
+
+      // Optimistically remove the post from list
+      queryClient.setQueryData(postKeys.byEvent(eventId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.filter((post) => post._id !== postId),
+          })),
+        };
+      });
+
+      return { previousPosts };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousPosts) {
+        queryClient.setQueryData(postKeys.byEvent(variables.eventId), context.previousPosts);
+      }
+      toast.error(err.response?.data?.message || 'Failed to delete post');
+    },
+    onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: postKeys.byEvent(variables.eventId) });
       queryClient.invalidateQueries({ queryKey: postKeys.media(variables.eventId) });
-      toast.success('Post deleted successfully');
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to delete post');
+      if (!error) toast.success('Post deleted successfully');
     },
   });
 };
@@ -94,13 +122,72 @@ export const useLikePost = () => {
 
   return useMutation({
     mutationFn: postApi.likePost,
-    onSuccess: (data, variables) => {
-      // Invalidate posts list to reflect like count/status
+    onMutate: async (variables) => {
+      const { eventId, postId } = variables;
+      
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: postKeys.byEvent(eventId) });
+      await queryClient.cancelQueries({ queryKey: postKeys.detail(postId) });
+
+      // Snapshot previous values
+      const previousPosts = queryClient.getQueryData(postKeys.byEvent(eventId));
+      const previousPost = queryClient.getQueryData(postKeys.detail(postId));
+
+      // Optimistically update posts list (for infinite query)
+      queryClient.setQueryData(postKeys.byEvent(eventId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            posts: page.posts.map((post) =>
+              post._id === postId
+                ? {
+                    ...post,
+                    isLiked: !post.isLiked,
+                    likesCount: post.isLiked
+                      ? Math.max(0, (post.likesCount || 0) - 1)
+                      : (post.likesCount || 0) + 1,
+                  }
+                : post
+            ),
+          })),
+        };
+      });
+
+      // Optimistically update post detail
+      queryClient.setQueryData(postKeys.detail(postId), (old) => {
+        if (!old || !old.post) return old;
+        return {
+          ...old,
+          post: {
+            ...old.post,
+            isLiked: !old.post.isLiked,
+            likesCount: old.post.isLiked
+              ? Math.max(0, (old.post.likesCount || 0) - 1)
+              : (old.post.likesCount || 0) + 1,
+          },
+        };
+      });
+
+      return { previousPosts, previousPost };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousPosts) {
+        queryClient.setQueryData(postKeys.byEvent(variables.eventId), context.previousPosts);
+      }
+      if (context?.previousPost) {
+        queryClient.setQueryData(postKeys.detail(variables.postId), context.previousPost);
+      }
+      toast.error(err.response?.data?.message || 'Failed to like post');
+    },
+    onSettled: (data, error, variables) => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: postKeys.byEvent(variables.eventId) });
       queryClient.invalidateQueries({ queryKey: postKeys.detail(variables.postId) });
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to like post');
+      // Invalidate notifications for the post author to see like notification
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 };

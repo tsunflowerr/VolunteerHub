@@ -13,6 +13,8 @@ import {
   Save,
   Eye,
   Tag,
+  Trophy,
+  Star,
 } from 'lucide-react';
 import {
   FormField,
@@ -24,6 +26,7 @@ import {
 import LoadingOverlay from '../../components/common/LoadingOverlay';
 import { useCreateEvent, useUpdateEvent } from '../../hooks/useManager';
 import { useEvent } from '../../hooks/useEvents';
+import { useAllAchievements, useAllLevels } from '../../hooks/useGamification';
 import useAuth from '../../hooks/useAuth.js';
 
 import styles from './ManagerEventForm.module.css';
@@ -116,12 +119,30 @@ const ManagerEventForm = () => {
     category: [],
     capacity: '',
     thumbnail: '',
+    // Gamification - Rewards
+    pointsReward: 10,
+    hoursCredit: 0,
+    bonusPoints: 0,
+    bonusReason: '',
+    // Gamification - Requirements
+    hasRequirements: false,
+    minLevel: 1,
+    minPoints: 0,
+    requiredAchievements: [],
+    minEventsCompleted: 0,
+    requirementDescription: '',
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState('');
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [showPreview, setShowPreview] = useState(false);
+
+  // Gamification data
+  const { data: achievementsData } = useAllAchievements();
+  const { data: levelsData } = useAllLevels();
+  const achievements = achievementsData?.data || [];
+  const levels = levelsData?.data || [];
 
   // Loading state from mutations
   const loading = createEvent.isPending || updateEvent.isPending;
@@ -141,6 +162,18 @@ const ManagerEventForm = () => {
         category: event.categories?.map((c) => c._id || c) || [],
         capacity: event.capacity || '',
         thumbnail: event.thumbnail || '',
+        // Gamification - Rewards
+        pointsReward: event.rewards?.pointsReward ?? 10,
+        hoursCredit: event.rewards?.hoursCredit ?? 0,
+        bonusPoints: event.rewards?.bonusPoints ?? 0,
+        bonusReason: event.rewards?.bonusReason || '',
+        // Gamification - Requirements
+        hasRequirements: event.requirements?.hasRequirements ?? false,
+        minLevel: event.requirements?.minLevel ?? 1,
+        minPoints: event.requirements?.minPoints ?? 0,
+        requiredAchievements: event.requirements?.requiredAchievements || [],
+        minEventsCompleted: event.requirements?.minEventsCompleted ?? 0,
+        requirementDescription: event.requirements?.requirementDescription || '',
       });
       setThumbnailPreview(event.thumbnail || '');
     }
@@ -261,6 +294,22 @@ const ManagerEventForm = () => {
       
       // Append categories
       formData.category.forEach(cat => payload.append('categories', cat));
+
+      // Append gamification rewards
+      payload.append('rewards[pointsReward]', formData.pointsReward || 10);
+      payload.append('rewards[hoursCredit]', formData.hoursCredit || 0);
+      payload.append('rewards[bonusPoints]', formData.bonusPoints || 0);
+      payload.append('rewards[bonusReason]', formData.bonusReason || '');
+
+      // Append gamification requirements
+      payload.append('requirements[hasRequirements]', formData.hasRequirements);
+      if (formData.hasRequirements) {
+        payload.append('requirements[minLevel]', formData.minLevel || 1);
+        payload.append('requirements[minPoints]', formData.minPoints || 0);
+        payload.append('requirements[minEventsCompleted]', formData.minEventsCompleted || 0);
+        payload.append('requirements[requirementDescription]', formData.requirementDescription || '');
+        formData.requiredAchievements.forEach(ach => payload.append('requirements[requiredAchievements]', ach));
+      }
 
       // Append thumbnail
       if (thumbnailFile) {
@@ -467,6 +516,155 @@ const ManagerEventForm = () => {
             />
           </FormField>
 
+          {/* Gamification Section - Rewards */}
+          <div className={styles.gamificationSection}>
+            <h3 className={styles.sectionTitle}>
+              <Trophy size={20} />
+              Event Rewards
+            </h3>
+            <p className={styles.sectionDesc}>
+              Configure the points and credits volunteers earn upon completing this event.
+            </p>
+
+            <div className={styles.dateRow}>
+              <FormField label="Points Reward" icon={Star}>
+                <TextInput
+                  type="number"
+                  name="pointsReward"
+                  value={formData.pointsReward}
+                  onChange={handleChange}
+                  placeholder="Points for completion"
+                  min="0"
+                />
+              </FormField>
+
+              <FormField label="Hours Credit" icon={Calendar}>
+                <TextInput
+                  type="number"
+                  name="hoursCredit"
+                  value={formData.hoursCredit}
+                  onChange={handleChange}
+                  placeholder="Volunteer hours credit"
+                  min="0"
+                  step="0.5"
+                />
+              </FormField>
+            </div>
+
+            <div className={styles.dateRow}>
+              <FormField label="Bonus Points" icon={Star}>
+                <TextInput
+                  type="number"
+                  name="bonusPoints"
+                  value={formData.bonusPoints}
+                  onChange={handleChange}
+                  placeholder="Additional bonus points"
+                  min="0"
+                />
+              </FormField>
+
+              <FormField label="Bonus Reason">
+                <TextInput
+                  name="bonusReason"
+                  value={formData.bonusReason}
+                  onChange={handleChange}
+                  placeholder="e.g., First event of the month"
+                />
+              </FormField>
+            </div>
+          </div>
+
+          {/* Gamification Section - Requirements */}
+          <div className={styles.gamificationSection}>
+            <h3 className={styles.sectionTitle}>
+              <Star size={20} />
+              Event Requirements
+            </h3>
+            <p className={styles.sectionDesc}>
+              Set minimum requirements for volunteers to register for this event.
+            </p>
+
+            <div className={styles.checkboxGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="hasRequirements"
+                  checked={formData.hasRequirements}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasRequirements: e.target.checked }))}
+                />
+                <span>Enable registration requirements</span>
+              </label>
+            </div>
+
+            {formData.hasRequirements && (
+              <>
+                <FormField label="Minimum Level">
+                  <select
+                    name="minLevel"
+                    value={formData.minLevel}
+                    onChange={handleChange}
+                    className={styles.select}
+                  >
+                    {levels.map(level => (
+                      <option key={level._id} value={level.level}>
+                        Level {level.level}: {level.name}
+                      </option>
+                    ))}
+                    {levels.length === 0 && <option value="1">Level 1</option>}
+                  </select>
+                </FormField>
+
+                <FormField label="Minimum Events Completed">
+                  <TextInput
+                    type="number"
+                    name="minEventsCompleted"
+                    value={formData.minEventsCompleted}
+                    onChange={handleChange}
+                    placeholder="Number of events completed"
+                    min="0"
+                  />
+                </FormField>
+
+                <FormField label="Required Achievements">
+                  <div className={styles.achievementsList}>
+                    {achievements.map(ach => (
+                      <label key={ach._id} className={styles.achievementItem}>
+                        <input
+                          type="checkbox"
+                          checked={formData.requiredAchievements.includes(ach._id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              requiredAchievements: checked
+                                ? [...prev.requiredAchievements, ach._id]
+                                : prev.requiredAchievements.filter(id => id !== ach._id)
+                            }));
+                          }}
+                        />
+                        <span className={styles.achievementIcon}>{ach.icon}</span>
+                        <span>{ach.name}</span>
+                      </label>
+                    ))}
+                    {achievements.length === 0 && (
+                      <p className={styles.noData}>No achievements available</p>
+                    )}
+                  </div>
+                </FormField>
+
+                <FormField label="Requirement Description">
+                  <TextArea
+                    name="requirementDescription"
+                    value={formData.requirementDescription}
+                    onChange={handleChange}
+                    placeholder="Explain the requirements to volunteers..."
+                    rows={2}
+                  />
+                </FormField>
+              </>
+            )}
+          </div>
+
           {/* Thumbnail */}
           <FormField
             label="Event Thumbnail"
@@ -523,6 +721,21 @@ const ManagerEventForm = () => {
             description: formData.about,
             thumbnail: thumbnailPreview,
             managerId: user,
+            // Map gamification fields to the expected structure
+            rewards: {
+              pointsReward: formData.pointsReward || 10,
+              hoursCredit: formData.hoursCredit || 0,
+              bonusPoints: formData.bonusPoints || 0,
+              bonusReason: formData.bonusReason || '',
+            },
+            requirements: {
+              hasRequirements: formData.hasRequirements,
+              minLevel: formData.minLevel || 1,
+              minPoints: formData.minPoints || 0,
+              requiredAchievements: formData.requiredAchievements || [],
+              minEventsCompleted: formData.minEventsCompleted || 0,
+              requirementDescription: formData.requirementDescription || '',
+            },
           }}
           onClose={() => setShowPreview(false)}
         />

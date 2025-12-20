@@ -26,6 +26,11 @@ export const managerApi = {
     return response.data;
   },
 
+  completeEventEarly: async (id) => {
+    const response = await api.patch(`/manager/events/${id}/complete`);
+    return response.data;
+  },
+
   getMyEvents: async (params) => {
     const response = await api.get('/manager/events', { params });
     return response.data;

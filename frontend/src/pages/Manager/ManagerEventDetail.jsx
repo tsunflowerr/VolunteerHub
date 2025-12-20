@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft,
   Calendar,
@@ -13,14 +14,17 @@ import {
   Clock,
   AlertCircle,
   MessageSquare,
+  Flag,
 } from 'lucide-react';
 import VolunteerListDialog from '../../components/Manager/VolunteerListDialog';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import CategoryChip from '../../components/common/Category/CategoryChip';
 import { useEvent, eventKeys } from '../../hooks/useEvents';
 import {
   useDeleteEvent,
   useEventVolunteers,
   useUpdateRegistrationStatus,
+  useCompleteEventEarly,
 } from '../../hooks/useManager';
 import styles from './ManagerEventDetail.module.css';
 
@@ -29,6 +33,8 @@ const ManagerEventDetail = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showVolunteersDialog, setShowVolunteersDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
 
   // Data Fetching
   const {
@@ -40,6 +46,7 @@ const ManagerEventDetail = () => {
     useEventVolunteers(id);
   const deleteMutation = useDeleteEvent();
   const updateStatusMutation = useUpdateRegistrationStatus();
+  const completeEventMutation = useCompleteEventEarly();
 
   const event = eventData?.event;
   // Map volunteers to include completionStatus for compatibility
@@ -69,14 +76,38 @@ const ManagerEventDetail = () => {
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: eventKeys.all });
-          navigate('/manager/events');
-        },
-      });
-    }
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: eventKeys.all });
+        toast.success('Event deleted successfully');
+        navigate('/manager/events');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to delete event');
+      },
+    });
+    setShowDeleteDialog(false);
+  };
+
+  const handleCompleteEarly = () => {
+    setShowCompleteDialog(true);
+  };
+
+  const confirmCompleteEarly = () => {
+    completeEventMutation.mutate(id, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: eventKeys.all });
+        toast.success('Event marked as completed');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to complete event');
+      },
+    });
+    setShowCompleteDialog(false);
   };
 
   if (isEventLoading || isVolunteersLoading) {
@@ -121,6 +152,16 @@ const ManagerEventDetail = () => {
             <button className={styles.discussionBtn} onClick={handleDiscussion}>
               <MessageSquare size={18} />
               Discussion
+            </button>
+          )}
+          {event.status === 'approved' && (
+            <button 
+              className={styles.completeBtn} 
+              onClick={handleCompleteEarly}
+              disabled={completeEventMutation.isPending}
+            >
+              <Flag size={18} />
+              {completeEventMutation.isPending ? 'Completing...' : 'Complete Early'}
             </button>
           )}
           <button className={styles.editBtn} onClick={handleEdit}>
@@ -340,6 +381,30 @@ const ManagerEventDetail = () => {
           onMarkComplete={handleMarkComplete}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmDelete}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
+
+      {/* Complete Early Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showCompleteDialog}
+        onClose={() => setShowCompleteDialog(false)}
+        onConfirm={confirmCompleteEarly}
+        title="Complete Event Early"
+        message="Are you sure you want to mark this event as completed early? This will allow you to mark volunteers as completed."
+        confirmText="Complete Event"
+        variant="success"
+        isLoading={completeEventMutation.isPending}
+      />
     </div>
   );
 };
