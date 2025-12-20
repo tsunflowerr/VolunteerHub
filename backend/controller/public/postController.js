@@ -6,6 +6,7 @@ import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
 import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 export async function createPost(req, res) {
     try {
@@ -55,14 +56,20 @@ export async function createPost(req, res) {
         }
         
         if(shouldSendNotification) {
-            const newNotification = new Notification({
-                recipient: event.managerId,
-                sender: req.user._id,
-                type: 'new_post',
-                content: `A new post has been created in your event "${event.name}".`,
-                event: eventId,
-            });
-            await newNotification.save();
+            await createAndSendNotification(
+                {
+                    recipient: event.managerId,
+                    sender: req.user._id,
+                    type: 'new_post',
+                    content: `A new post has been created in your event "${event.name}".`,
+                    event: eventId,
+                },
+                {
+                    title: 'New Post! 📝',
+                    body: `${req.user.username} created a post in "${event.name}"`,
+                    icon: req.user.avatar || '/default-avatar.png',
+                }
+            );
             try {
                 await redisClient.setEx(cacheKey, 300, '1');
             }

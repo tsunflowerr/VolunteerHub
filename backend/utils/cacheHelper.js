@@ -3,11 +3,11 @@ import redisClient from '../config/redis.js';
 // Định nghĩa TTL (Time To Live) cho các loại cache khác nhau
 export const CACHE_TTL = {
     CATEGORIES: 3600,        // 1 giờ - Categories ít thay đổi
-    EVENTS_LIST: 600,        // 10 phút - Danh sách events
-    EVENT_DETAIL: 1800,      // 30 phút - Chi tiết event
+    EVENTS_LIST: 300,        // 5 phút - Danh sách events (giảm từ 10 phút)
+    EVENT_DETAIL: 1800,      // 30 phút - Chi tiết event (không dùng nữa)
     USER_PROFILE: 1800,      // 30 phút - Profile user
-    TRENDING: 300,           // 5 phút - Trending events (thay đổi nhanh)
-    DASHBOARD: 300,          // 5 phút - Dashboard data
+    TRENDING: 180,           // 3 phút - Trending events (giảm từ 5 phút, thay đổi nhanh)
+    DASHBOARD: 180,          // 3 phút - Dashboard data (giảm từ 5 phút)
     POSTS: 300               // 5 phút - Posts trong event wall
 };
 

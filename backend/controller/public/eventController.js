@@ -107,15 +107,11 @@ export async function getEventById(req, res) {
                 console.error("Error setting Redis view cache:", redisError);
             }
         } else {
-            // Đã view rồi → dùng cache
-            event = await getOrSetCache(
-                cacheKey,
-                CACHE_TTL.EVENT_DETAIL,
-                () => Event.findById(eventId)
-                    .populate('managerId', 'username email avatar')
-                    .populate('categories')
-                    .lean()
-            );
+            // Đã view rồi → fetch trực tiếp từ DB (không cache vì registrationsCount thay đổi thường xuyên)
+            event = await Event.findById(eventId)
+                .populate('managerId', 'username email avatar')
+                .populate('categories')
+                .lean();
         }
         
         if(!event) {

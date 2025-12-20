@@ -132,7 +132,15 @@ export async function createAndSendNotification(notificationData, pushPayload) {
             return { notification, pushSent: false };
         }
         
-        const payload = JSON.stringify(pushPayload);
+        // Include notification type and status in push payload for frontend to handle cache invalidation
+        const enrichedPayload = {
+            ...pushPayload,
+            type: notificationData.type,
+            relatedStatus: notificationData.relatedStatus,
+            eventId: notificationData.event?.toString() || null,
+        };
+        
+        const payload = JSON.stringify(enrichedPayload);
         console.log(`Sending push notification to ${subscription.endpoint.substring(0, 50)}...`);
 
         await webpush.sendNotification(subscription, payload);

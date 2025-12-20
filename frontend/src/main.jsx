@@ -52,6 +52,80 @@ if ('serviceWorker' in navigator) {
       // Invalidate notification queries to refresh the notification bell immediately
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       console.log('Invalidated notification queries due to push notification');
+      
+      const payload = event.data.payload;
+      const notificationType = payload?.type;
+      const relatedStatus = payload?.relatedStatus;
+      const eventId = payload?.eventId;
+      
+      // Handle different notification types and invalidate relevant caches
+      switch (notificationType) {
+        // Registration status updates (confirmed, cancelled, completed)
+        case 'registration_status_update':
+          queryClient.invalidateQueries({ queryKey: ['events'] });
+          queryClient.invalidateQueries({ queryKey: ['registrations'] });
+          queryClient.invalidateQueries({ queryKey: ['manager'] }); // Manager dashboard
+          // Also invalidate specific event detail if eventId is provided
+          if (eventId) {
+            queryClient.invalidateQueries({ queryKey: ['events', 'detail', eventId] });
+            console.log(`Invalidated specific event detail: ${eventId}`);
+          }
+          console.log('Invalidated event/registration queries due to registration status update');
+          break;
+          
+        // Event status updates (approved, rejected, cancelled)
+        case 'event_status_update':
+          queryClient.invalidateQueries({ queryKey: ['events'] });
+          queryClient.invalidateQueries({ queryKey: ['manager'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+          if (eventId) {
+            queryClient.invalidateQueries({ queryKey: ['events', 'detail', eventId] });
+          }
+          console.log('Invalidated event queries due to event status update');
+          break;
+          
+        // Gamification notifications (level up, achievement, points)
+        case 'level_up':
+        case 'achievement_earned':
+        case 'points_earned':
+          queryClient.invalidateQueries({ queryKey: ['gamification'] });
+          queryClient.invalidateQueries({ queryKey: ['user'] }); // User profile with gamification data
+          queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
+          console.log('Invalidated gamification queries due to:', notificationType);
+          break;
+          
+        // New post in event
+        case 'new_post':
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+          queryClient.invalidateQueries({ queryKey: ['events'] }); // postsCount updates
+          if (eventId) {
+            queryClient.invalidateQueries({ queryKey: ['events', 'detail', eventId] });
+          }
+          console.log('Invalidated posts/events queries due to new post');
+          break;
+          
+        // Like/comment notifications
+        case 'like':
+        case 'comment':
+        case 'comment_reply':
+          // These don't typically need cache invalidation for the recipient
+          // The data updates are for the content owner, not the person who liked/commented
+          break;
+          
+        // Warning from admin
+        case 'warning':
+          queryClient.invalidateQueries({ queryKey: ['user'] });
+          console.log('Invalidated user queries due to warning');
+          break;
+          
+        default:
+          // For unknown types, check relatedStatus as fallback
+          if (relatedStatus === 'confirmed' || relatedStatus === 'cancelled' || relatedStatus === 'completed') {
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            queryClient.invalidateQueries({ queryKey: ['registrations'] });
+          }
+          break;
+      }
     }
   });
 }

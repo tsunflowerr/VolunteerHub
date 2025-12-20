@@ -38,8 +38,9 @@ export const useEvent = (id) => {
     queryKey: eventKeys.detail(id),
     queryFn: () => eventApi.getById(id),
     enabled: !!id, // Only fetch if id exists
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 0, // Always fetch fresh data when query is invalidated
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 

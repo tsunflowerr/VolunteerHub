@@ -3,9 +3,9 @@ import Post from '../../models/postModel.js';
 import Comment from '../../models/commentModel.js';
 import Event from '../../models/eventModel.js';
 import mongoose from 'mongoose';
-import Notification from '../../models/notificationModel.js';
 import redisClient from '../../config/redis.js';
 import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
+import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 export async function likeEvent(req, res) {
     try {
@@ -61,14 +61,20 @@ export async function likeEvent(req, res) {
             }
 
             if(shouldSendNotification) {
-                const newNotification = new Notification({
-                    sender: userId,
-                    recipient: event.managerId,
-                    type: 'like',
-                    content: `${req.user.username} liked your event "${event.name}".`,
-                    event: eventId,
-                });
-                await newNotification.save();
+                await createAndSendNotification(
+                    {
+                        sender: userId,
+                        recipient: event.managerId,
+                        type: 'like',
+                        content: `${req.user.username} liked your event "${event.name}".`,
+                        event: eventId,
+                    },
+                    {
+                        title: 'New Like! ❤️',
+                        body: `${req.user.username} liked your event "${event.name}"`,
+                        icon: req.user.avatar || '/default-avatar.png',
+                    }
+                );
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
@@ -139,15 +145,21 @@ export async function likePost(req, res) {
             }
             
             if(shouldSendNotification) {
-                const newNotification = new Notification({
-                    sender: userId,
-                    recipient: post.author,
-                    type: 'like',
-                    content: `${req.user.username} liked your post.`,
-                    post: postId,
-                    event: post.eventId,
-                });
-                await newNotification.save();
+                await createAndSendNotification(
+                    {
+                        sender: userId,
+                        recipient: post.author,
+                        type: 'like',
+                        content: `${req.user.username} liked your post.`,
+                        post: postId,
+                        event: post.eventId,
+                    },
+                    {
+                        title: 'New Like! ❤️',
+                        body: `${req.user.username} liked your post`,
+                        icon: req.user.avatar || '/default-avatar.png',
+                    }
+                );
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
@@ -214,15 +226,21 @@ export async function likeComment(req, res) {
             }
             
             if(shouldSendNotification) {
-                const newNotification = new Notification({
-                    sender: userId,
-                    recipient: comment.author,
-                    type: 'like',
-                    content: `${req.user.username} liked your comment.`,
-                    post: comment.postId,
-                    event: comment.eventId,
-                });
-                await newNotification.save();
+                await createAndSendNotification(
+                    {
+                        sender: userId,
+                        recipient: comment.author,
+                        type: 'like',
+                        content: `${req.user.username} liked your comment.`,
+                        post: comment.postId,
+                        event: comment.eventId,
+                    },
+                    {
+                        title: 'New Like! ❤️',
+                        body: `${req.user.username} liked your comment`,
+                        icon: req.user.avatar || '/default-avatar.png',
+                    }
+                );
                 
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');

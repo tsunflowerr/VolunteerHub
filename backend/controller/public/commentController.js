@@ -1,10 +1,10 @@
 import Comment from '../../models/commentModel.js';
 import Post from "../../models/postModel.js";
 import Event from "../../models/eventModel.js";
-import NotificationModel from '../../models/notificationModel.js';
 import Like from '../../models/likeModel.js';
 import redisClient from '../../config/redis.js';
 import mongoose from 'mongoose';
+import { createAndSendNotification } from '../../utils/notificationHelper.js';
 
 async function checkEventStatus(eventId) {
     const event = await Event.findById(eventId).select('status endDate');
@@ -70,15 +70,21 @@ export async function addComment(req, res) {
             }
 
             if (shouldSendNotification) {
-                const newNotification = new NotificationModel({
-                    sender: req.user._id,
-                    recipient: post.author,
-                    type: 'comment',
-                    content: `${req.user.username} commented on your post "${post.title}".`,
-                    post: postId,
-                    event: eventId,
-                });
-                await newNotification.save();
+                await createAndSendNotification(
+                    {
+                        sender: req.user._id,
+                        recipient: post.author,
+                        type: 'comment',
+                        content: `${req.user.username} commented on your post "${post.title}".`,
+                        post: postId,
+                        event: eventId,
+                    },
+                    {
+                        title: 'New Comment! 💬',
+                        body: `${req.user.username} commented on your post`,
+                        icon: req.user.avatar || '/default-avatar.png',
+                    }
+                );
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
                 } catch (error) {
@@ -146,15 +152,21 @@ export async function replyComment(req, res) {
             }
 
             if (shouldSendNotification) {
-                const newNotification = new NotificationModel({
-                    sender: req.user._id,
-                    recipient: parentComment.author,
-                    type: 'comment_reply',
-                    content: `${req.user.username} replied to your comment.`,
-                    post: postId,
-                    event: eventId,
-                });
-                await newNotification.save();
+                await createAndSendNotification(
+                    {
+                        sender: req.user._id,
+                        recipient: parentComment.author,
+                        type: 'comment_reply',
+                        content: `${req.user.username} replied to your comment.`,
+                        post: postId,
+                        event: eventId,
+                    },
+                    {
+                        title: 'New Reply! 💬',
+                        body: `${req.user.username} replied to your comment`,
+                        icon: req.user.avatar || '/default-avatar.png',
+                    }
+                );
                 try {
                     await redisClient.setEx(cacheKey, 300, '1');
                 } catch (error) {
