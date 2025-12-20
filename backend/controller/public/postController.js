@@ -35,7 +35,7 @@ export async function createPost(req, res) {
         });
 
         let saved = await post.save();
-        saved = await saved.populate('author', 'username email avatar');
+        saved = await saved.populate('author', 'username email avatar role');
 
         await Event.findByIdAndUpdate(
             eventId, 
@@ -94,7 +94,7 @@ export async function getAllPosts(req, res) {
         }
         const [posts, total] = await Promise.all([
             Post.find({ eventId })
-                .populate('author', 'username email avatar')
+                .populate('author', 'username email avatar role')
                 .sort({ createdAt: -1 })
                 .skip((page - 1) * limit)
                 .limit(limit)
@@ -149,7 +149,7 @@ export async function getSpecificPost(req, res) {
         }
         
         const post = await Post.findOne({ _id: postId, eventId })
-            .populate('author', 'username email avatar')
+            .populate('author', 'username email avatar role')
             .lean();
 
         if (!post) {
@@ -194,7 +194,7 @@ export async function getAllMediaFromPost(req, res) {
             image: { $exists: true, $not: { $size: 0 } } 
         })
         .select('image author createdAt title')
-        .populate('author', 'username avatar')
+        .populate('author', 'username avatar role')
         .sort({ createdAt: -1 })
         .lean();
 
@@ -259,7 +259,7 @@ export async function updatePost(req, res) {
             },
             updateData,
             { new: true, runValidators: true }
-        ).populate('author', 'username email avatar');
+        ).populate('author', 'username email avatar role');
         
         if (!updatedPost) {
             return res.status(404).json({ success: false, message: 'Post not found or you are not the author' });

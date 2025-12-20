@@ -16,8 +16,10 @@ export const useEvents = (params = {}) => {
     queryKey: eventKeys.list(params),
     queryFn: () => eventApi.getAll(params),
     keepPreviousData: true, // Great for pagination
-    staleTime: 30 * 1000, // 30 seconds - reduced for fresher data
+    staleTime: 0, // Always fetch fresh data for approved events
+    refetchInterval: 1000 * 45, // Auto-refetch every 45 seconds
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 

@@ -17,7 +17,10 @@ export const useManagerEvents = (params = {}) => {
   return useQuery({
     queryKey: managerKeys.events(),
     queryFn: () => managerApi.getMyEvents(params),
-    staleTime: 1000 * 60,
+    staleTime: 0, // Always consider data stale for fresh updates
+    refetchInterval: 1000 * 30, // Auto-refetch every 30 seconds
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always fetch on component mount
   });
 };
 
@@ -25,7 +28,10 @@ export const useManagerDashboard = () => {
   return useQuery({
     queryKey: managerKeys.dashboard(),
     queryFn: managerApi.getDashboard,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 1000 * 60, // Auto-refetch every 60 seconds
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always fetch on component mount
   });
 };
 

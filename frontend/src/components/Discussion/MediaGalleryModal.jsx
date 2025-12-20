@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image, Video, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { useEventMedia } from '../../hooks/usePosts';
+import VerifiedBadge from '../common/VerifiedBadge';
 import styles from './MediaGalleryModal.module.css';
 
 const MediaGalleryModal = ({ eventId, filter, onFilterChange, onClose }) => {

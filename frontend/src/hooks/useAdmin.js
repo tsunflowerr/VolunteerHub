@@ -157,7 +157,10 @@ export const useAdminPendingEvents = () => {
   return useQuery({
     queryKey: adminKeys.pendingEvents(),
     queryFn: adminApi.getPendingEvents,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 1000 * 30, // Auto-refetch every 30 seconds
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
@@ -218,6 +221,10 @@ export const useUpdateEventStatus = () => {
     onSuccess: (data, { status, eventId }) => {
       // Invalidate public event lists (Events page)
       queryClient.invalidateQueries({ queryKey: ['events'] });
+
+      // Invalidate manager events (so manager sees status change immediately)
+      queryClient.invalidateQueries({ queryKey: ['manager', 'events'] });
+      queryClient.invalidateQueries({ queryKey: ['manager', 'dashboard'] });
 
       // Invalidate specific event details if viewing that event
       if (eventId) {

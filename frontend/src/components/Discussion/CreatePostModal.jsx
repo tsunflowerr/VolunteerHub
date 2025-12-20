@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Image, Video, Smile, MapPin, Tag, Loader2 } from 'lucide-react';
+import VerifiedBadge from '../common/VerifiedBadge';
 import styles from './CreatePostModal.module.css';
 
 const CreatePostModal = ({

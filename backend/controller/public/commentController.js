@@ -48,7 +48,7 @@ export async function addComment(req, res) {
         });
 
         const saved = await comment.save();
-        await saved.populate('author', 'username email avatar');
+        await saved.populate('author', 'username email avatar role');
 
         // 🔹 Step 2: Update post count
         await Post.findByIdAndUpdate(
@@ -124,7 +124,7 @@ export async function replyComment(req, res) {
         });
 
         const saved = await reply.save();
-        await saved.populate('author', 'username email avatar');
+        await saved.populate('author', 'username email avatar role');
 
         // 🔹 Step 2: Update post count
         await Post.findByIdAndUpdate(
@@ -299,7 +299,7 @@ export async function updateComment(req, res) {
             {_id: commentId, author: req.user._id},
             {content: content.trim()},
             {new: true, runValidators: true}
-        ).populate('author', 'username email avatar');
+        ).populate('author', 'username email avatar role');
 
         if(!comment) {
             return res.status(404).json({success: false, message: 'Comment not found or unauthorized'});

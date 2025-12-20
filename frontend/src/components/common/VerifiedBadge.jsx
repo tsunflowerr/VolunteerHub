@@ -17,14 +17,13 @@ const VerifiedBadge = ({ role, size = 16, showTooltip = true }) => {
   if (!isManager && !isAdmin) return null;
 
   const tooltipText = isAdmin ? 'Administrator' : 'Verified Manager';
-  const Icon = isAdmin ? ShieldCheck : BadgeCheck;
 
   return (
     <span
       className={`${styles.badge} ${isAdmin ? styles.admin : styles.manager}`}
       title={showTooltip ? tooltipText : undefined}
     >
-      <Icon size={size} />
+      {isAdmin ? <ShieldCheck size={size} /> : <BadgeCheck size={size} />}
     </span>
   );
 };

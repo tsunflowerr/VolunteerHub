@@ -82,8 +82,11 @@ export async function searchEvents(req, res) {
         sortOptions = { registrationsCount: -1, likesCount: -1 };
         break;
       case 'upcoming':
-        // Filter only future events and sort by startDate ascending
-        filter.endDate = { $gt: new Date() };
+        // Filter only future events (events that haven't started yet) and sort by startDate ascending
+        if (!filter.startDate) {
+          filter.startDate = {};
+        }
+        filter.startDate.$gt = new Date();
         sortOptions = { startDate: 1 };
         break;
       default:
