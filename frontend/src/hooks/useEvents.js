@@ -20,6 +20,15 @@ export const useEvents = (params = {}) => {
   });
 };
 
+export const useTrendingEvents = (params = {}) => {
+  return useQuery({
+    queryKey: ['events', 'trending', params],
+    queryFn: () => eventApi.getTrending(params),
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
 export const useEvent = (id) => {
   return useQuery({
     queryKey: eventKeys.detail(id),

@@ -21,6 +21,11 @@ export const eventApi = {
     return response.data;
   },
 
+  getTrending: async (params = {}) => {
+    const response = await api.get('/events/trending', { params });
+    return response.data;
+  },
+
   getById: async (id) => {
     const response = await api.get(`/events/${id}`);
     return response.data;

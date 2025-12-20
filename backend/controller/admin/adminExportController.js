@@ -23,18 +23,28 @@ export async function exportUsersData(req, res) {
             Email: user.email,
             Role: user.role,
             Status: user.status,
-            Phone: user.phone_number,
+            Phone: user.phoneNumber || '',
+            Location: user.location || '',
+            Bio: user.bio || '',
             CreatedAt: user.createdAt,
             UpdatedAt: user.updatedAt
         }));
 
         if(format === 'csv') {
-            const parser = new Parser();
+            const parser = new Parser({
+                fields: ['ID', 'Username', 'Email', 'Role', 'Status', 'Phone', 'Location', 'Bio', 'CreatedAt', 'UpdatedAt'],
+                header: true,
+                delimiter: ',',
+                quote: '"',
+                escapedQuote: '""',
+                excelStrings: false
+            });
             const csv = parser.parse(formattedData);
-            const fileName = `users_export_${new Date().toISOString()}.csv`;
-            res.setHeader('Content-Type', 'text/csv');
+            const fileName = `users_export_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-            res.status(200).send(csv);
+            // Add BOM for Excel UTF-8 support
+            res.status(200).send('\ufeff' + csv);
         }
         else { // default to json
             const fileName = `users_export_${new Date().toISOString()}.json`;
@@ -79,12 +89,20 @@ export const exportEvents = async (req, res) => {
 
     // 6. Trả về file
     if (format.toLowerCase() === 'csv') {
-      const parser = new Parser();
+      const parser = new Parser({
+        fields: ['ID', 'Event', 'Status', 'Location', 'StartDate', 'EndDate', 'Capacity', 'ViewCount', 'LikesCount', 'Manager', 'ManagerEmail', 'Categories', 'CreatedAt'],
+        header: true,
+        delimiter: ',',
+        quote: '"',
+        escapedQuote: '""',
+        excelStrings: false
+      });
       const csv = parser.parse(formattedData);
-      const fileName = `events_export_${new Date().toISOString()}.csv`;
-      res.setHeader('Content-Type', 'text/csv');
+      const fileName = `events_export_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.status(200).send(csv);
+      // Add BOM for Excel UTF-8 support
+      res.status(200).send('\ufeff' + csv);
     } else {
       const fileName = `events_export_${new Date().toISOString()}.json`;
       res.setHeader('Content-Type', 'application/json');

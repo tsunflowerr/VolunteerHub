@@ -1,11 +1,11 @@
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './EventSection.module.css';
-import { useEvents } from '../../hooks/useEvents';
+import { useTrendingEvents } from '../../hooks/useEvents';
 import Event from './Event';
 
 const EventSection = () => {
   const navigate = useNavigate();
-  const { data, isLoading, error } = useEvents({ limit: 6 });
+  const { data, isLoading, error } = useTrendingEvents({ limit: 6 });
 
   const events = data?.events || [];
 

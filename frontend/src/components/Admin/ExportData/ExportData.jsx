@@ -45,8 +45,8 @@ function ExportData() {
     try {
       const token = localStorage.getItem('token');
       const endpoint = exportType === 'users' 
-        ? '/api/admin/export/users' 
-        : '/api/admin/export/events';
+        ? '/api/admin/export/users?format=csv' 
+        : '/api/admin/export/events?format=csv';
 
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -99,42 +99,9 @@ function ExportData() {
     } catch (err) {
       console.error('Export error:', err);
       
-      // Mock export for demo when API is not available
-      const mockData = exportType === 'users' 
-        ? 'ID,Username,Email,Role,Status,CreatedAt\n1,John Doe,john@example.com,user,active,2025-01-15\n2,Jane Smith,jane@example.com,manager,active,2025-02-20'
-        : 'ID,Title,Location,Date,Status,Organizer\n1,Beach Cleanup,Santa Monica,2025-12-15,approved,John Doe\n2,Food Drive,Community Center,2025-12-20,pending,Jane Smith';
-      
-      const blob = new Blob([mockData], { type: 'text/csv' });
-      const filename = `${exportType}_export_${Date.now()}.csv`;
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      setExportHistory((prev) => [
-        {
-          id: Date.now(),
-          type: exportType,
-          filename,
-          date: new Date().toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          }),
-        },
-        ...prev.slice(0, 4),
-      ]);
-
       setExportResult({
-        success: true,
-        message: 'Export successful! (Demo data)',
+        success: false,
+        message: err.message || 'Export failed. Please try again.',
       });
     } finally {
       setIsExporting(false);

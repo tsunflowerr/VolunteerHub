@@ -7,24 +7,13 @@ import {
 import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
 import { Pagination } from '../../components/common';
 import {
-  useAdminPendingEvents,
+  useAdminAllEvents,
   useUpdateEventStatus,
   useAdminDeleteEvent,
 } from '../../hooks/useAdmin';
 import styles from '../../components/Admin/EventsTable/EventsTable.module.css';
 
 function EventsManagement() {
-  // Data state queries
-  const {
-    data: pendingEventsData,
-    isLoading,
-    isError,
-    error,
-  } = useAdminPendingEvents();
-
-  const updateStatusMutation = useUpdateEventStatus();
-  const deleteEventMutation = useAdminDeleteEvent();
-
   // Filter & Pagination state
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,11 +21,26 @@ function EventsManagement() {
   const [actionLoading, setActionLoading] = useState(null);
   const [previewEvent, setPreviewEvent] = useState(null);
 
+  // Data state queries with search parameter
+  const {
+    data: eventsData,
+    isLoading,
+    isError,
+    error,
+  } = useAdminAllEvents({ 
+    search: searchTerm,
+    page: currentPage,
+    limit: itemsPerPage 
+  });
+
+  const updateStatusMutation = useUpdateEventStatus();
+  const deleteEventMutation = useAdminDeleteEvent();
+
   // Map events data
   const events = useMemo(() => {
-    if (!pendingEventsData?.events) return [];
+    if (!eventsData?.events) return [];
 
-    return pendingEventsData.events.map((event) => ({
+    return eventsData.events.map((event) => ({
       ...event, // Keep original data for preview
       title: event.name,
       createdBy: event.managerId
@@ -49,35 +53,11 @@ function EventsManagement() {
     }));
   }, [pendingEventsData]);
 
-  // Filter events locally with useMemo
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      const matchSearch =
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.createdBy?.fullName
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      return matchSearch;
-    });
-  }, [events, searchTerm]);
-
-  // Pagination calculations with useMemo
-  const { paginatedEvents, totalPages, startIndex, endIndex, totalItems } =
-    useMemo(() => {
-      const total = filteredEvents.length;
-      const pages = Math.ceil(total / itemsPerPage);
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = Math.min(start + itemsPerPage, total);
-      const paginated = filteredEvents.slice(start, end);
-
-      return {
-        paginatedEvents: paginated,
-        totalPages: pages,
-        startIndex: start,
-        endIndex: end,
-        totalItems: total,
-      };
-    }, [filteredEvents, currentPage, itemsPerPage]);
+  // Use server-side pagination from API response
+  const totalPages = eventsData?.pagination?.pages || 1;
+  const totalItems = eventsData?.pagination?.total || 0;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + events.length, totalItems);
 
   // Reset page if it exceeds total pages (e.g., after deletion)
   useEffect(() => {
@@ -87,10 +67,10 @@ function EventsManagement() {
   }, [currentPage, totalPages]);
 
   // Handlers
-  const handleSearchChange = (value) => {
+  const handleSearchChange = useCallback((value) => {
     setSearchTerm(value);
     setCurrentPage(1);
-  };
+  }, []);
 
   const handlePreview = (event) => {
     setPreviewEvent(event);
@@ -161,7 +141,7 @@ function EventsManagement() {
 
   const emptyMessage = searchTerm
     ? 'No matching events found'
-    : 'No pending events found';
+    : 'No events found';
 
   return (
     <div className={styles.container}>
@@ -175,7 +155,7 @@ function EventsManagement() {
       />
 
       <EventTable
-        events={paginatedEvents}
+        events={events}
         startIndex={startIndex}
         onApprove={handleApprove}
         onReject={handleReject}
