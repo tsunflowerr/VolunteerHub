@@ -170,6 +170,7 @@
   position: relative;
   min-width: 120px;
   height: 100%;
+  z-index: 1;
 }
 
 .actionsBtn {
@@ -205,8 +206,14 @@
   border-radius: 10px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1);
   min-width: 160px;
-  z-index: 100;
+  z-index: 1000;
   overflow: hidden;
+}
+
+/* When actions menu is open, give row higher z-index */
+.table tbody tr:has(.actionsMenu) {
+  position: relative;
+  z-index: 10;
 }
 
 .actionsMenu button {

@@ -394,6 +394,17 @@ h2.event-detail__section-subtitle {
   box-shadow: 0 4px 12px rgba(52, 79, 31, 0.3);
 }
 
+.event-detail__sidebar-card-btn.report-btn {
+  background-color: #dc2626;
+  color: white;
+}
+
+.event-detail__sidebar-card-btn.report-btn:hover {
+  background-color: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
 /* Categories Section */
 .event-detail__categories {
   display: flex;
@@ -423,9 +434,10 @@ h2.event-detail__section-subtitle {
 .event-detail__rewards {
   background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.1));
   border: 1px solid rgba(255, 193, 7, 0.3);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin: 3rem auto 1rem;
+  max-width: 95%;
 }
 
 .event-detail__rewards-title {
@@ -436,6 +448,7 @@ h2.event-detail__section-subtitle {
   font-weight: 600;
   color: var(--text-primary-color);
   margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 .event-detail__rewards-title svg {
@@ -498,9 +511,10 @@ h2.event-detail__section-subtitle {
 .event-detail__requirements {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
   border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-top: 1rem;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin: 1rem auto;
+  max-width: 95%;
 }
 
 .event-detail__requirements-title {
@@ -511,6 +525,7 @@ h2.event-detail__section-subtitle {
   font-weight: 600;
   color: var(--text-primary-color);
   margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 
 .event-detail__requirements-title svg {
@@ -525,13 +540,21 @@ h2.event-detail__section-subtitle {
 
 .event-detail__requirement-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-direction: column;
   gap: 0.75rem;
   background-color: white;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.95rem;
   color: var(--text-secondary-color);
+}
+
+.event-detail__requirement-item > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .event-detail__requirement-item svg {
@@ -544,6 +567,35 @@ h2.event-detail__section-subtitle {
 .event-detail__requirement-item span {
   color: var(--text-primary-color);
   font-weight: 600;
+}
+
+/* Achievements List in Requirements */
+.event-detail__achievements-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.event-detail__achievement-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(52, 79, 31, 0.08), rgba(52, 79, 31, 0.05));
+  border: 1px solid rgba(52, 79, 31, 0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.event-detail__achievement-icon {
+  font-size: 1.25rem;
+}
+
+.event-detail__achievement-name {
+  color: var(--text-primary-color);
+  font-weight: 500;
 }
 
 /* Eligibility Section in Sidebar */

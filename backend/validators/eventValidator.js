@@ -1,7 +1,7 @@
 import Joi from 'joi';
 
-// ====== Validation cho CREATE/UPDATE Event (Body) ======
-export const createAndUpdateEventSchema = Joi.object(
+// ====== Validation cho CREATE Event (Body) ======
+export const createEventSchema = Joi.object(
     {
         name: Joi.string().min(3).max(100).required().messages({
             'string.base': `"name" should be a type of 'text'`,
@@ -35,14 +35,12 @@ export const createAndUpdateEventSchema = Joi.object(
             'string.min': `"location" should have a minimum length of {#limit}`,
             'string.max': `"location" should have a maximum length of {#limit}`,
         }),
-        thumbnail: Joi.string().uri().optional().messages({
+        thumbnail: Joi.string().optional().allow('').messages({
             'string.base': `"thumbnail" should be a type of 'text'`,
-            'string.uri': `"thumbnail" must be a valid URI`,
         }),
-        images: Joi.array().items(Joi.string().uri().messages({
-            'string.base': `"image" should be a type of 'text'`,
-            'string.uri': `"image" must be a valid URI`,
-        })),
+        images: Joi.array().items(Joi.string()).optional().default([]).messages({
+            'array.base': `"images" should be an array`,
+        }),
         capacity: Joi.number().integer().min(1).required().messages({
             'number.base': `"capacity" should be a type of 'number'`,
             'number.integer': `"capacity" must be an integer`, 
@@ -68,12 +66,87 @@ export const createAndUpdateEventSchema = Joi.object(
             hasRequirements: Joi.boolean().default(false),
             minLevel: Joi.number().integer().min(1).default(1),
             minPoints: Joi.number().integer().min(0).default(0),
+            requiredAchievements: Joi.array().items(Joi.string().hex().length(24)).optional().default([]),
+            minEventsCompleted: Joi.number().integer().min(0).default(0),
+            requirementDescription: Joi.string().max(500).allow('').optional(),
+        }).optional().default({ hasRequirements: false }),
+    }
+);
+
+// ====== Validation cho UPDATE Event (Body) - same but dates don't need to be in future ======
+export const updateEventSchema = Joi.object(
+    {
+        name: Joi.string().min(3).max(100).required().messages({
+            'string.base': `"name" should be a type of 'text'`,
+            'string.empty': `"name" cannot be an empty field`,
+            'string.min': `"name" should have a minimum length of {#limit}`,
+            'string.max': `"name" should have a maximum length of {#limit}`,
+        }),
+        description: Joi.string().min(10).max(1000).required().messages({
+            'string.base': `"description" should be a type of 'text'`,
+            'string.empty': `"description" cannot be an empty field`,
+            'string.min': `"description" should have a minimum length of {#limit}`,
+            'string.max': `"description" should have a maximum length of {#limit}`,
+        }),
+        categories: Joi.array().items(Joi.string().hex().length(24)).min(1).single().required().messages({
+            'array.base': `"categories" should be an array`,
+            'array.min': `"categories" must contain at least 1 category`,
+            'string.hex': `"categories" items must be valid ObjectIds`,
+            'any.required': `"categories" is required`,
+        }),
+        activities: Joi.string().max(2000).optional().allow('').messages({
+            'string.base': `"activities" should be a type of 'text'`,
+            'string.max': `"activities" should have a maximum length of {#limit}`,
+        }),
+        prepare: Joi.string().max(1000).optional().allow('').messages({
+            'string.base': `"prepare" should be a type of 'text'`,
+            'string.max': `"prepare" should have a maximum length of {#limit}`,
+        }),
+        location: Joi.string().min(5).max(200).required().messages({
+            'string.base': `"location" should be a type of 'text'`,
+            'string.empty': `"location" cannot be an empty field`,
+            'string.min': `"location" should have a minimum length of {#limit}`,
+            'string.max': `"location" should have a maximum length of {#limit}`,
+        }),
+        thumbnail: Joi.string().optional().allow('').messages({
+            'string.base': `"thumbnail" should be a type of 'text'`,
+        }),
+        images: Joi.array().items(Joi.string()).optional().default([]).messages({
+            'array.base': `"images" should be an array`,
+        }),
+        capacity: Joi.number().integer().min(1).required().messages({
+            'number.base': `"capacity" should be a type of 'number'`,
+            'number.integer': `"capacity" must be an integer`, 
+            'number.min': `"capacity" should be at least {#limit}`,
+        }),
+        startDate: Joi.date().required().messages({
+            'date.base': `"startDate" should be a type of 'date'`,
+        }),
+        endDate: Joi.date().greater(Joi.ref('startDate')).required().messages({
+            'date.base': `"endDate" should be a type of 'date'`,
+            'date.greater': `"endDate" must be greater than startDate`,
+        }),
+        // Gamification - Rewards
+        rewards: Joi.object({
+            pointsReward: Joi.number().integer().min(0).default(10),
+            hoursCredit: Joi.number().min(0).default(0),
+            bonusPoints: Joi.number().integer().min(0).default(0),
+            bonusReason: Joi.string().max(200).allow('').optional(),
+        }).optional(),
+        // Gamification - Requirements
+        requirements: Joi.object({
+            hasRequirements: Joi.boolean().default(false),
+            minLevel: Joi.number().integer().min(1).default(1),
+            minPoints: Joi.number().integer().min(0).default(0),
             requiredAchievements: Joi.array().items(Joi.string().hex().length(24)).default([]),
             minEventsCompleted: Joi.number().integer().min(0).default(0),
             requirementDescription: Joi.string().max(500).allow('').optional(),
         }).optional(),
     }
 );
+
+// Keep the old name for backward compatibility
+export const createAndUpdateEventSchema = createEventSchema;
 
 // ====== Validation cho Pagination (Query Params) ======
 export const paginationSchema = Joi.object({

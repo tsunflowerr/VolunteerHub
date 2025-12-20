@@ -3,7 +3,7 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 import { managerMiddleware } from '../middleware/managerMiddleware.js';
 import { createEvent, updateEvent, deleteEvent, getEventsByManager, getTotalConfirmedVolunteers, completeEventEarly } from '../controller/manager/managerEventController.js';
 import { updateRegistrationStatus, getVolunteersForEvent, getRegistrationsByStatus, awardAchievementToVolunteer, getAvailableAchievements } from '../controller/manager/managerRegistrationController.js';
-import { createAndUpdateEventSchema, objectIdSchema, eventIdSchema } from '../validators/eventValidator.js';
+import { createEventSchema, updateEventSchema, objectIdSchema, eventIdSchema } from '../validators/eventValidator.js';
 import { 
     getRegistrationDetailSchema, 
     updateRegistrationStatusSchema, 
@@ -18,12 +18,73 @@ const router = express.Router();
 
 // Helper to map file path to body for validation
 const mapFileToBody = (req, res, next) => {
+    console.log('=== BEFORE PROCESSING ===');
+    console.log('req.body:', JSON.stringify(req.body, null, 2));
+    console.log('req.file:', req.file);
+    
     if (req.file) {
         req.body.thumbnail = req.file.path;
     } else if (typeof req.body.thumbnail === 'object' && req.body.thumbnail !== null) {
          // Sanitize: If thumbnail is an object (e.g. {}), remove it so Joi ignores it
         delete req.body.thumbnail;
     }
+    
+    // Parse FormData arrays properly - categories
+    if (req.body.categories && !Array.isArray(req.body.categories)) {
+        req.body.categories = [req.body.categories];
+    }
+    
+    // Parse nested objects from FormData
+    // Rewards object
+    if (req.body['rewards[pointsReward]']) {
+        req.body.rewards = {
+            pointsReward: parseInt(req.body['rewards[pointsReward]']) || 10,
+            hoursCredit: parseFloat(req.body['rewards[hoursCredit]']) || 0,
+            bonusPoints: parseInt(req.body['rewards[bonusPoints]']) || 0,
+            bonusReason: req.body['rewards[bonusReason]'] || '',
+        };
+        // Clean up individual fields
+        delete req.body['rewards[pointsReward]'];
+        delete req.body['rewards[hoursCredit]'];
+        delete req.body['rewards[bonusPoints]'];
+        delete req.body['rewards[bonusReason]'];
+    }
+    
+    // Requirements object
+    if (req.body['requirements[hasRequirements]'] !== undefined) {
+        const hasRequirements = req.body['requirements[hasRequirements]'] === 'true';
+        
+        // Handle requiredAchievements array first
+        let achievements = [];
+        if (req.body['requirements[requiredAchievements]']) {
+            const achievementsData = req.body['requirements[requiredAchievements]'];
+            achievements = Array.isArray(achievementsData) ? achievementsData : [achievementsData];
+        }
+        
+        req.body.requirements = {
+            hasRequirements,
+            minLevel: parseInt(req.body['requirements[minLevel]']) || 1,
+            minPoints: parseInt(req.body['requirements[minPoints]']) || 0,
+            minEventsCompleted: parseInt(req.body['requirements[minEventsCompleted]']) || 0,
+            requirementDescription: req.body['requirements[requirementDescription]'] || '',
+            requiredAchievements: achievements,
+        };
+        
+        // Clean up individual fields
+        delete req.body['requirements[hasRequirements]'];
+        delete req.body['requirements[minLevel]'];
+        delete req.body['requirements[minPoints]'];
+        delete req.body['requirements[minEventsCompleted]'];
+        delete req.body['requirements[requirementDescription]'];
+        delete req.body['requirements[requiredAchievements]'];
+    } else if (req.body.requirements && typeof req.body.requirements.requiredAchievements === 'string') {
+        // If requirements object exists but requiredAchievements is a string, convert it to array
+        req.body.requirements.requiredAchievements = [req.body.requirements.requiredAchievements];
+    }
+    
+    console.log('=== AFTER PROCESSING ===');
+    console.log('req.body:', JSON.stringify(req.body, null, 2));
+    
     next();
 };
 
@@ -132,7 +193,7 @@ router.use(authMiddleware, managerMiddleware);
  *         description: Forbidden - Manager role required
  */
 // Áp dụng rate limiting cho event creation
-router.post('/events', createLimiter, upload.single('thumbnail'), mapFileToBody, validate(createAndUpdateEventSchema), createEvent);
+router.post('/events', createLimiter, upload.single('thumbnail'), mapFileToBody, validate(createEventSchema), createEvent);
 router.get('/events', getEventsByManager);
 
 /**
@@ -187,7 +248,7 @@ router.get('/events', getEventsByManager);
  *       404:
  *         description: Event not found
  */
-router.put('/events/:id', updateLimiter, validate(objectIdSchema, 'params'), upload.single('thumbnail'), mapFileToBody, validate(createAndUpdateEventSchema), updateEvent);
+router.put('/events/:id', updateLimiter, validate(objectIdSchema, 'params'), upload.single('thumbnail'), mapFileToBody, validate(updateEventSchema), updateEvent);
 
 router.delete('/events/:id', deleteLimiter, validate(objectIdSchema, 'params'), deleteEvent);
 

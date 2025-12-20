@@ -3,10 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  MoreVertical,
-  Edit,
-  Trash2,
-  Eye,
   Filter,
   Search,
   Plus,
@@ -23,7 +19,6 @@ const ManagerEvents = () => {
 
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteEventId, setDeleteEventId] = useState(null);
 
   const events = useMemo(() => data?.events || [], [data]);
@@ -83,24 +78,6 @@ const ManagerEvents = () => {
     setSearchQuery(e.target.value);
   };
 
-  const handleEventAction = (action, eventId) => {
-    setOpenMenuId(null);
-
-    switch (action) {
-      case 'view':
-        navigate(`/manager/events/${eventId}`);
-        break;
-      case 'edit':
-        navigate(`/manager/events/edit/${eventId}`);
-        break;
-      case 'delete':
-        setDeleteEventId(eventId);
-        break;
-      default:
-        break;
-    }
-  };
-
   const confirmDelete = () => {
     if (deleteEventId) {
       deleteMutation.mutate(deleteEventId, {
@@ -113,10 +90,6 @@ const ManagerEvents = () => {
       });
     }
     setDeleteEventId(null);
-  };
-
-  const toggleMenu = (eventId) => {
-    setOpenMenuId(openMenuId === eventId ? null : eventId);
   };
 
   if (isLoading) {
@@ -133,7 +106,7 @@ const ManagerEvents = () => {
       >
         <div>
           <h1 className={styles.title}>My Events</h1>
-          <p className={styles.subtitle}>Manage all your volunteer events</p>
+          <p className={styles.subtitle}>Manage your volunteer events</p>
         </div>
         <button
           className={styles.createBtn}
@@ -204,62 +177,6 @@ const ManagerEvents = () => {
                   category={event.categories}
                   onLearnMore={() => navigate(`/manager/events/${event._id}`)}
                 />
-                {/* Action Menu Button */}
-                <div className={styles.actionMenu}>
-                  <button
-                    className={styles.menuBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMenu(event._id);
-                    }}
-                  >
-                    <MoreVertical size={20} />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  <AnimatePresence>
-                    {openMenuId === event._id && (
-                      <motion.div
-                        className={styles.dropdown}
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <button
-                          className={styles.dropdownItem}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventAction('view', event._id);
-                          }}
-                        >
-                          <Eye size={16} />
-                          View Details
-                        </button>
-                        <button
-                          className={styles.dropdownItem}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventAction('edit', event._id);
-                          }}
-                        >
-                          <Edit size={16} />
-                          Edit Event
-                        </button>
-                        <button
-                          className={`${styles.dropdownItem} ${styles.danger}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEventAction('delete', event._id);
-                          }}
-                        >
-                          <Trash2 size={16} />
-                          Delete Event
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
 
                 {/* Status Badge */}
                 <div
@@ -282,14 +199,6 @@ const ManagerEvents = () => {
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* Click outside to close menu */}
-      {openMenuId && (
-        <div
-          className={styles.overlay}
-          onClick={() => setOpenMenuId(null)}
-        ></div>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

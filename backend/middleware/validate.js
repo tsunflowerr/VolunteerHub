@@ -8,6 +8,9 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
                            source === 'params' ? req.params : 
                            req.body;
     
+    console.log(`=== VALIDATING ${source.toUpperCase()} ===`);
+    console.log('Data to validate:', JSON.stringify(dataToValidate, null, 2));
+    
     const { error, value } = schema.validate(dataToValidate, { 
         abortEarly: false,
         stripUnknown: true,
@@ -16,8 +19,13 @@ export const validate = (schema, source = 'body') => (req, res, next) => {
     
     if (error) {
         const errors = error.details.map(detail => detail.message);
+        console.log('=== VALIDATION ERRORS ===');
+        console.log(errors);
         return res.status(400).json({ success: false, errors });
     }
+    
+    console.log('=== VALIDATION PASSED ===');
+    console.log('Validated value:', JSON.stringify(value, null, 2));
     
     // Assign validated values without overwriting read-only properties
     if (source === 'query') {

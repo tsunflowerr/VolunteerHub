@@ -9,7 +9,7 @@ import { invalidateCacheByPattern, invalidateCache } from '../../utils/cacheHelp
 import mongoose from 'mongoose';
 
 export async function createEvent(req, res) {
-    const { name, description, categories, activities, prepare, location, thumbnail, images, capacity, startDate, endDate } = req.body;
+    const { name, description, categories, activities, prepare, location, thumbnail, images, capacity, startDate, endDate, rewards, requirements } = req.body;
     const organizerId = req.user._id;
     try {
         if (!name || !description || !location || !capacity || !startDate || !endDate) {
@@ -27,7 +27,9 @@ export async function createEvent(req, res) {
             images,
             capacity,
             startDate,
-            endDate
+            endDate,
+            rewards,
+            requirements
         })
         let saved = await newEvent.save();
         saved = await saved.populate('managerId', 'username email avatar');

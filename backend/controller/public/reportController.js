@@ -3,6 +3,7 @@ import Post from '../../models/postModel.js';
 import Comment from '../../models/commentModel.js';
 import User from '../../models/userModel.js';
 import Event from '../../models/eventModel.js';
+import Notification from '../../models/notificationModel.js';
 
 // Create a new report
 export async function createReport(req, res) {
@@ -89,6 +90,24 @@ export async function createReport(req, res) {
     });
 
     await report.save();
+
+    // Notify all admins about the new report
+    try {
+      const admins = await User.find({ role: 'admin' }).select('_id');
+      const notificationPromises = admins.map(admin =>
+        Notification.create({
+          recipient: admin._id,
+          sender: req.user._id,
+          type: 'report',
+          content: `New ${type} report: ${reason.replace('_', ' ')}`,
+          link: `/admin/reports`,
+        })
+      );
+      await Promise.all(notificationPromises);
+    } catch (notifError) {
+      console.error('Error sending notification to admins:', notifError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(201).json({
       success: true,

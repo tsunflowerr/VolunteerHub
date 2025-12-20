@@ -9,7 +9,9 @@ import {
   Settings,
   Lock,
   AlertTriangle,
+  Flag,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import styles from './EventDetail.module.css';
@@ -22,6 +24,7 @@ import {
 } from '../../hooks/useEvents';
 import { useEventEligibility } from '../../hooks/useGamification';
 import { checkPermission, RESOURCES, ACTIONS } from '../../utilities/abac';
+import ReportModal from '../common/ReportModal';
 
 const EventSidebar = ({
   event,
@@ -33,6 +36,7 @@ const EventSidebar = ({
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showReportModal, setShowReportModal] = useState(false);
   
   // Only use bookmark hook when we have a valid event ID (not in preview mode)
   const eventId = event?._id;
@@ -380,6 +384,31 @@ const EventSidebar = ({
             )}
           </button>
         </div>
+      )}
+
+      {/* Report Event Card */}
+      {!previewMode && user && !permissions.canManage && (
+        <div className={styles['event-detail__sidebar-card']}>
+          <h3 className={styles['event-detail__sidebar-card-title']}>
+            Report Event
+          </h3>
+          <button
+            className={`${styles['event-detail__sidebar-card-btn']} ${styles['report-btn']}`}
+            onClick={() => setShowReportModal(true)}
+          >
+            <Flag size={20} />
+            Report this event
+          </button>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal
+          type="event"
+          targetId={event._id}
+          onClose={() => setShowReportModal(false)}
+        />
       )}
     </aside>
   );
