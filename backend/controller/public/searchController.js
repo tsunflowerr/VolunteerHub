@@ -61,10 +61,14 @@ export async function searchEvents(req, res) {
         filter.startDate.$lte = new Date(endDate);
       }
     }
-    if (status) {
-      filter.status = status;
-    } else {
-      filter.status = { $in: ['approved', 'completed'] };
+    
+    // Status filter will be set in switch statement for 'upcoming', otherwise set here
+    if (sort !== 'upcoming') {
+      if (status) {
+        filter.status = status;
+      } else {
+        filter.status = { $in: ['approved', 'completed'] };
+      }
     }
 
     let sortOptions = {};
@@ -83,15 +87,32 @@ export async function searchEvents(req, res) {
         break;
       case 'upcoming':
         // Filter only future events (events that haven't started yet) and sort by startDate ascending
-        if (!filter.startDate) {
-          filter.startDate = {};
-        }
-        filter.startDate.$gt = new Date();
+        const now = new Date();
+        // Override any existing startDate filter for upcoming
+        filter.startDate = { $gt: now };
+        // Also ensure event hasn't ended yet (either no endDate or endDate > now)
+        filter.$and = [
+          {
+            $or: [
+              { endDate: { $exists: false } },
+              { endDate: null },
+              { endDate: { $gt: now } }
+            ]
+          }
+        ];
+        // Only show approved events (exclude completed)
+        filter.status = 'approved';
         sortOptions = { startDate: 1 };
         break;
       default:
         sortOptions = { createdAt: -1 };
     }
+
+    // For upcoming sort, add timestamp rounded to minute to ensure cache freshness
+    // This prevents stale results when events transition from approved to completed
+    const cacheTimestamp = sort === 'upcoming' 
+      ? Math.floor(Date.now() / (60 * 1000)) // Round to minute
+      : null;
 
     const cacheKey = `search:events:${JSON.stringify({
       keyword,
@@ -103,6 +124,7 @@ export async function searchEvents(req, res) {
       sort,
       page,
       limit,
+      ...(cacheTimestamp && { t: cacheTimestamp }), // Add timestamp for upcoming queries
     })}`;
 
     const result = await getOrSetCache(
