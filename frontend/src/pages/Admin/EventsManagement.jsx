@@ -51,7 +51,7 @@ function EventsManagement() {
       status: event.status,
       location: event.location || 'N/A',
     }));
-  }, [pendingEventsData]);
+  }, [eventsData]);
 
   // Use server-side pagination from API response
   const totalPages = eventsData?.pagination?.pages || 1;
