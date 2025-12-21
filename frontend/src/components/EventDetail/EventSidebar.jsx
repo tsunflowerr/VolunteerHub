@@ -400,13 +400,12 @@ const EventSidebar = ({
       )}
 
       {/* Report Modal */}
-      {showReportModal && (
-        <ReportModal
-          type="event"
-          targetId={event._id}
-          onClose={() => setShowReportModal(false)}
-        />
-      )}
+      <ReportModal
+        isOpen={showReportModal}
+        type="event"
+        targetId={event._id}
+        onClose={() => setShowReportModal(false)}
+      />
     </aside>
   );
 };
