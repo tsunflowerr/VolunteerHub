@@ -233,6 +233,24 @@ export async function getMyRegistrations(req, res) {
             Registration.countDocuments(query)
         ]);
 
+        // Add registrationsCount to each event
+        const eventIds = registrations.map(r => r.eventId?._id).filter(Boolean);
+        const registrationCounts = await Registration.aggregate([
+            { $match: { eventId: { $in: eventIds }, status: 'confirmed' } },
+            { $group: { _id: '$eventId', count: { $sum: 1 } } }
+        ]);
+        
+        const countMap = {};
+        registrationCounts.forEach(item => {
+            countMap[item._id.toString()] = item.count;
+        });
+        
+        registrations.forEach(reg => {
+            if (reg.eventId) {
+                reg.eventId.registrationsCount = countMap[reg.eventId._id.toString()] || 0;
+            }
+        });
+
         res.status(200).json({
             success: true,
             data: registrations,
