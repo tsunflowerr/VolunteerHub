@@ -76,10 +76,18 @@ export async function getUserGamificationProfile(req, res) {
       .populate('achievementId')
       .lean();
 
-    // Lấy ranking của user
-    const ranking = await UserProgress.countDocuments({
+    // Lấy ranking của user (chỉ tính users có userId không null và user còn tồn tại)
+    // Count users with higher points who still have valid user accounts
+    const higherRankedProgress = await UserProgress.find({
+      userId: { $ne: null },
       totalPoints: { $gt: userProgress.totalPoints }
-    }) + 1;
+    })
+      .populate('userId', '_id')
+      .lean();
+    
+    // Filter out entries where user was deleted after query
+    const validHigherRanked = higherRankedProgress.filter(p => p.userId != null);
+    const ranking = validHigherRanked.length + 1;
 
     res.status(200).json({
       success: true,
@@ -198,13 +206,14 @@ export async function getLeaderboard(req, res) {
     if (type === 'level') sortField = 'currentLevel';
     if (type === 'events') sortField = 'stats.eventsCompleted';
 
-    const leaderboard = await UserProgress.find()
+    // Only get UserProgress with valid userId (exclude deleted users)
+    const leaderboard = await UserProgress.find({ userId: { $ne: null } })
       .sort({ [sortField]: -1 })
       .limit(limitNum)
       .populate('userId', 'username avatar role gamification')
       .lean();
 
-    // Filter out entries where user has been deleted (userId is null)
+    // Double-check filter - filter out entries where user is still null after populate
     const validLeaderboard = leaderboard.filter(entry => entry.userId != null);
 
     // Lấy level info cho mỗi user
@@ -219,17 +228,40 @@ export async function getLeaderboard(req, res) {
       return acc;
     }, {});
 
-    const leaderboardWithLevels = validLeaderboard.map((entry, index) => ({
-      rank: index + 1,
-      user: entry.userId,
-      totalPoints: entry.totalPoints,
-      currentLevel: entry.currentLevel,
-      levelInfo: levelMap[entry.currentLevel],
-      stats: {
-        ...entry.stats,
-        achievementCount: entry.userId?.gamification?.achievementCount || 0
+    // Calculate rank with tie handling (Olympic ranking)
+    // Users with same value get same rank, next rank skips accordingly
+    // Example: if 3 users tied at rank 2, next user gets rank 5
+    let currentRank = 1;
+    let previousValue = null;
+    let usersAtCurrentRank = 0;
+
+    const leaderboardWithLevels = validLeaderboard.map((entry, index) => {
+      let value;
+      if (type === 'level') value = entry.currentLevel;
+      else if (type === 'events') value = entry.stats?.eventsCompleted || 0;
+      else value = entry.totalPoints; // default: points
+
+      // If value changed, update rank
+      if (previousValue !== null && value !== previousValue) {
+        currentRank += usersAtCurrentRank;
+        usersAtCurrentRank = 0;
       }
-    }));
+      
+      usersAtCurrentRank++;
+      previousValue = value;
+
+      return {
+        rank: currentRank,
+        user: entry.userId,
+        totalPoints: entry.totalPoints,
+        currentLevel: entry.currentLevel,
+        levelInfo: levelMap[entry.currentLevel],
+        stats: {
+          ...entry.stats,
+          achievementCount: entry.userId?.gamification?.achievementCount || 0
+        }
+      };
+    });
 
     res.status(200).json({
       success: true,

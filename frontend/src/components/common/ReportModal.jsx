@@ -9,9 +9,8 @@ const REPORT_REASONS = [
   { value: 'harassment', label: 'Harassment or bullying' },
   { value: 'hate_speech', label: 'Hate speech or discrimination' },
   { value: 'violence', label: 'Violence or dangerous content' },
-  { value: 'inappropriate', label: 'Inappropriate or offensive content' },
+  { value: 'inappropriate_content', label: 'Inappropriate or offensive content' },
   { value: 'misinformation', label: 'False information' },
-  { value: 'copyright', label: 'Copyright violation' },
   { value: 'other', label: 'Other' },
 ];
 

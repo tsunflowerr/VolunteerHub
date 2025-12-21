@@ -572,3 +572,107 @@
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Simple Pagination */
+.simplePagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.paginationInfo {
+  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.paginationBtn {
+  padding: 8px 16px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  color: var(--text-primary, #1a1a1a);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  background: var(--hover-bg, #f3f4f6);
+  border-color: var(--primary-color, #6366f1);
+  color: var(--primary-color, #6366f1);
+}
+
+.paginationBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationPages {
+  color: var(--text-primary, #1a1a1a);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0 8px;
+}
+
+.paginationPageSize {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paginationPageSize label {
+  color: var(--text-secondary, #666);
+  font-size: 0.875rem;
+}
+
+.pageSizeSelect {
+  padding: 6px 12px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  color: var(--text-primary, #1a1a1a);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pageSizeSelect:hover {
+  border-color: var(--primary-color, #6366f1);
+}
+
+.pageSizeSelect:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+@media (max-width: 768px) {
+  .simplePagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .paginationInfo {
+    text-align: center;
+  }
+
+  .paginationControls {
+    justify-content: center;
+  }
+
+  .paginationPageSize {
+    justify-content: center;
+  }
+}

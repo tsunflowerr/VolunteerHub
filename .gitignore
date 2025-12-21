@@ -43,6 +43,10 @@ coverage/
 # Others
 *.swp
 *.swo
+*.backup
+*.bak
+*~
+*.gz
 
 # Logs
 logs
@@ -68,3 +72,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+

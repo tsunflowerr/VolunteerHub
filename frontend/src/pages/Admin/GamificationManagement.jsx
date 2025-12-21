@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Plus, Loader2, Trophy, Star, Zap, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -14,7 +14,6 @@ import {
   useSeedDefaultAchievements,
   useGamificationStats,
 } from '../../hooks/useGamification';
-import { Pagination } from '../../components/common';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import styles from './GamificationManagement.module.css';
 
@@ -394,10 +393,12 @@ function GamificationManagement() {
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [deleteAchievementId, setDeleteAchievementId] = useState(null);
   const [deleteLevelId, setDeleteLevelId] = useState(null);
-  const itemsPerPage = 10;
+  
+  // Pagination for achievements
+  const [achievementPage, setAchievementPage] = useState(1);
+  const [achievementItemsPerPage, setAchievementItemsPerPage] = useState(10);
 
   // Queries
   const { data: achievementsData, isLoading: achievementsLoading } = useAdminAchievements();
@@ -497,13 +498,12 @@ function GamificationManagement() {
   const levels = levelsData?.data || [];
   const stats = statsData?.data;
 
-  // Pagination for achievements
-  const paginatedAchievements = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return achievements.slice(start, start + itemsPerPage);
-  }, [achievements, currentPage]);
-
-  const totalAchievementPages = Math.ceil(achievements.length / itemsPerPage);
+  // Pagination logic for achievements
+  const totalAchievements = achievements.length;
+  const totalAchievementPages = Math.ceil(totalAchievements / achievementItemsPerPage);
+  const achievementStartIndex = (achievementPage - 1) * achievementItemsPerPage;
+  const achievementEndIndex = Math.min(achievementStartIndex + achievementItemsPerPage, totalAchievements);
+  const paginatedAchievements = achievements.slice(achievementStartIndex, achievementEndIndex);
 
   const getRarityColor = (rarity) => {
     const colors = {
@@ -658,14 +658,48 @@ function GamificationManagement() {
                   </tbody>
                 </table>
               </div>
-
+              
+              {/* Simple Pagination */}
               {totalAchievementPages > 1 && (
-                <div className={styles.pagination}>
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalAchievementPages}
-                    onPageChange={setCurrentPage}
-                  />
+                <div className={styles.simplePagination}>
+                  <div className={styles.paginationInfo}>
+                    Showing {achievementStartIndex + 1}-{achievementEndIndex} of {totalAchievements} achievements
+                  </div>
+                  <div className={styles.paginationControls}>
+                    <button
+                      onClick={() => setAchievementPage(p => Math.max(1, p - 1))}
+                      disabled={achievementPage === 1}
+                      className={styles.paginationBtn}
+                    >
+                      Previous
+                    </button>
+                    <span className={styles.paginationPages}>
+                      Page {achievementPage} of {totalAchievementPages}
+                    </span>
+                    <button
+                      onClick={() => setAchievementPage(p => Math.min(totalAchievementPages, p + 1))}
+                      disabled={achievementPage === totalAchievementPages}
+                      className={styles.paginationBtn}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className={styles.paginationPageSize}>
+                    <label>Per page:</label>
+                    <select 
+                      value={achievementItemsPerPage} 
+                      onChange={(e) => {
+                        setAchievementItemsPerPage(Number(e.target.value));
+                        setAchievementPage(1);
+                      }}
+                      className={styles.pageSizeSelect}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
                 </div>
               )}
             </>

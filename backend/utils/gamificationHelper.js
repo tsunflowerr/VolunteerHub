@@ -77,14 +77,14 @@ export async function processEventCompletion(userId, eventId, options = {}) {
     }
     userProgress.lastEventDate = now;
 
-    // 4. Check and award automatic achievements (only for event count and time-based achievements)
+    // 4. Check and award automatic achievements (including points reward)
     const earnedAchievements = await checkAndAwardAchievements(userId, userProgress, event);
     results.achievementsEarned = earnedAchievements;
+    
+    // Calculate total points from earned achievements
+    results.pointsEarned = earnedAchievements.reduce((sum, ach) => sum + (ach.pointsReward || 0), 0);
 
-    // Note: Automatic achievements do NOT award points
-    // Only manual achievements awarded by managers after events will grant XP
-
-    // 5. Check for level up (from accumulated points from manual achievements)
+    // 5. Check for level up (from accumulated points)
     const newLevelInfo = await calculateLevel(userProgress.totalPoints);
     if (newLevelInfo.level > userProgress.currentLevel) {
       results.leveledUp = true;
@@ -191,8 +191,20 @@ async function checkAndAwardAchievements(userId, userProgress, event) {
           { upsert: true, new: true }
         );
 
-        // Note: No points are awarded for automatic achievements
-        // Points are only awarded through manual manager achievements
+        // Award points for automatic achievements too
+        if (achievement.pointsReward > 0) {
+          userProgress.totalPoints += achievement.pointsReward;
+          
+          // Record point history
+          await PointHistory.create({
+            userId,
+            points: achievement.pointsReward,
+            type: 'achievement_earned',
+            description: `Earned achievement: ${achievement.name}`,
+            relatedAchievement: achievement._id,
+            relatedEvent: event._id
+          });
+        }
 
         // Update user's achievement count
         await User.findByIdAndUpdate(userId, {
@@ -441,18 +453,21 @@ async function sendGamificationNotifications(userId, results, event) {
       );
     }
 
-    // Notification for achievements earned
+    // Notification for achievements earned (with points info)
     for (const achievement of results.achievementsEarned) {
+      const pointsText = achievement.pointsReward > 0 
+        ? ` và nhận được ${achievement.pointsReward} điểm`
+        : '';
       await createAndSendNotification(
         {
           recipient: userId,
           sender: userId,
           type: 'achievement_earned',
-          content: `🏆 Chúc mừng! Bạn đã đạt được thành tích "${achievement.name}"!`
+          content: `🏆 Chúc mừng! Bạn đã đạt được thành tích "${achievement.name}"${pointsText}!`
         },
         {
           title: 'Thành tích mới!',
-          body: `${achievement.icon} ${achievement.name}`,
+          body: `${achievement.icon} ${achievement.name}${achievement.pointsReward > 0 ? ` (+${achievement.pointsReward} XP)` : ''}`,
           icon: achievement.icon
         }
       );
