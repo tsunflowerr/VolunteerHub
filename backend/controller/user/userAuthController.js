@@ -1,7 +1,8 @@
 import User from '../../models/userModel.js';
+import { UserProgress } from '../../models/levelModel.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { invalidateCache } from '../../utils/cacheHelper.js';
+import { invalidateCache, invalidateCacheByPattern } from '../../utils/cacheHelper.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const JWT_EXPIRES_IN = '24h';
@@ -64,8 +65,14 @@ export async function registerUser(req, res) {
       )}&background=random`,
     });
 
+    // Initialize User Progress for Gamification (Leaderboard eligibility)
+    await UserProgress.create({ userId: newUser._id });
+
     // Invalidate admin dashboard cache (user count updated)
     await invalidateCache('dashboard:admin');
+    
+    // Invalidate leaderboard cache so new user appears immediately
+    await invalidateCacheByPattern('leaderboard:*');
 
     const token = createToken(newUser._id);
 

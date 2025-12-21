@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth';
+import { gamificationKeys } from '../hooks/useGamification';
 import { usersApi } from '../api/users';
 import toast from 'react-hot-toast';
 
@@ -94,6 +95,10 @@ export const AuthProvider = ({ children }) => {
           phoneNumber,
           password,
         });
+        
+        // Invalidate leaderboard cache so the new user appears immediately
+        queryClient.invalidateQueries({ queryKey: ['gamification', 'leaderboard'] });
+        
         toast.success('Registration successful! Please login.');
         return { success: true };
       } catch (error) {
@@ -102,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message };
       }
     },
-    []
+    [queryClient]
   );
 
   const logout = useCallback(async () => {

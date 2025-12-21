@@ -50,7 +50,8 @@ export const useLeaderboard = (params = { limit: 10, type: 'points' }) => {
   return useQuery({
     queryKey: gamificationKeys.leaderboard(params),
     queryFn: () => gamificationApi.getLeaderboard(params),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 1, // 1 minute
+    refetchOnWindowFocus: true,
   });
 };
 
