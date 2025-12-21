@@ -2,7 +2,7 @@ import { Dialog } from 'radix-ui';
 import React, { useState } from 'react';
 import Notification from './Notification';
 import styles from './NotificationDialog.module.css';
-import { X, Bell, BellRing, BellOff } from 'lucide-react';
+import { X, Bell, BellRing } from 'lucide-react';
 import {
   useNotifications,
   useMarkNotificationAsRead,
@@ -26,7 +26,6 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
   const {
     isSubscribed,
     subscribeToPush,
-    unsubscribeFromPush,
     loading: pushLoading,
     permission,
   } = usePushNotifications();
@@ -102,18 +101,9 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
             )}
           </div>
 
-          {/* Push Notification Opt-in/Opt-out */}
+          {/* Push Notification Opt-in */}
           <div className={styles.pushOptIn}>
-            {isSubscribed ? (
-              <button
-                className={styles.disablePushButton}
-                onClick={unsubscribeFromPush}
-                disabled={pushLoading}
-              >
-                <BellOff size={16} />
-                {pushLoading ? 'Disabling...' : 'Disable Push Notifications'}
-              </button>
-            ) : permission !== 'denied' ? (
+            {permission !== 'denied' && (
               <button
                 className={styles.enablePushButton}
                 onClick={subscribeToPush}
@@ -122,7 +112,8 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
                 <BellRing size={16} />
                 {pushLoading ? 'Enabling...' : 'Enable Push Notifications'}
               </button>
-            ) : (
+            )}
+            {permission === 'denied' && (
               <p className={styles.permissionDeniedText}>
                 Push notifications are blocked by browser settings.
               </p>

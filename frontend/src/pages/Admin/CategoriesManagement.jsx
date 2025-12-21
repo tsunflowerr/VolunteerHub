@@ -109,6 +109,14 @@ function CategoriesManagement() {
   );
 
   const handleDelete = useCallback(async (categoryId, categoryName) => {
+    // Check if category has events
+    const eventStats = dashboardData?.data?.eventStatistics?.byCategory || [];
+    const categoryStat = eventStats.find(stat => stat.name === categoryName);
+    if (categoryStat && categoryStat.count > 0) {
+      alert('Cannot delete category with associated events.');
+      return;
+    }
+
     if (!confirm(`Are you sure you want to delete "${categoryName}"?`)) return;
     
     try {
@@ -120,7 +128,7 @@ function CategoriesManagement() {
     } finally {
       setActionLoading(null);
     }
-  }, [deleteCategoryMutation]);
+  }, [deleteCategoryMutation, dashboardData]);
 
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
