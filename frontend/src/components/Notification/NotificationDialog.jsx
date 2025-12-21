@@ -2,7 +2,7 @@ import { Dialog } from 'radix-ui';
 import React, { useState } from 'react';
 import Notification from './Notification';
 import styles from './NotificationDialog.module.css';
-import { X, Bell, BellRing } from 'lucide-react';
+import { X, Bell, BellRing, BellOff } from 'lucide-react';
 import {
   useNotifications,
   useMarkNotificationAsRead,
@@ -26,6 +26,7 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
   const {
     isSubscribed,
     subscribeToPush,
+    unsubscribeFromPush,
     loading: pushLoading,
     permission,
   } = usePushNotifications();
@@ -105,12 +106,16 @@ const NotificationDialog = ({ children, open, onOpenChange }) => {
           <div className={styles.pushOptIn}>
             {permission !== 'denied' && (
               <button
-                className={styles.enablePushButton}
-                onClick={subscribeToPush}
+                className={isSubscribed ? styles.disablePushButton : styles.enablePushButton}
+                onClick={isSubscribed ? unsubscribeFromPush : subscribeToPush}
                 disabled={pushLoading}
               >
-                <BellRing size={16} />
-                {pushLoading ? 'Enabling...' : 'Enable Push Notifications'}
+                {isSubscribed ? <BellOff size={16} /> : <BellRing size={16} />}
+                {pushLoading
+                  ? 'Processing...'
+                  : isSubscribed
+                  ? 'Disable Push Notifications'
+                  : 'Enable Push Notifications'}
               </button>
             )}
             {permission === 'denied' && (
