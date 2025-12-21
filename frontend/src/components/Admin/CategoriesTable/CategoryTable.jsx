@@ -84,8 +84,12 @@ function CategoryTable({
                   <button
                     className={styles.btnDelete}
                     onClick={() => onDelete(category._id, category.name)}
-                    disabled={actionLoading === category._id}
-                    title="Delete"
+                    disabled={actionLoading === category._id || category.eventCount > 0}
+                    title={
+                      category.eventCount > 0
+                        ? 'Cannot delete category with associated events'
+                        : 'Delete'
+                    }
                   >
                     {actionLoading === category._id ? (
                       <Loader2 size={16} className={styles.spinner} />

@@ -1,4 +1,5 @@
 import Category from '../../models/categoryModel.js';
+import Event from '../../models/eventModel.js';
 import { invalidateCache } from '../../utils/cacheHelper.js';
 
 export async function createCategory(req, res) {
@@ -56,6 +57,15 @@ export async function updateCategory(req, res) {
 export async function deleteCategory(req, res) {
     const id = req.params.id;
     try {
+        // Check if category is used in any events
+        const eventCount = await Event.countDocuments({ categories: id });
+        if (eventCount > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Cannot delete category because it is associated with events." 
+            });
+        }
+
         const category = await Category.findByIdAndDelete(id);
         
         if(!category) {

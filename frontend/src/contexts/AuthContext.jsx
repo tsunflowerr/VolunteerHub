@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/auth';
+import { usersApi } from '../api/users';
 import toast from 'react-hot-toast';
 
 export const AuthContext = createContext(null);
@@ -106,6 +107,21 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
+      // Unsubscribe from push notifications before clearing token
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          if (subscription) {
+            await subscription.unsubscribe();
+            // Tell backend to remove it
+            await usersApi.removePushSubscription();
+          }
+        } catch (e) {
+          console.error('Error unsubscribing from push during logout', e);
+        }
+      }
+
       await authApi.logout().catch(() => {});
     } finally {
       localStorage.removeItem('token');
