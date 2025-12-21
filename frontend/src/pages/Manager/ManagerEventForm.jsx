@@ -1,0 +1,748 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import * as yup from 'yup';
+import toast from 'react-hot-toast';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  FileText,
+  Image as ImageIcon,
+  ArrowLeft,
+  Save,
+  Eye,
+  Tag,
+  Trophy,
+  Star,
+} from 'lucide-react';
+import {
+  FormField,
+  TextInput,
+  TextArea,
+  ImagePicker,
+  CategoryCheckboxes,
+} from '../../components/Form';
+import LoadingOverlay from '../../components/common/LoadingOverlay';
+import { useCreateEvent, useUpdateEvent } from '../../hooks/useManager';
+import { useEvent } from '../../hooks/useEvents';
+import { useAllAchievements, useAllLevels } from '../../hooks/useGamification';
+import useAuth from '../../hooks/useAuth.js';
+
+import styles from './ManagerEventForm.module.css';
+import EventPreviewDialog from '../../components/EventDetail/EventPreviewDialog';
+
+// Yup validation schema
+const eventFormSchema = yup.object().shape({
+  name: yup
+    .string()
+    .required('Event name is required')
+    .min(3, 'Event name must be at least 3 characters')
+    .max(100, 'Event name must not exceed 100 characters')
+    .trim(),
+  about: yup
+    .string()
+    .required('About section is required')
+    .min(10, 'About must be at least 10 characters')
+    .max(1000, 'About must not exceed 1000 characters')
+    .trim(),
+  activities: yup
+    .string()
+    .max(2000, 'Activities must not exceed 2000 characters')
+    .trim(),
+  prepare: yup
+    .string()
+    .max(1000, 'Preparation info must not exceed 1000 characters')
+    .trim(),
+  location: yup
+    .string()
+    .required('Location is required')
+    .min(5, 'Location must be at least 5 characters')
+    .max(200, 'Location must not exceed 200 characters')
+    .trim(),
+  startDate: yup
+    .date()
+    .required('Start date is required')
+    .min(new Date(), 'Start date must be in the future'),
+  endDate: yup
+    .date()
+    .required('End date is required')
+    .min(yup.ref('startDate'), 'End date must be after start date'),
+  category: yup
+    .array()
+    .of(yup.string())
+    .min(1, 'Please select at least one category')
+    .required('Please select at least one category'),
+  capacity: yup
+    .number()
+    .required('Capacity is required')
+    .positive('Capacity must be positive')
+    .integer('Capacity must be an integer')
+    .min(1, 'Capacity must be at least 1')
+    .max(10000, 'Capacity must not exceed 10,000'),
+  thumbnail: yup.string().when('$isEdit', {
+    is: false,
+    then: () =>
+      yup
+        .string()
+        .required('Thumbnail image is required')
+        .test(
+          'isValidImage',
+          'Please select a valid image',
+          (value) => !!value && value.length > 0
+        ),
+    otherwise: () => yup.string().nullable(),
+  }),
+});
+
+const ManagerEventForm = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+
+  // Get current user (manager) info
+  const { user } = useAuth();
+
+  // React Query hooks
+  const createEvent = useCreateEvent();
+  const updateEvent = useUpdateEvent();
+  const { data: existingEventData, isLoading: isLoadingEvent } = useEvent(id);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    about: '',
+    activities: '',
+    prepare: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    category: [],
+    capacity: '',
+    thumbnail: '',
+    // Gamification - Rewards
+    pointsReward: 10,
+    hoursCredit: 0,
+    bonusPoints: 0,
+    bonusReason: '',
+    // Gamification - Requirements
+    hasRequirements: false,
+    minLevel: 1,
+    minPoints: 0,
+    requiredAchievements: [],
+    minEventsCompleted: 0,
+    requirementDescription: '',
+  });
+
+  const [thumbnailPreview, setThumbnailPreview] = useState('');
+  const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Gamification data
+  const { data: achievementsData } = useAllAchievements();
+  const { data: levelsData } = useAllLevels();
+  const achievements = achievementsData?.data || [];
+  const levels = levelsData?.data || [];
+
+  // Loading state from mutations
+  const loading = createEvent.isPending || updateEvent.isPending;
+
+  // Load event data if editing
+  useEffect(() => {
+    if (isEditMode && existingEventData?.event) {
+      const event = existingEventData.event;
+      setFormData({
+        name: event.name || '',
+        about: event.description || '',
+        activities: event.activities || '',
+        prepare: event.prepare || '',
+        location: event.location || '',
+        startDate: event.startDate ? event.startDate.slice(0, 10) : '',
+        endDate: event.endDate ? event.endDate.slice(0, 10) : '',
+        category: event.categories?.map((c) => c._id || c) || [],
+        capacity: event.capacity || '',
+        thumbnail: event.thumbnail || '',
+        // Gamification - Rewards
+        pointsReward: event.rewards?.pointsReward ?? 10,
+        hoursCredit: event.rewards?.hoursCredit ?? 0,
+        bonusPoints: event.rewards?.bonusPoints ?? 0,
+        bonusReason: event.rewards?.bonusReason || '',
+        // Gamification - Requirements
+        hasRequirements: event.requirements?.hasRequirements ?? false,
+        minLevel: event.requirements?.minLevel ?? 1,
+        minPoints: event.requirements?.minPoints ?? 0,
+        requiredAchievements: event.requirements?.requiredAchievements || [],
+        minEventsCompleted: event.requirements?.minEventsCompleted ?? 0,
+        requirementDescription: event.requirements?.requirementDescription || '',
+      });
+      setThumbnailPreview(event.thumbnail || '');
+    }
+  }, [isEditMode, existingEventData]);
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: '',
+      }));
+    }
+  };
+
+  // Handle category selection
+  const handleCategoryChange = (categoryId) => {
+    setFormData((prev) => {
+      const currentCategories = prev.category;
+      const isSelected = currentCategories.includes(categoryId);
+
+      const newCategories = isSelected
+        ? currentCategories.filter((id) => id !== categoryId)
+        : [...currentCategories, categoryId];
+
+      return {
+        ...prev,
+        category: newCategories,
+      };
+    });
+
+    if (errors.category) {
+      setErrors((prev) => ({
+        ...prev,
+        category: '',
+      }));
+    }
+  };
+
+  // Handle image file selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrors((prev) => ({
+          ...prev,
+          thumbnail: 'Please select a valid image file',
+        }));
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          thumbnail: 'Image size must be less than 5MB',
+        }));
+        return;
+      }
+
+      setThumbnailFile(file);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setFormData((prev) => ({
+          ...prev,
+          thumbnail: base64String, // Keep for validation/preview
+        }));
+        setThumbnailPreview(base64String);
+      };
+      reader.readAsDataURL(file);
+
+      if (errors.thumbnail) {
+        setErrors((prev) => ({
+          ...prev,
+          thumbnail: '',
+        }));
+      }
+    }
+  };
+
+  // Remove selected image
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      thumbnail: '',
+    }));
+    setThumbnailPreview('');
+    setThumbnailFile(null);
+  };
+
+  // Handle submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      // Validate form data
+      await eventFormSchema.validate(formData, {
+        abortEarly: false,
+        context: { isEdit: isEditMode },
+      });
+
+      const payload = new FormData();
+      payload.append('name', formData.name);
+      payload.append('description', formData.about);
+      payload.append('activities', formData.activities || '');
+      payload.append('prepare', formData.prepare || '');
+      payload.append('location', formData.location);
+      payload.append('startDate', formData.startDate);
+      payload.append('endDate', formData.endDate);
+      payload.append('capacity', formData.capacity);
+      
+      // Append categories
+      formData.category.forEach(cat => payload.append('categories', cat));
+
+      // Append gamification rewards
+      payload.append('rewards[pointsReward]', formData.pointsReward || 10);
+      payload.append('rewards[hoursCredit]', formData.hoursCredit || 0);
+      payload.append('rewards[bonusPoints]', formData.bonusPoints || 0);
+      payload.append('rewards[bonusReason]', formData.bonusReason || '');
+
+      // Append gamification requirements
+      payload.append('requirements[hasRequirements]', formData.hasRequirements);
+      if (formData.hasRequirements) {
+        payload.append('requirements[minLevel]', formData.minLevel || 1);
+        payload.append('requirements[minPoints]', formData.minPoints || 0);
+        payload.append('requirements[minEventsCompleted]', formData.minEventsCompleted || 0);
+        payload.append('requirements[requirementDescription]', formData.requirementDescription || '');
+        formData.requiredAchievements.forEach(ach => payload.append('requirements[requiredAchievements]', ach));
+      }
+
+      // Append thumbnail
+      if (thumbnailFile) {
+        payload.append('thumbnail', thumbnailFile);
+      } else if (isEditMode && formData.thumbnail && !formData.thumbnail.startsWith('data:')) {
+        // If editing and no new file (and it's not a base64 string from a cancelled file pick), send the old URL
+        payload.append('thumbnail', formData.thumbnail);
+      }
+
+      if (isEditMode) {
+        await updateEvent.mutateAsync({ id, data: payload });
+      } else {
+        await createEvent.mutateAsync(payload);
+      }
+
+      navigate('/manager/events');
+    } catch (err) {
+      if (err.name === 'ValidationError') {
+        const validationErrors = {};
+        err.inner.forEach((error) => {
+          validationErrors[error.path] = error.message;
+        });
+        setErrors(validationErrors);
+        toast.error('Please check the form for errors');
+      } else {
+        console.error('Failed to save event:', err);
+      }
+    }
+  };
+
+  // Show loading when fetching existing event
+  if (isEditMode && isLoadingEvent) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <p>Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <motion.div
+        className={styles.content}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {/* Header */}
+        <div className={styles.header}>
+          <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <ArrowLeft size={20} />
+            Back
+          </button>
+          <h1 className={styles.title}>
+            {isEditMode ? 'Edit Event' : 'Create New Event'}
+          </h1>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {/* Event Name */}
+          <FormField
+            label="Event Name"
+            icon={FileText}
+            required
+            error={errors.name}
+          >
+            <TextInput
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter event name"
+              error={errors.name}
+            />
+          </FormField>
+
+          {/* About */}
+          <FormField
+            label="About This Event"
+            icon={FileText}
+            required
+            error={errors.about}
+          >
+            <TextArea
+              name="about"
+              value={formData.about}
+              onChange={handleChange}
+              placeholder="Describe what this event is about..."
+              rows={4}
+              error={errors.about}
+            />
+          </FormField>
+
+          {/* Activities */}
+          <FormField
+            label="Activities"
+            icon={FileText}
+            error={errors.activities}
+          >
+            <TextArea
+              name="activities"
+              value={formData.activities}
+              onChange={handleChange}
+              placeholder="What activities will volunteers do?"
+              rows={4}
+              error={errors.activities}
+            />
+          </FormField>
+
+          {/* Preparation */}
+          <FormField
+            label="What to Prepare"
+            icon={FileText}
+            error={errors.prepare}
+          >
+            <TextArea
+              name="prepare"
+              value={formData.prepare}
+              onChange={handleChange}
+              placeholder="What should volunteers bring or prepare?"
+              rows={3}
+              error={errors.prepare}
+            />
+          </FormField>
+
+          {/* Location */}
+          <FormField
+            label="Location"
+            icon={MapPin}
+            required
+            error={errors.location}
+          >
+            <TextInput
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="Enter event location"
+              error={errors.location}
+            />
+          </FormField>
+
+          {/* Date Range */}
+          <div className={styles.dateRow}>
+            <FormField
+              label="Start Date"
+              icon={Calendar}
+              required
+              error={errors.startDate}
+            >
+              <TextInput
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+                error={errors.startDate}
+              />
+            </FormField>
+
+            <FormField
+              label="End Date"
+              icon={Calendar}
+              required
+              error={errors.endDate}
+            >
+              <TextInput
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                error={errors.endDate}
+              />
+            </FormField>
+          </div>
+
+          {/* Capacity */}
+          <FormField
+            label="Capacity"
+            icon={Users}
+            required
+            error={errors.capacity}
+          >
+            <TextInput
+              type="number"
+              name="capacity"
+              value={formData.capacity}
+              onChange={handleChange}
+              placeholder="Maximum number of volunteers"
+              error={errors.capacity}
+              min="1"
+            />
+          </FormField>
+
+          {/* Categories */}
+          <FormField
+            label="Categories"
+            required
+            error={errors.category}
+            icon={Tag}
+          >
+            <CategoryCheckboxes
+              selectedCategories={formData.category}
+              onCategoryChange={handleCategoryChange}
+            />
+          </FormField>
+
+          {/* Gamification Section - Rewards */}
+          <div className={styles.gamificationSection}>
+            <h3 className={styles.sectionTitle}>
+              <Trophy size={20} />
+              Event Rewards
+            </h3>
+            <p className={styles.sectionDesc}>
+              Configure the points and credits volunteers earn upon completing this event.
+            </p>
+
+            <div className={styles.dateRow}>
+              <FormField label="Points Reward" icon={Star}>
+                <TextInput
+                  type="number"
+                  name="pointsReward"
+                  value={formData.pointsReward}
+                  onChange={handleChange}
+                  placeholder="Points for completion"
+                  min="0"
+                />
+              </FormField>
+
+              <FormField label="Hours Credit" icon={Calendar}>
+                <TextInput
+                  type="number"
+                  name="hoursCredit"
+                  value={formData.hoursCredit}
+                  onChange={handleChange}
+                  placeholder="Volunteer hours credit"
+                  min="0"
+                  step="0.5"
+                />
+              </FormField>
+            </div>
+
+            <div className={styles.dateRow}>
+              <FormField label="Bonus Points" icon={Star}>
+                <TextInput
+                  type="number"
+                  name="bonusPoints"
+                  value={formData.bonusPoints}
+                  onChange={handleChange}
+                  placeholder="Additional bonus points"
+                  min="0"
+                />
+              </FormField>
+
+              <FormField label="Bonus Reason">
+                <TextInput
+                  name="bonusReason"
+                  value={formData.bonusReason}
+                  onChange={handleChange}
+                  placeholder="e.g., First event of the month"
+                />
+              </FormField>
+            </div>
+          </div>
+
+          {/* Gamification Section - Requirements */}
+          <div className={styles.gamificationSection}>
+            <h3 className={styles.sectionTitle}>
+              <Star size={20} />
+              Event Requirements
+            </h3>
+            <p className={styles.sectionDesc}>
+              Set minimum requirements for volunteers to register for this event.
+            </p>
+
+            <div className={styles.checkboxGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  name="hasRequirements"
+                  checked={formData.hasRequirements}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasRequirements: e.target.checked }))}
+                />
+                <span>Enable registration requirements</span>
+              </label>
+            </div>
+
+            {formData.hasRequirements && (
+              <>
+                <FormField label="Minimum Level">
+                  <select
+                    name="minLevel"
+                    value={formData.minLevel}
+                    onChange={handleChange}
+                    className={styles.select}
+                  >
+                    {levels.map(level => (
+                      <option key={level._id} value={level.level}>
+                        Level {level.level}: {level.name}
+                      </option>
+                    ))}
+                    {levels.length === 0 && <option value="1">Level 1</option>}
+                  </select>
+                </FormField>
+
+                <FormField label="Minimum Events Completed">
+                  <TextInput
+                    type="number"
+                    name="minEventsCompleted"
+                    value={formData.minEventsCompleted}
+                    onChange={handleChange}
+                    placeholder="Number of events completed"
+                    min="0"
+                  />
+                </FormField>
+
+                <FormField label="Required Achievements">
+                  <div className={styles.achievementsList}>
+                    {achievements.map(ach => (
+                      <label key={ach._id} className={styles.achievementItem}>
+                        <input
+                          type="checkbox"
+                          checked={formData.requiredAchievements.includes(ach._id)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              requiredAchievements: checked
+                                ? [...prev.requiredAchievements, ach._id]
+                                : prev.requiredAchievements.filter(id => id !== ach._id)
+                            }));
+                          }}
+                        />
+                        <span className={styles.achievementIcon}>{ach.icon}</span>
+                        <span>{ach.name}</span>
+                      </label>
+                    ))}
+                    {achievements.length === 0 && (
+                      <p className={styles.noData}>No achievements available</p>
+                    )}
+                  </div>
+                </FormField>
+
+                <FormField label="Requirement Description">
+                  <TextArea
+                    name="requirementDescription"
+                    value={formData.requirementDescription}
+                    onChange={handleChange}
+                    placeholder="Explain the requirements to volunteers..."
+                    rows={2}
+                  />
+                </FormField>
+              </>
+            )}
+          </div>
+
+          {/* Thumbnail */}
+          <FormField
+            label="Event Thumbnail"
+            icon={ImageIcon}
+            required={!isEditMode}
+            error={errors.thumbnail}
+          >
+            <ImagePicker
+              preview={thumbnailPreview}
+              onImageChange={handleImageChange}
+              onRemoveImage={handleRemoveImage}
+              error={errors.thumbnail}
+            />
+          </FormField>
+
+          {/* Actions */}
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.cancelBtn}
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={styles.previewBtn}
+              onClick={() => setShowPreview(true)}
+            >
+              <Eye size={20} />
+              Preview
+            </button>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={loading}
+            >
+              <Save size={20} />
+              {loading
+                ? 'Saving...'
+                : isEditMode
+                ? 'Update Event'
+                : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+
+      {/* Preview Dialog */}
+      {showPreview && (
+        <EventPreviewDialog
+          event={{
+            ...formData,
+            description: formData.about,
+            thumbnail: thumbnailPreview,
+            managerId: user,
+            // Map gamification fields to the expected structure
+            rewards: {
+              pointsReward: formData.pointsReward || 10,
+              hoursCredit: formData.hoursCredit || 0,
+              bonusPoints: formData.bonusPoints || 0,
+              bonusReason: formData.bonusReason || '',
+            },
+            requirements: {
+              hasRequirements: formData.hasRequirements,
+              minLevel: formData.minLevel || 1,
+              minPoints: formData.minPoints || 0,
+              requiredAchievements: formData.requiredAchievements || [],
+              minEventsCompleted: formData.minEventsCompleted || 0,
+              requirementDescription: formData.requirementDescription || '',
+            },
+          }}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+      {loading && <LoadingOverlay message={isEditMode ? "Updating event..." : "Creating event..."} />}
+    </div>
+  );
+};
+
+export default ManagerEventForm;

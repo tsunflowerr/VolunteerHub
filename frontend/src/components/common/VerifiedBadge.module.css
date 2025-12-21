@@ -1,0 +1,33 @@
+/* VerifiedBadge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.manager {
+  color: #1da1f2; /* Facebook/Twitter blue */
+}
+
+.manager svg {
+  fill: #1da1f2;
+  stroke: #fff;
+}
+
+.admin {
+  color: #f59e0b; /* Golden/amber color */
+}
+
+.admin svg {
+  fill: #f59e0b;
+  stroke: #fff;
+}
+
+/* Animation on hover */
+.badge:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}

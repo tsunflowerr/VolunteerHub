@@ -1,0 +1,36 @@
+/* Event Section Component - BEM Convention */
+@import '../../styles/global.css';
+
+/* Grid */
+.event-list__grid {
+  /* max-width: 1400px; */
+  width: 100%;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.no-events {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-gray-700);
+  font-size: 1.125rem;
+  width: 100%;
+}
+
+/* @media (min-width: 768px) {
+  .event-list__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem 1.5rem;
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 1024px) {
+  .event-list__grid {
+    grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+    align-items: stretch;
+  }
+} */

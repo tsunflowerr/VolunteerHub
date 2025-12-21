@@ -1,0 +1,173 @@
+.widgetsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.widget {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.widgetTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 20px 0;
+}
+
+.widgetTitle svg {
+  color: #667eea;
+}
+
+/* Activity List */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.activityIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityMessage {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.activityTime {
+  font-size: 12px;
+  color: #888;
+}
+
+/* Event List */
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eventItem {
+  padding: 16px;
+  background: #f8f9fc;
+  border-radius: 12px;
+}
+
+.eventInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.eventTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.eventDate {
+  font-size: 12px;
+  color: #666;
+}
+
+.eventProgress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  min-width: 45px;
+  text-align: right;
+}
+
+/* Quick Stats */
+.quickStats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quickStatItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8f9fc;
+  border-radius: 12px;
+}
+
+.quickStatValue {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.quickStatLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .widgetsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .widgetsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .widget {
+    padding: 16px;
+  }
+
+  .widgetTitle {
+    font-size: 16px;
+  }
+}

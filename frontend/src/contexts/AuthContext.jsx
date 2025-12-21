@@ -1,93 +1,189 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { authApi } from '../api/auth';
+import toast from 'react-hot-toast';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Check if user is logged in on mount
+  // Initialize auth state
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await authApi.getCurrentUser();
+        if (response.success && response.user) {
+          setUser(response.user);
+          setIsAuthenticated(true);
+        } else {
+          // Token might be invalid
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
-  const login = (email, password) => {
-    // Get stored users or empty array
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const login = useCallback(async (email, password) => {
+    try {
+      const response = await authApi.login({ email, password });
 
-    // Find user by email and password
-    const foundUser = users.find(
-      (u) => u.email === email && u.password === password
-    );
+      if (response.token) {
+        localStorage.setItem('token', response.token);
 
-    if (foundUser) {
-      const userWithoutPassword = {
-        id: foundUser.id,
-        fullName: foundUser.fullName,
-        email: foundUser.email,
-      };
-      setUser(userWithoutPassword);
-      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-      return { success: true };
+        // If the login response includes user data, use it directly
+        // Otherwise we might need to fetch it, but typically login returns it
+        if (response.user) {
+          setUser(response.user);
+          localStorage.setItem('user', JSON.stringify(response.user)); // Optional backup
+        } else {
+          // Fallback: fetch user details if not in login response
+          const userResponse = await authApi.getCurrentUser();
+          setUser(userResponse.data);
+        }
+
+        setIsAuthenticated(true);
+        toast.success('Login successful!');
+        return { success: true };
+      } else {
+        return { success: false, message: 'No token received' };
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || 'Login failed';
+      toast.error(message);
+      return { success: false, message };
     }
+  }, []);
 
-    return { success: false, message: 'Invalid email or password' };
-  };
-
-  const register = (fullName, email, password) => {
-    // Get stored users or empty array
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-
-    // Check if user already exists
-    const existingUser = users.find((u) => u.email === email);
-    if (existingUser) {
-      return { success: false, message: 'User already exists with this email' };
-    }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      fullName,
-      email,
-      password, // In real app, this should be hashed on server
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Auto login after registration
-    const userWithoutPassword = {
-      id: newUser.id,
-      fullName: newUser.fullName,
-      email: newUser.email,
-    };
-    setUser(userWithoutPassword);
-    localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-
-    return { success: true };
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
+  const register = useCallback(
+    async (username, email, phoneNumber, password) => {
+      try {
+        await authApi.register({
+          username,
+          email,
+          phoneNumber,
+          password,
+        });
+        toast.success('Registration successful! Please login.');
+        return { success: true };
+      } catch (error) {
+        const message = error.response?.data?.message || 'Registration failed';
+        toast.error(message);
+        return { success: false, message };
+      }
+    },
+    []
   );
-};
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout().catch(() => {});
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('currentUser');
+      setUser(null);
+      setIsAuthenticated(false);
+      queryClient.clear();
+      toast.success('Logged out');
+    }
+  }, [queryClient]);
+
+  // Update user state directly (for syncing with React Query mutations)
+  const updateUser = useCallback((updatedData) => {
+    setUser((prev) => ({ ...prev, ...updatedData }));
+  }, []);
+
+  const updateUserInfo = useCallback(async (updatedData) => {
+    try {
+      const response = await authApi.updateProfile(updatedData);
+      if (response.success) {
+        setUser(response.user); // Update local state with new data
+        toast.success('Profile updated successfully');
+        return { success: true };
+      }
+      return { success: false, message: 'Update failed' };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Update failed';
+      toast.error(message);
+      return { success: false, message };
+    }
+  }, []);
+
+  const changePassword = useCallback(
+    async (currentPassword, newPassword, confirmNewPassword) => {
+      try {
+        await authApi.changePassword({
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_new_password: confirmNewPassword,
+        });
+        toast.success('Password changed successfully');
+        return { success: true };
+      } catch (error) {
+        const msg =
+          error.response?.data?.message || 'Failed to change password';
+        toast.error(msg);
+        return { success: false, message: msg };
+      }
+    },
+    []
+  );
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated,
+      login,
+      register,
+      logout,
+      updateUser,
+      updateUserInfo,
+      changePassword,
+    }),
+    [
+      user,
+      loading,
+      isAuthenticated,
+      login,
+      register,
+      logout,
+      updateUser,
+      updateUserInfo,
+      changePassword,
+    ]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

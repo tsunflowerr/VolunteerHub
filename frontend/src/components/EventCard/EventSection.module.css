@@ -51,18 +51,30 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
+  width: 100%;
+  align-items: stretch;
+}
+
+.no-events {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-gray-700);
+  font-size: 1.125rem;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
   .event-section__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 3rem 1.5rem;
+    align-items: stretch;
   }
 }
 
 @media (min-width: 1024px) {
   .event-section__grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
   }
 }
 

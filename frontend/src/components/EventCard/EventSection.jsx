@@ -1,11 +1,23 @@
-import { useState } from 'react';
-import { EventCard } from './EventCard';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import styles from './EventSection.module.css';
-import { volunteerEvents } from '../../dummy/volunteerEvents';
+import { useTrendingEvents } from '../../hooks/useEvents';
+import Event from './Event';
 
 const EventSection = () => {
-  const [volunteers, setVolunteers] = useState(volunteerEvents);
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useTrendingEvents({ limit: 6 });
+
+  const events = data?.events || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        Loading events...
+      </div>
+    );
+  }
+
+  if (error) return null;
 
   return (
     <section className={styles['event-section']}>
@@ -25,22 +37,28 @@ const EventSection = () => {
       </div>
 
       <div className={styles['event-section__grid']}>
-        {volunteers.map((volunteer) => (
-          <EventCard
-            key={volunteer._id}
-            title={volunteer.title}
-            description={volunteer.description}
-            date={volunteer.date}
-            image={volunteer.image}
-            onLearnMore={() => {
-              // Handle learn more action
-            }}
-          />
-        ))}
+        {events.length > 0 ? (
+          events.map((event) => (
+            <Event
+              key={event._id}
+              name={event.name}
+              description={event.description}
+              startDate={event.startDate}
+              location={event.location}
+              thumbnail={event.thumbnail}
+              managerId={event.managerId}
+              registrationsCount={event.registrationsCount}
+              category={event.categories}
+              onLearnMore={() => navigate(`/events/${event._id}`)}
+            />
+          ))
+        ) : (
+          <div className={styles['no-events']}>No event yet</div>
+        )}
       </div>
 
       <div className={styles['event-section__actions']}>
-        <Link to="/need-volunteer" className={styles['event-section__link']}>
+        <Link to="/events" className={styles['event-section__link']}>
           <button className={styles['event-section__button']}>See All</button>
         </Link>
       </div>

@@ -8,7 +8,15 @@ const Footer = () => {
       <div className={styles.footer__container}>
         <div className={styles.footer__information}>
           <div className={styles.footer__logo}>
-            <span className={styles.footer__logoName}>VolunteerHub</span>
+            <img
+              src="/logo.png"
+              className={styles.footer__logoIcon}
+              alt="VolunteerHub Logo"
+            />
+            <span className={styles.footer__logoName}>
+              <span className={styles.footer__logoNameBlue}>olunteer</span>
+              <span className={styles.footer__logoNameGreen}>Hub</span>
+            </span>
           </div>
           <p className={styles.footer__quote}>
             Your passion is changing the world. Our mission is to make it

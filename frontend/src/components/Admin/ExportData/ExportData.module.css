@@ -1,0 +1,299 @@
+@import '../../../styles/global.css';
+
+.container {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.header {
+  padding: 24px 28px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #f8f9fc 0%, #fff 100%);
+}
+
+.header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e1e2e;
+  margin: 0 0 6px 0;
+}
+
+.header p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.content {
+  padding: 28px;
+}
+
+.section {
+  margin-bottom: 28px;
+}
+
+.section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e1e2e;
+  margin: 0 0 16px 0;
+}
+
+/* Option Grid - 2 columns for Users and Events */
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.optionCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: #f8f9fc;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  overflow: hidden;
+}
+
+.optionCard:hover {
+  background: #f0f2f8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.optionCard.selected {
+  background: #fff;
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 16px rgba(52, 79, 31, 0.15);
+}
+
+.optionIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.optionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.optionLabel {
+  font-weight: 600;
+  color: #1e1e2e;
+  font-size: 1.05rem;
+}
+
+.optionDesc {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.selectedIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+/* Info Box */
+.infoBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.infoBox strong {
+  font-weight: 600;
+}
+
+/* Result Message */
+.result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.result.success {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+}
+
+.result.error {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+}
+
+/* Export Button */
+.actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.exportBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.exportBtn:hover:not(:disabled) {
+  background: #2a3f19;
+}
+
+.exportBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* History Section */
+.history {
+  padding: 24px 28px;
+  background: #f8f9fc;
+  border-top: 1px solid #f0f0f0;
+}
+
+.history h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e1e2e;
+  margin: 0 0 16px 0;
+}
+
+.history h3 svg {
+  color: var(--primary-color);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emptyHistory {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  padding: 20px;
+}
+
+.historyItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.historyItem:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.historyIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+}
+
+.historyInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.historyName {
+  font-weight: 500;
+  color: #1e1e2e;
+  font-size: 0.9rem;
+}
+
+.historyDate {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.historyType {
+  padding: 4px 10px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: capitalize;
+}
+
+/* Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .optionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .header, .content, .history {
+    padding: 20px;
+  }
+
+  .optionCard {
+    padding: 20px;
+  }
+
+  .exportBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -36,10 +36,16 @@
 .authen__logo {
   display: flex;
   align-items: center;
+  gap: 15px;
+}
+
+.authen__logoIcon {
+  width: 60px;
+  height: 60px;
 }
 
 .authen__logoText {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-white-color);
 }
@@ -107,14 +113,16 @@
 }
 
 .authen__mobileLogo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
   margin-bottom: 2rem;
 }
 
-@media (min-width: 1024px) {
-  .authen__mobileLogo {
-    display: none;
-  }
+.authen__mobileLogoIcon {
+  width: 100px;
+  height: 100px;
 }
 
 .authen__mobileLogoText {
@@ -174,6 +182,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .authen__label {
@@ -245,11 +254,11 @@
   background-color: var(--secondary-color);
   border: none;
   border-radius: 0.5rem;
-  transition: opacity 0.2s;
+  transition: opacity 0.3s ease;
 }
 
 .authen__submitButton:hover {
-  opacity: 0.9;
+  background-color: var(--secondary-color);
 }
 
 .authen__divider {
@@ -276,4 +285,18 @@
 
 .authen__switchLink:hover {
   opacity: 0.8;
+}
+
+.authen__inputError {
+  border-color: #ef4444 !important;
+}
+
+.authen__inputError:focus {
+  border-color: #dc2626 !important;
+}
+
+.authen__errorMessage {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: -0.25rem;
 }

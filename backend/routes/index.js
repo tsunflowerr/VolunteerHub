@@ -1,0 +1,35 @@
+import express from 'express';
+import adminRoutes from './adminRoutes.js';
+import managerRoutes from './managerRoutes.js';
+import authRoutes from './authRoutes.js';
+import userRoutes from './userRoutes.js';
+import categoryRoutes from './categoryRoutes.js';
+import eventRoutes from './eventRoutes.js';
+import searchRoutes from './searchRoutes.js';
+import dashboardRoutes from './dashboardRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import gamificationRoutes from './gamificationRoutes.js';
+
+const router = express.Router();
+
+// ====== API Routes ======
+router.use('/admin', adminRoutes);
+router.use('/manager', managerRoutes);
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/events', eventRoutes);
+router.use('/search', searchRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/gamification', gamificationRoutes);
+
+router.get('/health', (req, res) => {
+    res.status(200).json({ 
+        success: true, 
+        message: 'VolunteerHub API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+export default router;

@@ -6,12 +6,13 @@
   color: var(--text-black-color);
   padding: 3rem 0 1.5rem;
   margin-top: auto;
+  border-top: 1px solid var(--color-gray-300);
 }
 
 .footer__container {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -31,11 +32,23 @@
   gap: 0.5rem;
 }
 
+.footer__logoIcon {
+  width: 40px;
+  height: 40px;
+}
+
 .footer__logoName {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.footer__logoNameBlue {
+  color: #053c83;
+}
+
+.footer__logoNameGreen {
+  color: var(--primary-color);
 }
 
 .footer__quote {
@@ -122,7 +135,7 @@
   }
 
   .footer__logoName {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
   }
 
   .footer__quote,

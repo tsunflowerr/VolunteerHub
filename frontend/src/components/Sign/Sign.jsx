@@ -6,6 +6,11 @@ const Sign = ({ title, subtitle, children }) => {
       <div className={styles.authen__leftPanel}>
         <div className={styles.authen__leftContent}>
           <div className={styles.authen__logo}>
+            <img
+              src="/logo_big.png"
+              alt="logo"
+              className={styles.authen__logoIcon}
+            />
             <h1 className={styles.authen__logoText}>VolunteerHub</h1>
           </div>
 
@@ -34,7 +39,11 @@ const Sign = ({ title, subtitle, children }) => {
       <div className={styles.authen__rightPanel}>
         <div className={styles.authen__formContainer}>
           <div className={styles.authen__mobileLogo}>
-            <h1 className={styles.authen__mobileLogoText}>VolunteerHub</h1>
+            <img
+              src="/logo_big.png"
+              alt="logo"
+              className={styles.authen__mobileLogoIcon}
+            />
           </div>
 
           <div className={styles.authen__formWrapper}>
