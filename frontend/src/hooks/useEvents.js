@@ -71,7 +71,10 @@ export const useMyRegistrations = (params = {}) => {
   return useQuery({
     queryKey: registrationKeys.list(params),
     queryFn: () => eventApi.getMyRegistrations(params),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 0, // ✅ CRITICAL: Always fetch fresh data - fixes "must F5 to see updates" issue
+    refetchOnWindowFocus: true, // ✅ IMPORTANT: Auto-refetch when user returns to tab
+    // Optional: Uncomment for auto-polling (trades bandwidth for real-time feel)
+    // refetchInterval: 15000, // Auto-refresh every 15s when viewing registration list
   });
 };
 
