@@ -20,8 +20,8 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export const usePushNotifications = () => {
-  const { user } = useAuth();
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const { user, updateUser } = useAuth();
+  const [isLocallySubscribed, setIsLocallySubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [permission, setPermission] = useState(Notification.permission);
 
@@ -32,7 +32,7 @@ export const usePushNotifications = () => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.pushManager.getSubscription().then((subscription) => {
-          setIsSubscribed(!!subscription);
+          setIsLocallySubscribed(!!subscription);
         });
       });
     }
@@ -50,13 +50,10 @@ export const usePushNotifications = () => {
     }
 
     console.log('Attempting to subscribe to push notifications...');
-    console.log('VAPID_PUBLIC_KEY:', VAPID_PUBLIC_KEY?.substring(0, 20) + '...');
-
     setLoading(true);
     try {
       // Request permission first
       const permissionResult = await Notification.requestPermission();
-      console.log('Notification permission result:', permissionResult);
       
       if (permissionResult !== 'granted') {
         toast.error('Notification permission denied');
@@ -66,25 +63,25 @@ export const usePushNotifications = () => {
       }
 
       const registration = await navigator.serviceWorker.ready;
-      console.log('ServiceWorker ready:', registration);
-
+      
+      // Subscribe (returns existing if available)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
-      console.log('Push subscription created:', subscription);
-      console.log('Endpoint:', subscription.endpoint);
 
       // Send subscription to backend
       await usersApi.savePushSubscription(subscription);
       console.log('Subscription saved to backend successfully');
 
-      setIsSubscribed(true);
+      // Update local state and auth context
+      setIsLocallySubscribed(true);
+      updateUser({ hasPushSubscription: true });
+      
       setPermission('granted');
       toast.success('Push notifications enabled!');
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
-      console.error('Error details:', error.message, error.code);
       toast.error('Failed to enable push notifications: ' + error.message);
       setPermission(Notification.permission);
     } finally {
@@ -104,7 +101,10 @@ export const usePushNotifications = () => {
 
       await usersApi.removePushSubscription();
 
-      setIsSubscribed(false);
+      // Update local state and auth context
+      setIsLocallySubscribed(false);
+      updateUser({ hasPushSubscription: false });
+
       toast.success('Push notifications disabled');
     } catch (error) {
       console.error('Failed to unsubscribe from push notifications', error);
@@ -114,9 +114,14 @@ export const usePushNotifications = () => {
     }
   };
 
+  // Determine effective subscription status:
+  // Must have local browser subscription AND backend record for this user
+  const isSubscribed = isLocallySubscribed && !!user?.hasPushSubscription;
+
   return {
     isSubscribed,
-    isRemoteSubscribed: user?.hasPushSubscription,
+    isLocallySubscribed,
+    isRemoteSubscribed: !!user?.hasPushSubscription,
     loading,
     permission,
     subscribeToPush,

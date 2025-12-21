@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { gamificationApi } from '../../api/gamification';
+import { useLeaderboard } from '../../hooks/useGamification';
 import { LevelBadge } from '../../components/Gamification';
 import VerifiedBadge from '../../components/common/VerifiedBadge';
 import { Trophy, Medal, Award, Star } from 'lucide-react';
@@ -10,13 +9,10 @@ const Ranking = () => {
   const [filterType, setFilterType] = useState('points'); // 'points', 'level', 'events', 'achievements'
   const [limit, setLimit] = useState(50);
 
-  // Fetch leaderboard data - always use 'points' type for base data when filtering by achievements
-  const { data: leaderboardData, isLoading } = useQuery({
-    queryKey: ['leaderboard', filterType, limit],
-    queryFn: () => gamificationApi.getLeaderboard({ 
-      type: filterType === 'achievements' ? 'points' : filterType, 
-      limit 
-    }),
+  // Fetch leaderboard data
+  const { data: leaderboardData, isLoading } = useLeaderboard({ 
+    type: filterType === 'achievements' ? 'points' : filterType, 
+    limit 
   });
 
   const getRankIcon = (rank) => {
