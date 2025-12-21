@@ -1,158 +1,197 @@
 # 🤝 VolunteerHub
 
-> Nền tảng quản lý tình nguyện viên toàn diện - Kết nối người tổ chức và tình nguyện viên, theo dõi hoạt động, xây dựng cộng đồng tình nguyện mạnh mẽ.
+> **Nền tảng kết nối và quản lý hoạt động tình nguyện toàn diện.**
+> Xây dựng cộng đồng, lan tỏa yêu thương.
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-19-blue.svg)](https://reactjs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Latest-brightgreen.svg)](https://www.mongodb.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg?logo=node.js)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-19-blue.svg?logo=react)](https://reactjs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Latest-brightgreen.svg?logo=mongodb)](https://www.mongodb.com/)
+[![Redis](https://img.shields.io/badge/Redis-Latest-red.svg?logo=redis)](https://redis.io/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+---
+
+## 📖 Mục lục
+
+- [Giới Thiệu](#-giới-thiệu)
+- [Tính Năng Chính](#-tính-năng-chính)
+- [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
+- [Cài Đặt & Chạy Dự Án](#-cài-đặt--chạy-dự-án)
+- [Cấu Hình Biến Môi Trường](#-cấu-hình-biến-môi-trường)
+- [API Documentation](#-api-documentation)
+- [Bảo Mật](#-bảo-mật)
+- [Tác Giả](#-tác-giả)
 
 ---
 
 ## 🌟 Giới Thiệu
 
-**VolunteerHub** là nền tảng quản lý tình nguyện viên hiện đại với hệ thống phân quyền 3 cấp (User, Manager, Admin), tích hợp gamification, thông báo real-time, và analytics dashboard.
+**VolunteerHub** là một giải pháp phần mềm hiện đại được thiết kế để đơn giản hóa quy trình tổ chức và tham gia các hoạt động tình nguyện. Hệ thống cung cấp nền tảng tập trung cho phép các tổ chức (Managers) tạo sự kiện, và các tình nguyện viên (Users) dễ dàng tìm kiếm, đăng ký và theo dõi hành trình đóng góp của mình.
 
-**Tính năng nổi bật:**
-- 🔐 Authentication JWT với phân quyền đa cấp
-- 📅 Quản lý sự kiện đầy đủ (CRUD, approval workflow, categories)
-- 📝 Đăng ký tham gia với tracking trạng thái
-- 💬 Social features (posts, comments, likes, bookmarks)
-- 🏆 Gamification system (points, levels, achievements, leaderboard)
-- 🔔 Web push notifications & in-app notifications
-- 📊 Dashboard & analytics cho từng role
-- 🔍 Full-text search với advanced filtering
-- 📤 Export dữ liệu CSV
+Dự án chú trọng vào trải nghiệm người dùng (UX) mượt mà, hiệu năng cao và tính tương tác thông qua hệ thống Gamification và Mạng xã hội nội bộ.
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Tính Năng Chính
 
-### Backend
-- **Node.js** + **Express.js** 5.1.0 - Web framework
-- **MongoDB** + **Mongoose** 8.19.1 - Database & ODM
-- **Redis** 5.8.3 - Caching & rate limiting
-- **JWT** 9.0.2 + **bcrypt** 6.0.0 - Authentication
-- **Joi** 18.0.1 - Validation
-- **web-push** 3.6.7 - Push notifications
-- **Cloudinary** 1.41.3 - Image storage
-- **node-cron** 4.2.1 - Scheduled tasks
-- **Swagger** - API documentation
-- **Helmet** + **CORS** - Security
+### 👤 User (Tình nguyện viên)
 
-### Frontend
-- **React** 19.1.1 + **Vite** 7.1.7 - UI framework & build tool
-- **React Router** 7.9.4 - Routing
-- **TanStack Query** 5.90.11 - Data fetching & caching
-- **Axios** 1.13.2 - HTTP client
-- **Recharts** 3.4.1 - Data visualization
-- **Framer Motion** 12.23.24 + **AOS** 2.3.4 - Animations
-- **Radix UI** 1.1.15 - UI components
-- **Lucide React** 0.546.0 - Icons
-- **Yup** 1.7.1 + **date-fns** 4.1.0 - Validation & utilities
+- **Khám phá sự kiện:** Tìm kiếm nâng cao theo từ khóa, địa điểm, thời gian, danh mục.
+- **Đăng ký tham gia:** Quy trình đăng ký đơn giản, theo dõi trạng thái (Pending, Approved, Completed).
+- **Tương tác xã hội:** Thảo luận, bình luận, like bài viết, lưu sự kiện (Bookmark).
+- **Gamification:** Tích điểm, thăng cấp, mở khóa danh hiệu (Achievements), xem Bảng xếp hạng (Leaderboard).
+- **Thông báo:** Nhận thông báo Real-time và Web Push về trạng thái đăng ký, sự kiện mới.
+- **Hồ sơ cá nhân:** Quản lý thông tin, lịch sử hoạt động, thống kê giờ tình nguyện.
 
-### DevOps
-- **Docker** & **Docker Compose** - Containerization
-- **Nodemon** - Development auto-reload
-- **ESLint** - Code linting
+### 🏢 Manager (Người tổ chức)
+
+- **Quản lý sự kiện:** Tạo, sửa, xóa sự kiện. Tùy chỉnh form đăng ký.
+- **Quản lý tình nguyện viên:** Duyệt/Từ chối đơn đăng ký, điểm danh (Check-in), đánh giá sau sự kiện.
+- **Thống kê:** Xem báo cáo về số lượng người tham gia, mức độ quan tâm.
+
+### 🛡️ Admin (Quản trị viên)
+
+- **Dashboard tổng quan:** Thống kê toàn hệ thống (Users, Events, Traffic).
+- **Quản lý người dùng:** Phân quyền, khóa tài khoản vi phạm.
+- **Quản lý danh mục:** CRUD danh mục sự kiện.
+- **Hệ thống báo cáo:** Xử lý các báo cáo vi phạm nội dung.
 
 ---
 
-## 🚀 Cài Đặt
+## 🛠️ Công Nghệ Sử Dụng
 
-### Yêu Cầu
-- Node.js 18+
-- MongoDB 5+
-- Redis 6+
+Dự án được xây dựng trên nền tảng **MERN Stack** hiện đại và tối ưu hóa hiệu năng.
 
-### Backend
+### Backend (`/backend`)
+
+| Công nghệ                   | Mục đích                         |
+| :-------------------------- | :------------------------------- |
+| **Node.js** & **Express 5** | RESTful API Framework            |
+| **MongoDB** & **Mongoose**  | Cơ sở dữ liệu NoSQL & ODM        |
+| **Redis**                   | Caching, Rate Limiting & Session |
+| **JWT** & **Bcrypt**        | Xác thực & Mã hóa bảo mật        |
+| **Web Push**                | Thông báo đẩy trình duyệt        |
+| **Cloudinary**              | Lưu trữ hình ảnh tối ưu          |
+| **Node-cron**               | Tác vụ định kỳ (Scheduled Tasks) |
+| **Swagger**                 | Tài liệu hóa API tự động         |
+
+### Frontend (`/frontend`)
+
+| Công nghệ                      | Mục đích                       |
+| :----------------------------- | :----------------------------- |
+| **React 19**                   | Thư viện UI Core               |
+| **Vite**                       | Build tool siêu tốc            |
+| **TanStack Query**             | Quản lý Server State & Caching |
+| **Zustand / Context**          | Quản lý Global State           |
+| **React Router 7**             | Định tuyến (Routing)           |
+| **Radix UI** & **CSS Modules** | Xây dựng giao diện & Styling   |
+| **Framer Motion**              | Hiệu ứng chuyển động mượt mà   |
+| **Lucide React**               | Bộ icon hiện đại               |
+
+---
+
+## 📥 Cài Đặt & Chạy Dự Án
+
+### Yêu cầu tiên quyết
+
+- [Node.js](https://nodejs.org/) (v18 trở lên)
+- [MongoDB](https://www.mongodb.com/) (Local hoặc Atlas)
+- [Redis](https://redis.io/) (Local hoặc Cloud)
+- [Docker](https://www.docker.com/) (Tùy chọn)
+
+### Cách 1: Chạy thủ công (Development)
+
+#### 1. Khởi chạy Backend
 
 ```bash
 cd backend
 npm install
-
-# Tạo file .env
-PORT=4000
-NODE_ENV=development
-CLIENT_URL=http://localhost:5173
-MONGODB_URI=mongodb://localhost:27017/volunteerhub
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-VAPID_PUBLIC_KEY=your_vapid_public_key
-VAPID_PRIVATE_KEY=your_vapid_private_key
-
-npm start  # http://localhost:4000
+# Cấu hình .env (xem bên dưới)
+npm start
+# Server chạy tại: http://localhost:4000
 ```
 
-### Frontend
+#### 2. Khởi chạy Frontend
 
 ```bash
 cd frontend
 npm install
-
-# Tạo file .env
-VITE_API_URL=http://localhost:4000/api
-VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
-
-npm run dev  # http://localhost:5173
+# Cấu hình .env (xem bên dưới)
+npm run dev
+# App chạy tại: http://localhost:5173
 ```
 
-### Docker (Recommended)
+### Cách 2: Chạy bằng Docker (Recommended)
+
+Chạy toàn bộ hệ thống (Frontend, Backend, MongoDB, Redis) chỉ với một lệnh:
 
 ```bash
-docker-compose up -d           # Khởi động
-docker-compose logs -f         # Xem logs
-docker-compose down            # Dừng
+docker-compose up -d --build
+```
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:4000`
+- API Docs: `http://localhost:4000/api-docs`
+
+---
+
+## 🔑 Cấu Hình Biến Môi Trường
+
+Tạo file `.env` trong thư mục tương ứng.
+
+### Backend (`backend/.env`)
+
+```env
+PORT=4000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/volunteerhub
+REDIS_URL=redis://localhost:6379
+
+# Security
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# Cloudinary (Image Upload)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Web Push Notifications
+VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+```
+
+### Frontend (`frontend/.env`)
+
+```env
+VITE_API_URL=http://localhost:4000/api
+VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 ```
 
 ---
 
 ## 📚 API Documentation
 
-**Swagger UI:** `http://localhost:4000/api-docs`
+Hệ thống tích hợp sẵn Swagger UI để tra cứu API.
+Truy cập: **[http://localhost:4000/api-docs](http://localhost:4000/api-docs)**
 
-**Base URL:** `http://localhost:4000/api`
+**Quy định Rate Limit:**
 
-**Authentication:** JWT qua Cookie (recommended) hoặc `Authorization: Bearer <token>`
-
-**Rate Limits:**
-- Auth: 5 req/15min
-- Registration: 3 req/15min
-- Search: 50 req/15min
-- General: 100 req/15min
-
-Chi tiết đầy đủ tại [backend/API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md)
+- **Auth:** 5 requests / 15 phút
+- **Đăng ký:** 3 requests / 15 phút
+- **Tìm kiếm:** 50 requests / 15 phút
 
 ---
 
 ## 🔒 Bảo Mật
 
-- JWT authentication với bcrypt password hashing
-- Role-based access control (RBAC)
-- Helmet.js security headers
-- Redis-backed rate limiting
-- Joi schema validation
-- XSS protection & MongoDB injection prevention
-- CORS configuration
-- Secure cookies & environment variables
+Chúng tôi áp dụng các tiêu chuẩn bảo mật cao:
+
+- **Authentication:** JWT (JSON Web Token) được lưu trữ an toàn (HttpOnly Cookies recommended).
+- **Authorization:** ABAC (Attribute-Based Access Control) kết hợp RBAC.
+- **Validation:** Kiểm tra dữ liệu đầu vào chặt chẽ với Joi.
+- **Protection:** Chống XSS, NoSQL Injection, Rate Limiting với Redis, Security Headers (Helmet).
 
 ---
-
-## 📝 License
-
-MIT License
-
----
-
-## 👨‍💻 Tác Giả
-
-**tsunflowerr**
-- GitHub: [@tsunflowerr](https://github.com/tsunflowerr)
-- Repository: [VolunteerHub](https://github.com/tsunflowerr/VolunteerHub)
-
----
-
-**Made with ❤️ by tsunflowerr**
