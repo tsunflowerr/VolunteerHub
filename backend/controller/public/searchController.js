@@ -88,18 +88,46 @@ export async function searchEvents(req, res) {
       case 'upcoming':
         // Filter only future events (events that haven't started yet) and sort by startDate ascending
         const now = new Date();
-        // Override any existing startDate filter for upcoming
-        filter.startDate = { $gt: now };
+        
+        // Merge "upcoming" constraint (startDate > now) with existing user filters
+        if (!filter.startDate) {
+          filter.startDate = { $gt: now };
+        } else {
+          // If user already has startDate filters (e.g. from date range picker)
+          // Ensure we respect the user's range BUT also enforce the "upcoming" (future) rule.
+          // Basically: startDate = max(userStartDate, now)
+          
+          if (filter.startDate.$gte) {
+             // If user picked a start date that is in the past, "upcoming" should force it to 'now'.
+             // If user picked a start date in the future, keep user's date.
+             if (filter.startDate.$gte < now) {
+                filter.startDate.$gte = now;
+             }
+             // If user's start date is valid (future), we leave it alone.
+          } else {
+             // No user start date (only end date provided?), add lower bound
+             filter.startDate.$gt = now;
+          }
+        }
+
         // Also ensure event hasn't ended yet (either no endDate or endDate > now)
-        filter.$and = [
-          {
+        // We only add this if it doesn't conflict with user's endDate filter
+        // Actually, if user specified endDate, that implicitly handles "not ended yet" 
+        // as long as user's endDate > now.
+        
+        // Let's add the basic sanity check for "active/future" events:
+        if (!filter.$and) {
+             filter.$and = [];
+        }
+        
+        filter.$and.push({
             $or: [
               { endDate: { $exists: false } },
               { endDate: null },
               { endDate: { $gt: now } }
             ]
-          }
-        ];
+        });
+
         // Only show approved events (exclude completed)
         filter.status = 'approved';
         sortOptions = { startDate: 1 };

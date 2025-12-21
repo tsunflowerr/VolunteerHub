@@ -74,7 +74,6 @@ export const useBookmarkedEvents = () => {
   return useQuery({
     queryKey: ['bookmarks'],
     queryFn: usersApi.getBookmarkedEvents,
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
@@ -82,21 +81,28 @@ export const useToggleBookmark = (eventId) => {
   const queryClient = useQueryClient();
   const { user, updateUser } = useAuth();
 
-  const isBookmarked = eventId ? user?.bookmarks?.includes(eventId) : false;
+  const isBookmarked = eventId
+    ? user?.bookmarks?.some((b) => {
+        const bId = typeof b === 'string' ? b : b?._id;
+        return bId === eventId;
+      })
+    : false;
 
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: ({ action }) => {
       // Guard against undefined eventId
       if (!eventId) {
         return Promise.reject(new Error('Event ID is required'));
       }
-      if (isBookmarked) {
+      console.log('Toggle Bookmark Mutation:', { eventId, action });
+      
+      if (action === 'remove') {
         return eventApi.removeBookmark(eventId);
       } else {
         return eventApi.addBookmark(eventId);
       }
     },
-    onMutate: async () => {
+    onMutate: async ({ action }) => {
       // Don't run if no eventId
       if (!eventId) return {};
       
@@ -108,8 +114,11 @@ export const useToggleBookmark = (eventId) => {
 
       // Optimistically update bookmarks in AuthContext
       if (user) {
-        const updatedBookmarks = isBookmarked
-          ? previousBookmarks.filter((id) => id !== eventId)
+        const updatedBookmarks = action === 'remove'
+          ? previousBookmarks.filter((b) => {
+              const bId = typeof b === 'string' ? b : b?._id;
+              return bId !== eventId;
+            })
           : [...previousBookmarks, eventId];
         updateUser({ bookmarks: updatedBookmarks });
       }
@@ -117,18 +126,35 @@ export const useToggleBookmark = (eventId) => {
       return { previousBookmarks };
     },
     onError: (error, variables, context) => {
-      // Rollback on error
+      const { action } = variables;
+      // Handle specific error cases where state is already what we want
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+
+      // Case 1: Tried to remove, but backend says "Bookmark not found" (404)
+      if (action === 'remove' && status === 404) {
+         toast.success('Removed from bookmarks');
+         return;
+      }
+
+      // Case 2: Tried to add, but backend says "Already bookmarked" (400)
+      if (action === 'add' && status === 400) {
+        toast.success('Added to bookmarks');
+        return;
+      }
+
+      // Default: Rollback on other errors
       if (context?.previousBookmarks && user) {
         updateUser({ bookmarks: context.previousBookmarks });
       }
-      toast.error(error.response?.data?.message || 'Failed to update bookmark');
+      toast.error(message || 'Failed to update bookmark');
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       toast.success(
-        isBookmarked ? 'Removed from bookmarks' : 'Added to bookmarks'
+        variables.action === 'remove' ? 'Removed from bookmarks' : 'Added to bookmarks'
       );
     },
   });
@@ -139,7 +165,9 @@ export const useToggleBookmark = (eventId) => {
       console.warn('Cannot toggle bookmark: Event ID is missing');
       return;
     }
-    mutation.mutate();
+    // Determine action at the moment of click
+    const action = isBookmarked ? 'remove' : 'add';
+    mutation.mutate({ action });
   };
 
   return {

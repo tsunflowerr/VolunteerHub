@@ -68,7 +68,14 @@ const MyEvents = () => {
   });
 
   // Fetch Bookmarks
-  const { data: bookData, isLoading: isBookLoading } = useBookmarkedEvents();
+  const { data: bookData, isLoading: isBookLoading, error: bookError } = useBookmarkedEvents();
+
+  if (bookError) {
+    console.error('Error fetching bookmarks:', bookError);
+  }
+  if (bookData) {
+    console.log('Bookmarked events data:', bookData);
+  }
 
   // Process Data based on Active Tab & Search Params
   const { currentEvents, totalPages, isLoading } = useMemo(() => {

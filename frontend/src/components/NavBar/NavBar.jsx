@@ -253,16 +253,14 @@ const NavBar = ({ showNavButtons = true }) => {
             </button>
             <button
               className={`${styles.navbar__menuItem} ${
-                isActive('/discussions')
-                  ? styles['navbar__menuItem--active']
-                  : ''
+                isActive('/ranking') ? styles['navbar__menuItem--active'] : ''
               }`}
               onClick={() => {
                 setShowMenu(false);
-                navigate('/discussions');
+                navigate('/ranking');
               }}
             >
-              Discussions
+              Ranking
             </button>
           </div>
         )}

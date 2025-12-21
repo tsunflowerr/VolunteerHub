@@ -350,6 +350,11 @@ h2.event-detail__section-subtitle {
   gap: 0.5rem;
 }
 
+.event-detail__sidebar-card-bookmark-btn--active {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
 .event-detail__sidebar-card-bookmark-btn svg {
   flex-shrink: 0;
 }
