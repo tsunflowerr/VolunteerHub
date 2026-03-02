@@ -2,7 +2,7 @@ services:
   redis:
     image: redis:latest
     container_name: volunteerhub-redis
-    restart: always
+    restart: no
     ports:
       - '6379:6379'
     volumes:
@@ -15,7 +15,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: volunteerhub-backend
-    restart: always
+    restart: no
     ports:
       - '4000:4000'
     env_file:
@@ -35,7 +35,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: volunteerhub-frontend
-    restart: always
+    restart: no
     ports:
       - '5173:5173'
     volumes:
