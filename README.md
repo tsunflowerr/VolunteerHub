@@ -3,6 +3,10 @@
 > **Nền tảng kết nối và quản lý hoạt động tình nguyện toàn diện.**
 > Xây dựng cộng đồng, lan tỏa yêu thương.
 
+🔗 **Live Demo:** [https://volunteer-hub-mauve.vercel.app](https://volunteer-hub-mauve.vercel.app)
+🔗 **API Backend:** [https://volunteerhub-xa0m.onrender.com](https://volunteerhub-xa0m.onrender.com)
+📚 **API Docs:** [https://volunteerhub-xa0m.onrender.com/api-docs](https://volunteerhub-xa0m.onrender.com/api-docs)
+
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg?logo=node.js)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg?logo=react)](https://reactjs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Latest-brightgreen.svg?logo=mongodb)](https://www.mongodb.com/)
